@@ -2079,3 +2079,22 @@ html.is-standalone body {
   border-color: rgba(255, 77, 154, 0.5);
   background: rgba(255, 77, 154, 0.16);
 }
+
+.home-greet {
+  margin: 0 0 0.85rem;
+}
+.home-greet__title {
+  margin: 0 0 0.2rem;
+  font-size: clamp(1.55rem, 5.5vw, 2rem);
+  text-transform: none;
+  letter-spacing: 0.01em;
+  font-weight: 750;
+}
+.home-greet .eyebrow {
+  color: var(--blue);
+}
+@media (min-width: 860px) {
+  .home-greet {
+    display: none;
+  }
+}

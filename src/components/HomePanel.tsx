@@ -10,7 +10,6 @@ import type {
   ActiveChallenge,
   DayMode,
   Intensity,
-  IrlStatus,
   MorningTrioState,
   PerformanceBand,
   PerformanceSnapshot,
@@ -25,14 +24,6 @@ const BAND_DA: Record<PerformanceBand, string> = {
   godlike: 'Godlike',
 };
 
-const IRL: { value: IrlStatus; label: string }[] = [
-  { value: 'home', label: 'Hjemme' },
-  { value: 'alone', label: 'Alene' },
-  { value: 'out', label: 'Ude' },
-  { value: 'work', label: 'Arbejde' },
-  { value: 'public', label: 'Offentligt' },
-];
-
 type Props = {
   underwear: UnderwearPick | null;
   pointsBalance: number;
@@ -40,7 +31,6 @@ type Props = {
   intensity: Intensity;
   dayMode: DayMode;
   playingGame: string;
-  irlStatus: IrlStatus;
   activeChallenge: ActiveChallenge | null;
   inGameChallenge: ActiveChallenge | null;
   emergencyStop: boolean;
@@ -48,8 +38,6 @@ type Props = {
   onGoSex: () => void;
   onGoCalendar: () => void;
   onGoGaming: () => void;
-  onGoProfil: () => void;
-  onIrl: (irl: IrlStatus) => void;
   sexActive: SexStrafInstance | null;
   sexDue: SexStrafDue;
   calendarToday: CalendarSummary;
@@ -100,6 +88,9 @@ function buildNextLines(opts: {
   } else if (opts.playingGame.trim()) {
     lines.push(`Spiller ${opts.playingGame.trim()} — log under Gaming.`);
   }
+  if (!lines.length) {
+    lines.push('Intet akut — tjek Gaming eller Kalender når du er klar.');
+  }
   return lines.slice(0, 4);
 }
 
@@ -110,7 +101,6 @@ export function HomePanel({
   intensity,
   dayMode,
   playingGame,
-  irlStatus,
   activeChallenge,
   inGameChallenge,
   emergencyStop,
@@ -118,8 +108,6 @@ export function HomePanel({
   onGoSex,
   onGoCalendar,
   onGoGaming,
-  onGoProfil,
-  onIrl,
   sexActive,
   sexDue,
   calendarToday,
@@ -144,45 +132,23 @@ export function HomePanel({
         ? 'Hard'
         : 'Soft'
       : `${intensity}/${dayMode}-dag`;
-  const now = new Date();
-  const greetDate = now.toLocaleDateString('da-DK', {
-    weekday: 'long',
-    day: 'numeric',
-    month: 'long',
-  });
-  const clock = now.toLocaleTimeString('da-DK', { hour: '2-digit', minute: '2-digit' });
   const sexPending =
     !!sexActive && (sexActive.status === 'pending' || sexActive.status === 'active');
 
   return (
     <div className="mode-stack home-stack">
-      <div className="dash-cards">
-        <button type="button" className="dash-card dash-card--today" onClick={onGoCalendar}>
-          <span className="dash-card__k">I dag</span>
-          <strong>{underwear?.roleNameDa ?? underwear?.lookNameDa ?? 'Outfit'}</strong>
-          <span>{clock} · {greetDate}</span>
-        </button>
-        {(sexPending || sexDue.due) ? (
-          <button type="button" className="dash-card dash-card--hot" onClick={onGoSex}>
-            <span className="dash-card__k">Sex-straf</span>
-            <strong>{sexActive?.status === 'active' ? 'Aktiv' : sexPending ? 'Afventer' : 'Due'}</strong>
-            <span>{sexActive?.titleDa ?? 'Kræv under Sex'}</span>
-          </button>
-        ) : (
-          <button type="button" className="dash-card dash-card--cal" onClick={onGoProfil}>
-            <span className="dash-card__k">IRL</span>
-            <strong>{IRL.find((o) => o.value === irlStatus)?.label ?? irlStatus}</strong>
-            <span>Profil & limits</span>
-          </button>
-        )}
-      </div>
-
       <section className="panel panel--command panel--home-order">
         <div className="panel__head">
           <div>
             <p className="eyebrow">Tøj · role</p>
             <h2>{underwear?.roleNameDa ? underwear.roleNameDa : 'På dig nu'}</h2>
           </div>
+          {(sexPending || sexDue.due) && (
+            <button type="button" className="sex-pill-badge" onClick={onGoSex}>
+              <i className="nav-badge" aria-hidden />
+              Sex
+            </button>
+          )}
         </div>
 
         {emergencyStop && (
@@ -213,7 +179,7 @@ export function HomePanel({
         <ImageGallery
           slot="outfit"
           titleDa="Egne outfit-fotos"
-          hintDa="Upload looks fra telefonen — gemmes kun lokalt. Send gerne til Chief of Staff for seed-galleri."
+          hintDa="Upload looks fra telefonen — gemmes kun lokalt (IndexedDB)."
         />
       </section>
 
@@ -247,31 +213,28 @@ export function HomePanel({
               <strong>NØDSTOP</strong>
             </span>
           )}
-          {sexPending && (
-            <span className="status-chip status-chip--sex" role="listitem">
+          {(sexPending || sexDue.due) && (
+            <button
+              type="button"
+              className="status-chip status-chip--sex"
+              role="listitem"
+              onClick={onGoSex}
+            >
               <span className="status-chip__k">Sex-straf</span>
-              <strong>Aktiv</strong>
-            </span>
+              <strong>{sexActive?.status === 'active' ? 'Aktiv' : sexPending ? 'Afventer' : 'Due'}</strong>
+            </button>
           )}
           {morningLeft > 0 && (
-            <span className="status-chip" role="listitem">
+            <button
+              type="button"
+              className="status-chip"
+              role="listitem"
+              onClick={onGoChallenges}
+            >
               <span className="status-chip__k">Morgen</span>
               <strong>{morningLeft}/3</strong>
-            </span>
-          )}
-        </div>
-        <div className="irl-row" role="group" aria-label="IRL-status">
-          {IRL.map((o) => (
-            <button
-              key={o.value}
-              type="button"
-              className={`chip ${irlStatus === o.value ? 'chip--on' : ''}`}
-              disabled={emergencyStop}
-              onClick={() => onIrl(o.value)}
-            >
-              {o.label}
             </button>
-          ))}
+          )}
         </div>
       </section>
 
@@ -290,20 +253,21 @@ export function HomePanel({
               Åbn sex-straf →
             </button>
           )}
+          {morningLeft > 0 && (
+            <button type="button" className="linkish" onClick={onGoChallenges}>
+              Morgen-trio →
+            </button>
+          )}
           {calendarToday.entries.length > 0 && (
             <button type="button" className="linkish" onClick={onGoCalendar}>
               Åbn kalender →
             </button>
           )}
-          <button type="button" className="linkish" onClick={onGoChallenges}>
-            Udfordringer →
-          </button>
-          <button type="button" className="linkish" onClick={onGoGaming}>
-            Gaming →
-          </button>
-          <button type="button" className="linkish" onClick={onGoProfil}>
-            Profil →
-          </button>
+          {playingGame.trim() && (
+            <button type="button" className="linkish" onClick={onGoGaming}>
+              Gaming →
+            </button>
+          )}
         </div>
       </section>
     </div>

@@ -1337,7 +1337,7 @@ export const CHALLENGE_TEMPLATES: ChallengeTemplate[] = [
   {
     id: 'ch-morning-easy-04',
     titleDa: 'Morgen: lipstick touch',
-    bodyDa: 'Påfør læbestift eller lip tint. Se dig i spejlet 30 sekunder. Ingen mantraer — kun make-up DO.',
+    bodyDa: 'Påfør læbestift eller lip tint. Se dig i spejlet 30 sekunder. Ren make-up DO — ingen tale.',
     tags: ['morgen', 'do', 'easy', 'makeup'],
     themes: ['clothing', 'irl'],
     intensity: ['soft'],

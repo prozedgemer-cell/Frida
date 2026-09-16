@@ -77,8 +77,6 @@ export function Dashboard({ api }: { api: Hook }) {
 
   return (
     <div className={`app-shell ${tab === 'hoved' ? 'is-hoved' : ''}`}>
-      <PanicButton active={state.emergencyStop} onToggle={api.setEmergencyStop} />
-
       <header className="dash-bar">
         <div>
           <p className="eyebrow">{mode.eyebrow}</p>
@@ -103,6 +101,7 @@ export function Dashboard({ api }: { api: Hook }) {
               Sex
             </button>
           )}
+          <PanicButton active={state.emergencyStop} onToggle={api.setEmergencyStop} />
           <button
             type="button"
             className={`header-profile-btn ${tab === 'profil' ? 'is-active' : ''}`}
