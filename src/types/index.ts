@@ -1,3 +1,5 @@
+import type { GamePresetId } from '../data/gameProfiles';
+
 export type ThemePack =
   | 'bdsm'
   | 'clothing'
@@ -49,6 +51,8 @@ export interface ContextState {
   irlStatus: IrlStatus;
   playingGame: string;
   notes: string;
+  /** Active preset for structured logging (optional) */
+  activeGameId?: GamePresetId;
 }
 
 export interface UnderwearItem {
@@ -125,11 +129,17 @@ export interface GameSessionLog {
   gameName: string;
   at: string;
   result: GameResult;
-  /** Score, K/D, rank eller fri note */
+  /** Score, K/D, rank eller fri note (auto-udfyldt fra metrics når muligt) */
   performanceNote: string;
   rating: PerformanceRating;
   durationMin?: number;
   mood: string;
+  /** Preset id for structured KPIs */
+  gameId?: GamePresetId;
+  /** Structured metrics matching gameProfiles fields */
+  metrics?: Record<string, number | string>;
+  /** Normalized 0–100 from game formula; drives sessionRawScore when set */
+  computedScore?: number;
 }
 
 export interface PerformanceSnapshot {

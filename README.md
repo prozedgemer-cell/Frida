@@ -5,8 +5,8 @@ Local-first MVP: React + TypeScript + Vite. Data i `localStorage`. Ingen auth.
 
 ## Modes (bundnavigation)
 
-1. **Gaming** — session-log (resultat, rating, note, humør), præstationsscore/streak, point
-2. **In-game** — udfordringer *mens du spiller* med bonus-/strafpoint
+1. **Gaming** — spil-presets (CS2, WARDOGS, LoL, Diablo IV, Fortnite) med rigtige KPI-felter, normaliseret 0–100 score, paste-import, point
+2. **In-game** — udfordringer *mens du spiller* + hurtiglink til post-match KPI-log
 3. **Hverdag** — IRL-status, soft/hard-dag, auto undertøj (påvirket af præstation)
 4. **Udfordringer** — træk / fuldfør / skip / fail + straf/belønning vægtet efter præstation
 5. **Profil** — themes, limits, cup, intensitet, app-tips
@@ -127,7 +127,8 @@ Hvis repoet er tomt, kan du også `git init` i projektmappen, tilføje remote, o
 - Mobil-app UX: safe-area, viewport-fit=cover, bundmenu (Hjem / Udfordring / Profil) på telefon
 - **18+ gate** ved første besøg
 - **Profil**: navn låst til Frida, fake breast cup-størrelse, soft/hard intensitet, soft/hard-dag, theme packs, hard limits
-- **Dashboard**: tydelig undertøjs-beording, challenges, IRL/gaming-kontekst, stort **nødstop**
+- **Dashboard**: tydelig undertøjs-beording, challenges, IRL/gaming-KPI, stort **nødstop**
+- **Spil-presets**: CS2 / WARDOGS / LoL / Diablo IV / Fortnite med strukturerede metrics + 0–100 KPI-score
 - **Auto undertøj**: vægtet motor (tid, hverdag/weekend, IRL-status, valgfrit spil, intensitet, themes) — dagens valg gemmes, reroll muligt
 - **Challenge-motor**: ~118 danske skabeloner med tags/themes; anatomi-respekt (ingen vaginal-use; semen-opsamling tilladt ærligt); complete / skip / fail-log
 - **Themes** (toggle): BDSM, clothing/underwear, sex, IRL, porn, anime, hentai, fantasy roleplay
@@ -165,9 +166,26 @@ Med ~120 skabeloner og 8 themes lander ordensstørrelsen allerede i **tusinder�
 
 Undertøjskatalog: `src/data/underwear.ts`.
 
+## Spil-KPI & præstation
+
+**Wardogs-antagelse:** tolket som **WARDOGS** (BULKHEAD / Team17, Early Access sep 2026) — tactical all-out warfare FPS. Ikke Watch Dogs, ikke Warzone. Markeret i UI + her.
+
+| Spil | KPI-felter | Score-vægte (0–100) | Fetch |
+|------|------------|---------------------|-------|
+| **CS2** | Kills, deaths, ADR, HS%, rank | K/D 30% · ADR 28% · HS% 12% · resultat 30% | Manuel / paste (Leetify m.m. kræver nøgle) |
+| **WARDOGS** | Kills, deaths, cash, zone-bidrag | K/D 25% · cash 25% · resultat 30% · zone 20% | Manuel (community boards, ingen gratis API) |
+| **LoL** | K/D/A, CS/min, vision, dmg%, rank | KDA 30% · CS/min 20% · vision 10% · dmg 10% · resultat 30% | Manuel / paste (Riot/OP.GG kræver nøgle) |
+| **Diablo IV** | Pit tier, cleartid, deaths, journey | Pit 40% · clear 20% · deaths 15% · journey 15% · resultat 10% | Manuel (helltides crowdsource) |
+| **Fortnite** | Placement, kills, mode, rank | Placement 40% · kills 25% · K/D 15% · resultat 20% | Manuel / paste (TRN-Api-Key) |
+
+Formel-detaljer ligger i `src/engines/gameScoreEngine.ts` + in-app «Formel / hjælp». Score driver undertøj, challenges og straf/belønning som før.
+
+**Ingen** scraping bag login, session-cookies eller passwords. «Paste tracker» er best-effort tekstparse.
+
 ## Out of scope (næste skridt)
 
-- Rigtige game APIs / automatisk detektion af spil
+- Live game APIs med bruger-nøgler / OAuth
+- Automatisk detektion af kørende spil
 - Multi-user / cloud sync
 - Native App Store / Play-apps (PWA dækker telefon-ikonet gratis)
 - Konti / auth

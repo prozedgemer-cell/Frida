@@ -1,4 +1,5 @@
-import type { AppState, Profile } from '../types';
+import type { GamePresetId } from '../data/gameProfiles';
+import type { AppState, GameSessionLog, Profile } from '../types';
 import { ALL_THEMES, DEFAULT_HARD_LIMITS } from '../types';
 
 const KEY = 'frida-kontrolpanel-v1';
@@ -6,6 +7,15 @@ const UI_TAB_KEY = 'frida-ui-tab-v1';
 
 const VALID_TABS = ['gaming', 'ingame', 'hverdag', 'udfordringer', 'profil'] as const;
 export type StoredUiTab = (typeof VALID_TABS)[number];
+
+const VALID_GAME_IDS: GamePresetId[] = [
+  'cs2',
+  'wardogs',
+  'lol',
+  'diablo4',
+  'fortnite',
+  'custom',
+];
 
 export function defaultProfile(): Profile {
   return {
@@ -26,6 +36,7 @@ export function defaultState(): AppState {
       irlStatus: 'home',
       playingGame: '',
       notes: '',
+      activeGameId: undefined,
     },
     emergencyStop: false,
     underwearToday: null,
@@ -34,6 +45,48 @@ export function defaultState(): AppState {
     gameSessions: [],
     pointsBalance: 0,
     activeInGameChallenge: null,
+  };
+}
+
+function migrateSession(row: Record<string, unknown>, fallbackGame: string): GameSessionLog {
+  const gameIdRaw = String(row.gameId ?? '');
+  const gameId = (VALID_GAME_IDS as string[]).includes(gameIdRaw)
+    ? (gameIdRaw as GamePresetId)
+    : undefined;
+
+  let metrics: Record<string, number | string> | undefined;
+  if (row.metrics && typeof row.metrics === 'object' && !Array.isArray(row.metrics)) {
+    metrics = {};
+    for (const [k, v] of Object.entries(row.metrics as Record<string, unknown>)) {
+      if (typeof v === 'number' || typeof v === 'string') metrics[k] = v;
+    }
+    if (!Object.keys(metrics).length) metrics = undefined;
+  }
+
+  const computed =
+    typeof row.computedScore === 'number' && Number.isFinite(row.computedScore)
+      ? row.computedScore
+      : undefined;
+
+  return {
+    id: String(row.id),
+    gameName: String(row.gameName ?? fallbackGame ?? 'Ukendt'),
+    at: String(row.at ?? new Date().toISOString()),
+    result: (['win', 'loss', 'quit', 'draw', 'other'].includes(String(row.result))
+      ? row.result
+      : 'other') as GameSessionLog['result'],
+    performanceNote: String(row.performanceNote ?? ''),
+    rating: ([1, 2, 3, 4, 5].includes(Number(row.rating))
+      ? Number(row.rating)
+      : 3) as GameSessionLog['rating'],
+    durationMin:
+      typeof row.durationMin === 'number' && Number.isFinite(row.durationMin)
+        ? row.durationMin
+        : undefined,
+    mood: String(row.mood ?? ''),
+    gameId,
+    metrics,
+    computedScore: computed,
   };
 }
 
@@ -63,31 +116,15 @@ export function loadState(): AppState {
     if (typeof context.playingGame !== 'string') context.playingGame = '';
     if (typeof context.notes !== 'string') context.notes = '';
     if (!context.irlStatus) context.irlStatus = 'home';
+    const ag = context.activeGameId as string | undefined;
+    if (ag && !(VALID_GAME_IDS as string[]).includes(ag)) {
+      context.activeGameId = undefined;
+    }
 
-    // Migrate: if old clients only had playingGame/notes, sessions start empty
     let gameSessions = Array.isArray(parsed.gameSessions) ? parsed.gameSessions : [];
     gameSessions = gameSessions
       .filter((s) => s && typeof s === 'object' && typeof (s as { id?: string }).id === 'string')
-      .map((s) => {
-        const row = s as unknown as Record<string, unknown>;
-        return {
-          id: String(row.id),
-          gameName: String(row.gameName ?? context.playingGame ?? 'Ukendt'),
-          at: String(row.at ?? new Date().toISOString()),
-          result: (['win', 'loss', 'quit', 'draw', 'other'].includes(String(row.result))
-            ? row.result
-            : 'other') as AppState['gameSessions'][number]['result'],
-          performanceNote: String(row.performanceNote ?? ''),
-          rating: ([1, 2, 3, 4, 5].includes(Number(row.rating))
-            ? Number(row.rating)
-            : 3) as AppState['gameSessions'][number]['rating'],
-          durationMin:
-            typeof row.durationMin === 'number' && Number.isFinite(row.durationMin)
-              ? row.durationMin
-              : undefined,
-          mood: String(row.mood ?? ''),
-        };
-      });
+      .map((s) => migrateSession(s as unknown as Record<string, unknown>, context.playingGame));
 
     return {
       profile: parsed.profile as Profile,

@@ -191,6 +191,9 @@ export function useFridaState() {
           rating: entry.rating,
           durationMin: entry.durationMin,
           mood: entry.mood ?? '',
+          gameId: entry.gameId,
+          metrics: entry.metrics,
+          computedScore: entry.computedScore,
         };
         const gameSessions = [session, ...s.gameSessions].slice(0, 80);
         const perf = computePerformance(gameSessions);

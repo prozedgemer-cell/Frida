@@ -156,10 +156,12 @@ export function Dashboard({ api }: { api: Hook }) {
             performance={performance}
             pointsBalance={state.pointsBalance}
             playingGame={state.context.playingGame}
+            activeGameId={state.context.activeGameId}
             paused={state.emergencyStop}
             onDraw={api.drawNewInGameChallenge}
             onResolve={api.resolveInGameChallenge}
             onGoGaming={() => setTab('gaming')}
+            onChangeContext={api.updateContext}
           />
         </div>
 

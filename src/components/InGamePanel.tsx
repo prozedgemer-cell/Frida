@@ -1,4 +1,16 @@
-import type { ActiveChallenge, ChallengeLogEntry, ChallengeOutcome, PerformanceSnapshot } from '../types';
+import {
+  GAME_PRESETS,
+  getPreset,
+  matchPresetFromGameName,
+  type GamePresetId,
+} from '../data/gameProfiles';
+import type {
+  ActiveChallenge,
+  ChallengeLogEntry,
+  ChallengeOutcome,
+  ContextState,
+  PerformanceSnapshot,
+} from '../types';
 
 type Props = {
   challenge: ActiveChallenge | null;
@@ -6,10 +18,12 @@ type Props = {
   performance: PerformanceSnapshot;
   pointsBalance: number;
   playingGame: string;
+  activeGameId?: GamePresetId;
   paused: boolean;
   onDraw: () => void;
   onResolve: (outcome: ChallengeOutcome) => void;
   onGoGaming?: () => void;
+  onChangeContext?: (patch: Partial<ContextState>) => void;
 };
 
 export function InGamePanel({
@@ -18,19 +32,33 @@ export function InGamePanel({
   performance,
   pointsBalance,
   playingGame,
+  activeGameId,
   paused,
   onDraw,
   onResolve,
   onGoGaming,
+  onChangeContext,
 }: Props) {
   const ingameLog = log.filter((e) => e.kind === 'ingame').slice(0, 8);
+  const resolvedId =
+    activeGameId ?? matchPresetFromGameName(playingGame);
+  const preset = getPreset(resolvedId);
+
+  const pickGame = (id: GamePresetId) => {
+    if (!onChangeContext) return;
+    const p = getPreset(id);
+    onChangeContext({
+      playingGame: id === 'custom' ? playingGame || p.shortDa : p.shortDa,
+      activeGameId: id === 'custom' ? undefined : id,
+    });
+  };
 
   return (
     <div className="mode-stack">
       <section className="panel panel--mode panel--ingame">
         <div className="panel__head">
           <div>
-            <p className="eyebrow">Mode · In-game</p>
+            <p className="eyebrow">Mode · In-game / Under spil</p>
             <h2>Udfordring mens du spiller</h2>
           </div>
           <div className="points-chip">
@@ -39,18 +67,49 @@ export function InGamePanel({
           </div>
         </div>
         <p className="muted tiny">
-          Disse ordrer er ment til at køre <strong>i spillet / mellem runder</strong>. Fuldfør = bonuspoint.
-          Fejl = strafpoint (og mere straf-vægt næste gang).
+          Ordrer <strong>i spillet / mellem runder</strong>. Fuldfør = bonuspoint. Efter match: log
+          rigtige KPI&apos;er under Gaming.
         </p>
         <div className="perf-banner perf-banner--compact">
           <span className="tiny">
             Præstation {performance.score}/100 · {performance.band}
-            {playingGame.trim() ? ` · spiller ${playingGame.trim()}` : ' · intet spil sat (sæt under Gaming)'}
+            {playingGame.trim()
+              ? ` · spiller ${playingGame.trim()} (${preset.shortDa})`
+              : ' · intet spil sat'}
           </span>
         </div>
+
+        <div className="game-preset-grid game-preset-grid--compact" role="list">
+          {GAME_PRESETS.filter((p) => p.id !== 'custom').map((p) => (
+            <button
+              key={p.id}
+              type="button"
+              role="listitem"
+              className={`game-chip ${resolvedId === p.id ? 'game-chip--active' : ''}`}
+              disabled={paused || !onChangeContext}
+              onClick={() => pickGame(p.id)}
+            >
+              {p.shortDa}
+            </button>
+          ))}
+        </div>
+        {resolvedId === 'wardogs' && (
+          <p className="assumption-note tiny">
+            WARDOGS = 2026 warfare-FPS (ikke Watch Dogs / Warzone).
+          </p>
+        )}
+      </section>
+
+      <section className="panel panel--command">
+        <p className="eyebrow">Hurtiglog efter match</p>
+        <h2>Indtast KPI for {preset.shortDa}</h2>
+        <p className="tiny muted">
+          {preset.helpDa}
+        </p>
+        <p className="tiny muted">{preset.fetchNoteDa}</p>
         {onGoGaming && (
-          <button type="button" className="btn btn--ghost btn--tiny" onClick={onGoGaming}>
-            → Log session under Gaming
+          <button type="button" className="btn btn--ok" disabled={paused} onClick={onGoGaming}>
+            → Åbn Gaming & log stats
           </button>
         )}
       </section>

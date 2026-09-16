@@ -1,3 +1,7 @@
+import {
+  computeGameScore,
+  ratingFromScore,
+} from './gameScoreEngine';
 import type {
   GameResult,
   GameSessionLog,
@@ -27,8 +31,19 @@ function clamp(n: number, lo: number, hi: number): number {
   return Math.max(lo, Math.min(hi, n));
 }
 
-/** Single-session raw score 0–100 */
+/**
+ * Single-session raw score 0–100.
+ * Prefer game-specific computedScore (from KPIs); else classic rating+result.
+ */
 export function sessionRawScore(s: GameSessionLog): number {
+  if (typeof s.computedScore === 'number' && Number.isFinite(s.computedScore)) {
+    return clamp(s.computedScore, 0, 100);
+  }
+  // Recompute if metrics present but score missing (older saves / edits)
+  if (s.gameId && s.metrics) {
+    const recomputed = computeGameScore(s.gameId, s.metrics, s.result);
+    if (recomputed != null) return clamp(recomputed, 0, 100);
+  }
   return clamp(RATING_BASE[s.rating] + RESULT_DELTA[s.result], 0, 100);
 }
 
@@ -91,7 +106,11 @@ export function computePerformance(sessions: GameSessionLog[]): PerformanceSnaps
         : 'ingen streak';
 
   const lastDa = last
-    ? `${last.gameName}: ${RESULT_LABELS_DA[last.result]} · ${RATING_LABELS_DA[last.rating]}`
+    ? `${last.gameName}: ${RESULT_LABELS_DA[last.result]} · ${
+        last.computedScore != null
+          ? `${last.computedScore}/100`
+          : RATING_LABELS_DA[last.rating]
+      }`
     : '';
 
   const bandDa =
@@ -124,13 +143,17 @@ export function influenceTextDa(perf: PerformanceSnapshot, subject: string): str
     hour: '2-digit',
     minute: '2-digit',
   });
+  const detail =
+    last.computedScore != null
+      ? `${last.computedScore}/100 KPI-score`
+      : `${RESULT_LABELS_DA[last.result].toLowerCase()} / ${RATING_LABELS_DA[last.rating].toLowerCase()}`;
   if (perf.band === 'poor') {
-    return `Fordi din sidste session (${last.gameName}, ${when}) var ${RESULT_LABELS_DA[last.result].toLowerCase()} / ${RATING_LABELS_DA[last.rating].toLowerCase()}: ${subject} hælder til straf / hårdere kontrol.`;
+    return `Fordi din sidste session (${last.gameName}, ${when}) var ${detail}: ${subject} hælder til straf / hårdere kontrol.`;
   }
   if (perf.band === 'godlike' || perf.band === 'good') {
-    return `Fordi din sidste session (${last.gameName}, ${when}) gik ${RATING_LABELS_DA[last.rating].toLowerCase()}: ${subject} hælder til belønning / blødere tease.`;
+    return `Fordi din sidste session (${last.gameName}, ${when}) gik ${detail}: ${subject} hælder til belønning / blødere tease.`;
   }
-  return `Fordi din sidste session (${last.gameName}, ${when}) var middel: ${subject} er afbalanceret.`;
+  return `Fordi din sidste session (${last.gameName}, ${when}) var middel (${detail}): ${subject} er afbalanceret.`;
 }
 
 /** Points for completing/failing a normal challenge (small). */
@@ -143,3 +166,5 @@ export function challengePointsDelta(
   if (outcome === 'fail') return -penalty;
   return 0;
 }
+
+export { ratingFromScore, computeGameScore };
