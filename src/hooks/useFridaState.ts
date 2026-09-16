@@ -555,15 +555,18 @@ export function useFridaState() {
       noteDa: string;
       signal: CalendarSignal;
       imageId?: string;
+      timeHm?: string;
     }) => {
       setState((s) => {
         const now = new Date().toISOString();
+        const timeHm = entry.timeHm || undefined;
         if (entry.id) {
           const calendarEntries = s.calendarEntries.map((e) =>
             e.id === entry.id
               ? {
                   ...e,
                   dateKey: entry.dateKey,
+                  timeHm,
                   titleDa: entry.titleDa,
                   noteDa: entry.noteDa,
                   signal: entry.signal,
@@ -577,6 +580,7 @@ export function useFridaState() {
         const row: CalendarEntry = {
           id: `cal-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
           dateKey: entry.dateKey,
+          timeHm,
           titleDa: entry.titleDa,
           noteDa: entry.noteDa,
           signal: entry.signal,

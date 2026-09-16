@@ -6,12 +6,15 @@ import type {
   PerformanceSnapshot,
 } from '../types';
 import { WEIGHT_FORMULA_DA } from '../engines/weightBlend';
+import type { CalendarSummary } from '../engines/calendarEngine';
+import { CalendarInfluenceNote } from './CalendarInfluenceNote';
 import { ChallengeCard } from './ChallengeCard';
 
 type Props = {
   active: ActiveChallenge[];
   log: ChallengeLogEntry[];
   performance: PerformanceSnapshot;
+  calendarToday?: CalendarSummary | null;
   paused: boolean;
   onRefresh: () => void;
   onResolve: (id: string, outcome: ChallengeOutcome) => void;
@@ -23,6 +26,7 @@ export function ChallengesPanel({
   active,
   log,
   performance,
+  calendarToday,
   paused,
   onRefresh,
   onResolve,
@@ -54,6 +58,7 @@ export function ChallengesPanel({
             : ''}{' '}
           Nødstop pauser alle handlinger.
         </p>
+        <CalendarInfluenceNote calendar={calendarToday} compact />
         {performance.sessionCount > 0 && (
           <p className="influence-note">
             {performance.band === 'poor'

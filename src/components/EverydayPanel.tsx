@@ -1,4 +1,6 @@
 import type { ContextState, DayMode, IrlStatus, PerformanceSnapshot, Profile } from '../types';
+import type { CalendarSummary } from '../engines/calendarEngine';
+import { CalendarInfluenceNote } from './CalendarInfluenceNote';
 import { UnderwearOrder } from './UnderwearOrder';
 import type { UnderwearPick } from '../types';
 
@@ -15,6 +17,7 @@ type Props = {
   context: ContextState;
   underwear: UnderwearPick | null;
   performance: PerformanceSnapshot;
+  calendarToday?: CalendarSummary | null;
   paused: boolean;
   onContext: (patch: Partial<ContextState>) => void;
   onProfile: (patch: Partial<Profile>) => void;
@@ -26,6 +29,7 @@ export function EverydayPanel({
   context,
   underwear,
   performance,
+  calendarToday,
   paused,
   onContext,
   onProfile,
@@ -54,6 +58,7 @@ export function EverydayPanel({
           <span className="pill">{weekend ? 'weekend' : 'hverdag'}</span>
         </p>
 
+        <CalendarInfluenceNote calendar={calendarToday} />
         <p className="influence-note">
           Vægt: kalender/rolle/dag ≈ 70% · gaming ≈ 30%.
           {performance.sessionCount > 0

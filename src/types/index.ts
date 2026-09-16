@@ -377,6 +377,8 @@ export interface CalendarEntry {
   id: string;
   /** Local YYYY-MM-DD */
   dateKey: string;
+  /** Optional local HH:MM (24h) */
+  timeHm?: string;
   titleDa: string;
   noteDa: string;
   signal: CalendarSignal;

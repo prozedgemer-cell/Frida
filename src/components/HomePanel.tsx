@@ -3,6 +3,7 @@ import { WEIGHT_FORMULA_DA } from '../engines/weightBlend';
 import { OutfitHero } from './OutfitHero';
 import { OutfitLayers } from './OutfitLayers';
 import { ChallengeCard } from './ChallengeCard';
+import { CalendarInfluenceNote } from './CalendarInfluenceNote';
 import type { CalendarSummary } from '../engines/calendarEngine';
 import type { SexStrafDue } from '../engines/sexStrafEngine';
 import type {
@@ -301,6 +302,7 @@ export function HomePanel({
       <section className="panel panel--home-next">
         <p className="eyebrow">Nu</p>
         <h2 className="home-next-title">Hvad sker der</h2>
+        <CalendarInfluenceNote calendar={calendarToday} compact />
         <ol className="home-next-list">
           {nextLines.map((line) => (
             <li key={line}>{line}</li>

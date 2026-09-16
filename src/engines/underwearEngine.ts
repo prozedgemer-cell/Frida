@@ -13,6 +13,7 @@ import type {
 import { influenceTextDa } from './performanceEngine';
 import {
   calendarUnderwearMultiplier,
+  describeCalendarInfluence,
   localDateKey,
   type CalendarSummary,
 } from './calendarEngine';
@@ -218,6 +219,8 @@ function buildReason(
   }
   if (cal && cal.entries.length) {
     parts.push(`kalender: ${cal.signals.join(', ') || 'noter'}`);
+    const inf = describeCalendarInfluence(cal);
+    parts.push(inf.outfitDa);
   }
   const themes = item.themes.filter((t) => profile.enabledThemes.includes(t));
   if (themes.length) parts.push(`themes: ${themes.join(', ')}`);

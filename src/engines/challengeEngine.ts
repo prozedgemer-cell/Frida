@@ -3,6 +3,7 @@ import { getUnderwearById } from './underwearEngine';
 import { influenceTextDa } from './performanceEngine';
 import {
   calendarChallengeMultiplier,
+  describeCalendarInfluence,
   type CalendarSummary,
 } from './calendarEngine';
 import { blendContextGaming, WEIGHT_FORMULA_DA } from './weightBlend';
@@ -208,12 +209,15 @@ function toActive(
   underwear: UnderwearPick | null,
   perf?: PerformanceSnapshot | null,
   morningTier?: MorningTier,
+  cal?: CalendarSummary | null,
 ): ActiveChallenge {
   const intensity = pickIntensity(t, profile);
-  const influence =
+  const gamingInf =
     perf && perf.sessionCount > 0
       ? influenceTextDa(perf, t.kind === 'straf' ? 'straffen' : 'udfordringen')
       : undefined;
+  const calInf = cal && cal.entries.length ? describeCalendarInfluence(cal).challengeDa : undefined;
+  const influence = [gamingInf, calInf].filter(Boolean).join(' ') || undefined;
   return {
     id: `active-${t.id}-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
     templateId: t.id,
@@ -248,7 +252,7 @@ export function drawChallenges(
 
   const weighted = pool.map((t) => ({ t, w: performanceWeight(t, perf, cal) }));
   const picked = weightedSample(weighted, Math.min(count, weighted.length));
-  return picked.map((t) => toActive(t, profile, context, underwear, perf));
+  return picked.map((t) => toActive(t, profile, context, underwear, perf, undefined, cal));
 }
 
 /** Draw one while-playing challenge (kind: ingame) */
@@ -270,9 +274,12 @@ export function drawInGameChallenge(
   }));
   const [picked] = weightedSample(weighted, 1);
   if (!picked) return null;
-  const active = toActive(picked, profile, context, underwear, perf);
+  const active = toActive(picked, profile, context, underwear, perf, undefined, cal);
   if (perf && perf.sessionCount > 0) {
-    active.performanceInfluenceDa = influenceTextDa(perf, 'in-game-udfordringen');
+    const calInf = cal && cal.entries.length ? describeCalendarInfluence(cal).challengeDa : '';
+    active.performanceInfluenceDa = [influenceTextDa(perf, 'in-game-udfordringen'), calInf]
+      .filter(Boolean)
+      .join(' ');
   }
   return active;
 }
@@ -314,7 +321,7 @@ function pickForTier(
   const [picked] = weightedSample(weighted, 1);
   if (!picked) return null;
   used.add(picked.id);
-  return toActive(picked, profile, context, underwear, perf, tier);
+  return toActive(picked, profile, context, underwear, perf, tier, cal);
 }
 
 /**

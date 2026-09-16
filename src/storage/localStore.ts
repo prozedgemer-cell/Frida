@@ -160,9 +160,13 @@ function migrateCalendarEntry(row: unknown): CalendarEntry | null {
   const signal = VALID_SIGNALS.includes(r.signal as CalendarSignal)
     ? (r.signal as CalendarSignal)
     : 'none';
+  const timeRaw = typeof r.timeHm === 'string' ? r.timeHm : typeof r.time === 'string' ? r.time : '';
+  const timeM = timeRaw.trim().match(/^([01]?\d|2[0-3]):([0-5]\d)$/);
+  const timeHm = timeM ? `${timeM[1].padStart(2, '0')}:${timeM[2]}` : undefined;
   return {
     id: r.id,
     dateKey,
+    timeHm,
     titleDa: String(r.titleDa ?? ''),
     noteDa: String(r.noteDa ?? ''),
     signal,

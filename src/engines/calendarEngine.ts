@@ -16,6 +16,21 @@ export function addDaysKey(dateKey: string, delta: number): string {
   return localDateKey(dt);
 }
 
+/** Normalize optional HH:MM (24h). Invalid → undefined. */
+export function normalizeTimeHm(raw: string | undefined | null): string | undefined {
+  if (!raw) return undefined;
+  const m = String(raw).trim().match(/^([01]?\d|2[0-3]):([0-5]\d)$/);
+  if (!m) return undefined;
+  return `${m[1]!.padStart(2, '0')}:${m[2]}`;
+}
+
+export function timeHmMinutes(timeHm?: string): number | null {
+  const n = normalizeTimeHm(timeHm);
+  if (!n) return null;
+  const [h, mi] = n.split(':').map(Number);
+  return (h ?? 0) * 60 + (mi ?? 0);
+}
+
 export function monthGrid(year: number, monthIndex: number): (string | null)[] {
   const first = new Date(year, monthIndex, 1);
   const startPad = (first.getDay() + 6) % 7; // Monday-first
@@ -47,6 +62,10 @@ export interface CalendarSummary {
   /** Extra boost 0–1 from keyword density in notes */
   noteBoost: number;
   planBlurbDa: string;
+  /** Timed notes as "HH:MM titel" */
+  timedLabels: string[];
+  eveningBias: boolean;
+  morningBias: boolean;
 }
 
 function flagsFrom(entries: CalendarEntry[]) {
@@ -183,7 +202,14 @@ export function summarizeCalendar(
 ): CalendarSummary {
   const day = entries
     .filter((e) => e.dateKey === dateKey)
-    .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
+    .sort((a, b) => {
+      const am = timeHmMinutes(a.timeHm);
+      const bm = timeHmMinutes(b.timeHm);
+      if (am != null && bm != null && am !== bm) return am - bm;
+      if (am != null && bm == null) return -1;
+      if (am == null && bm != null) return 1;
+      return b.updatedAt.localeCompare(a.updatedAt);
+    });
   const f = flagsFrom(day);
   const plan = parsePlanText(day);
   const labels = f.signals.map((s) => CALENDAR_SIGNAL_LABELS_DA[s]);
@@ -191,15 +217,22 @@ export function summarizeCalendar(
     .map((e) => e.titleDa.trim())
     .filter(Boolean)
     .slice(0, 2);
+  const timedLabels = day
+    .filter((e) => normalizeTimeHm(e.timeHm))
+    .map((e) => `${normalizeTimeHm(e.timeHm)} ${e.titleDa.trim() || 'note'}`);
+  const minutes = day.map((e) => timeHmMinutes(e.timeHm)).filter((n): n is number => n != null);
+  const eveningBias = minutes.some((n) => n >= 17 * 60);
+  const morningBias = minutes.some((n) => n < 11 * 60) && !eveningBias;
   let headlineDa = 'Ingen kalender-noter i dag.';
   if (day.length) {
     const sig = labels.length ? `Signal: ${labels.join(', ')}` : 'Ingen signal-tag';
     const role = plan.planBlurbDa ? ` · ${plan.planBlurbDa}` : '';
+    const clock = timedLabels.length ? ` · ${timedLabels[0]}` : '';
     headlineDa = titles.length
-      ? `${titles.join(' · ')} — ${sig}${role}`
-      : `${day.length} note${day.length > 1 ? 'r' : ''} — ${sig}${role}`;
+      ? `${titles.join(' · ')} — ${sig}${role}${clock}`
+      : `${day.length} note${day.length > 1 ? 'r' : ''} — ${sig}${role}${clock}`;
   }
-  return { dateKey, entries: day, ...f, headlineDa, ...plan };
+  return { dateKey, entries: day, ...f, headlineDa, ...plan, timedLabels, eveningBias, morningBias };
 }
 
 /**
@@ -275,6 +308,12 @@ export function calendarUnderwearMultiplier(
     if (role === 'bil-trafik' && (itemTags.includes('diskret') || itemTags.includes('praktisk') || itemTags.includes('komfort')))
       m *= 1.55;
   }
+  if (cal.eveningBias) {
+    m *= itemTags.includes('sexy') || itemTags.includes('aften') || itemTags.includes('date') ? 1.4 : 1.05;
+  }
+  if (cal.morningBias) {
+    m *= itemTags.includes('hverdag') || itemTags.includes('diskret') || itemTags.includes('work') ? 1.35 : 0.95;
+  }
   if (cal.noteBoost) m *= 1 + cal.noteBoost;
   return Math.max(m, 0.15);
 }
@@ -308,6 +347,59 @@ export function calendarChallengeMultiplier(
   }
   if (cal.noteBoost) w *= 1 + cal.noteBoost * 0.8;
   return Math.max(w, 0.08);
+}
+
+export interface CalendarInfluence {
+  summaryDa: string;
+  outfitDa: string;
+  challengeDa: string;
+  strafDa: string;
+}
+
+/** Human-readable how/why today's calendar steers outfit, challenges, sex-straf. */
+export function describeCalendarInfluence(cal?: CalendarSummary | null): CalendarInfluence {
+  if (!cal || !cal.entries.length) {
+    return {
+      summaryDa: 'Ingen kalender-noter i dag — kalenderen trækker ikke.',
+      outfitDa: 'Outfit: kun IRL, tid på dagen og gaming (30%).',
+      challengeDa: 'Udfordringer: kun profil, themes og gaming.',
+      strafDa: 'Sex-straf: kun gaming-præstation, pointgæld og failed challenges.',
+    };
+  }
+  const labels = cal.signals.map((s) => CALENDAR_SIGNAL_LABELS_DA[s]);
+  const roles = cal.roleHints.slice(0, 3).join(', ');
+  const timed = cal.timedLabels.slice(0, 3).join(' · ');
+  const bits: string[] = [];
+  if (labels.length) bits.push(`signal ${labels.join(', ')}`);
+  if (roles) bits.push(roles);
+  if (timed) bits.push(`kl. ${timed}`);
+  const summaryDa = `Kalender i dag: ${bits.join(' · ') || cal.headlineDa}`;
+
+  let outfitDa = 'Outfit: kalender ~70% bias';
+  if (cal.hasRest) outfitDa += ' — hvile dæmper hårdt/afslørende tøj.';
+  else if (cal.hasHard || cal.hasStraf) outfitDa += ' — straf/hård trækker BDSM/afslørende lag.';
+  else if (cal.hasSoft || cal.hasReward) outfitDa += ' — blød/belønning trækker komfort og luksus.';
+  else if (cal.hasClothing || cal.hasDate) outfitDa += ' — tøj/date trækker lingeri og milf/date-look.';
+  else if (cal.hasGaming) outfitDa += ' — gaming-note trækker komfort/praktisk.';
+  if (cal.eveningBias) outfitDa += ' Aften-tid på noten → sexy/aften-lag.';
+  if (cal.morningBias) outfitDa += ' Morgen-tid på noten → diskret/hverdag.';
+  if (roles) outfitDa += ` Role-hint: ${roles}.`;
+
+  let challengeDa = 'Udfordringer:';
+  if (cal.hasRest) challengeDa += ' hvile sænker straf-udfordringer.';
+  else if (cal.hasStraf || cal.hasHard) challengeDa += ' straf/hård øger straf-pool (~2.4×).';
+  else if (cal.hasReward || cal.hasSoft) challengeDa += ' belønning/blød øger reward-pool.';
+  else challengeDa += ' noter giver let bias via keywords.';
+  if (cal.roleHints.includes('familie-sikker')) challengeDa += ' Familie-sikker dæmper straf hårdt.';
+  if (cal.noteBoost) challengeDa += ' Plan-tekst forstærker vægt.';
+
+  let strafDa = 'Sex-straf:';
+  if (cal.hasRest) strafDa += ' hvile-dag blokerer NY sex-straf.';
+  else if (cal.hasStraf || cal.hasHard) strafDa += ' straf/hård-signal gør sex-straf due (hvis cooldown er ovre).';
+  else strafDa += ' ingen direkte straf-trigger fra kalenderen i dag.';
+  if (timed) strafDa += ` Tidspunkter: ${timed}.`;
+
+  return { summaryDa, outfitDa, challengeDa, strafDa };
 }
 
 export function formatDateKeyDa(dateKey: string): string {

@@ -4,7 +4,10 @@ import {
   formatDateKeyDa,
   localDateKey,
   monthGrid,
+  normalizeTimeHm,
+  summarizeCalendar,
 } from '../engines/calendarEngine';
+import { CalendarInfluenceNote } from './CalendarInfluenceNote';
 import { addImage, getImageBlob } from '../storage/imageStore';
 import type { CalendarEntry, CalendarSignal } from '../types';
 import { CALENDAR_SIGNAL_LABELS_DA } from '../types';
@@ -34,6 +37,7 @@ type Props = {
     noteDa: string;
     signal: CalendarSignal;
     imageId?: string;
+    timeHm?: string;
   }) => void;
   onDelete: (id: string) => void;
 };
@@ -47,6 +51,7 @@ export function CalendarPanel({ entries, paused, onUpsert, onDelete }: Props) {
   const [selected, setSelected] = useState(today);
   const [titleDa, setTitleDa] = useState('');
   const [noteDa, setNoteDa] = useState('');
+  const [timeHm, setTimeHm] = useState('');
   const [signal, setSignal] = useState<CalendarSignal>('none');
   const [editingId, setEditingId] = useState<string | null>(null);
   const [imageId, setImageId] = useState<string | undefined>();
@@ -107,6 +112,7 @@ export function CalendarPanel({ entries, paused, onUpsert, onDelete }: Props) {
   const resetForm = () => {
     setTitleDa('');
     setNoteDa('');
+    setTimeHm('');
     setSignal('none');
     setEditingId(null);
     setImageId(undefined);
@@ -123,6 +129,7 @@ export function CalendarPanel({ entries, paused, onUpsert, onDelete }: Props) {
       noteDa: noteDa.trim(),
       signal,
       imageId,
+      timeHm: normalizeTimeHm(timeHm),
     });
     resetForm();
   };
@@ -131,6 +138,7 @@ export function CalendarPanel({ entries, paused, onUpsert, onDelete }: Props) {
     setSelected(e.dateKey);
     setTitleDa(e.titleDa);
     setNoteDa(e.noteDa);
+    setTimeHm(e.timeHm ?? '');
     setSignal(e.signal);
     setEditingId(e.id);
     setImageId(e.imageId);
@@ -190,9 +198,10 @@ export function CalendarPanel({ entries, paused, onUpsert, onDelete }: Props) {
           </div>
         </div>
         <p className="muted tiny">
-          Skriv dagens planer — teksten + signal påvirker outfit-role og challenges (~70%).
+          Skriv dagens planer — dato, tid og signal-tags påvirker outfit, challenges og sex-straf (~70%).
           Straf/hård øger, hvile blødgør. Vedhæft billede til noter (lokalt).
         </p>
+        <CalendarInfluenceNote calendar={summarizeCalendar(entries, today)} />
 
         <div className="cal-grid" role="grid" aria-label="Måned">
           {WEEKDAYS.map((d) => (
@@ -236,6 +245,15 @@ export function CalendarPanel({ entries, paused, onUpsert, onDelete }: Props) {
             value={titleDa}
             onChange={(e) => setTitleDa(e.target.value)}
             placeholder="fx Date, ranked-aften, milf-look, domme-session"
+            disabled={paused}
+          />
+        </label>
+        <label className="field">
+          <span>Tidspunkt (valgfrit)</span>
+          <input
+            type="time"
+            value={timeHm}
+            onChange={(e) => setTimeHm(e.target.value)}
             disabled={paused}
           />
         </label>
@@ -317,6 +335,7 @@ export function CalendarPanel({ entries, paused, onUpsert, onDelete }: Props) {
             <li key={e.id}>
               <div>
                 <strong>{e.titleDa}</strong>
+                {e.timeHm && <span className="tag">{e.timeHm}</span>}
                 {e.signal !== 'none' && (
                   <span className={`tag tag--${e.signal === 'straf' || e.signal === 'hard' ? 'straf' : 'reward'}`}>
                     {CALENDAR_SIGNAL_LABELS_DA[e.signal]}
@@ -356,7 +375,7 @@ export function CalendarPanel({ entries, paused, onUpsert, onDelete }: Props) {
             {upcoming.slice(0, 8).map((e) => (
               <li key={e.id}>
                 <span className="pill pill--skip">{e.dateKey === today ? 'i dag' : e.dateKey.slice(5)}</span>
-                <span>{e.titleDa}</span>
+                <span>{e.timeHm ? `${e.timeHm} · ${e.titleDa}` : e.titleDa}</span>
                 {e.signal !== 'none' && (
                   <span className="tag">{CALENDAR_SIGNAL_LABELS_DA[e.signal]}</span>
                 )}

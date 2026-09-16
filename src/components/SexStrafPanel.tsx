@@ -4,11 +4,14 @@ import type { SexStrafDue } from '../engines/sexStrafEngine';
 import { SEX_STRAF_TEMPLATE_COUNT } from '../data/sexStraf';
 import { ImageGallery } from './ImageGallery';
 import { OutfitHero } from './OutfitHero';
+import type { CalendarSummary } from '../engines/calendarEngine';
+import { CalendarInfluenceNote } from './CalendarInfluenceNote';
 
 type Props = {
   active: SexStrafInstance | null;
   log: SexStrafInstance[];
   due: SexStrafDue;
+  calendarToday?: CalendarSummary | null;
   paused: boolean;
   pointsBalance: number;
   onClaim: () => void;
@@ -51,6 +54,7 @@ export function SexStrafPanel({
   active,
   log,
   due,
+  calendarToday,
   paused,
   pointsBalance,
   onClaim,
@@ -72,6 +76,7 @@ export function SexStrafPanel({
             <span>point</span>
           </span>
         </div>
+        <CalendarInfluenceNote calendar={calendarToday} compact />
         <p className="muted tiny">
           Fiktiv fantasy-RP. Altid Frida. Ingen vaginal brug. Nødstop stopper ny fremdrift.
           {` ${SEX_STRAF_TEMPLATE_COUNT} scener.`} Fuldført giver point-indløsning (gæld/præstation).

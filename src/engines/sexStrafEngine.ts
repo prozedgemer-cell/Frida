@@ -148,6 +148,9 @@ export function evaluateSexStrafDue(opts: {
   }
   if (opts.calendar?.hasStraf) reasonsDa.push('Kalender-signal i dag: straf.');
   if (opts.calendar?.hasHard) reasonsDa.push('Kalender-signal i dag: hård dag.');
+  if (opts.calendar?.timedLabels?.length) {
+    reasonsDa.push(`Kalender-tid: ${opts.calendar.timedLabels[0]}.`);
+  }
 
   const recentFails = opts.challengeLog.slice(0, 3).filter((e) => e.outcome === 'fail').length;
   if (recentFails > 0) {

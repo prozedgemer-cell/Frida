@@ -8,7 +8,7 @@ Local-first MVP: React + TypeScript + Vite. Data i `localStorage`. Ingen auth.
 Mobil: **Hoved · Kalender · + · Sex · Profil**. Plus-knappen åbner Gaming, In-game, Hverdag og Udfordringer. Desktop viser alle modes i toppen.
 
 1. **Hoved** — greeting-overblik, **fuldt outfit via Frida Mode ROLE-pack** (g-string-milf · brazilian-cut · bdsm-hard/klassik · soft-everyday-femme · hentai-anime · fantasy-elf-heks · milf-power · strappy-show) · milf-power (alias) · strappy-show (alias)), **morgen-trio** (let/hård/grænse · kun DO/WEAR), status-chips, «Nu»-liste, badge hvis sex-straf afventer
-2. **Kalender** — noter/aftaler med signal-tags (straf, belønning, blød/hård, tøj, gaming, hvile, date). Signaler påvirker tøj, challenges og om sex-straf er due
+2. **Kalender** — lokale noter/aftaler med dato, valgfrit klokkeslæt og signal-tags (straf, belønning, blød/hård, tøj, gaming, hvile, date). Signaler + tid + plan-tekst påvirker tøj, challenges og om sex-straf er due. UI viser hvordan/hvorfor.
 3. **Sex-straf** — fiktiv RP som indløsning af stats (partner, sted, hvorfor, varighed, hårdhed). Badge på nav når pending/due
 4. **Gaming** — spil-presets (CS2, WARDOGS, LoL, Diablo IV, Fortnite) med KPI, 0–100 score, paste-import
 5. **In-game** — udfordringer *mens du spiller*

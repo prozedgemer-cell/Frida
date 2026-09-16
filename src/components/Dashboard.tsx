@@ -86,6 +86,24 @@ export function Dashboard({ api }: { api: Hook }) {
   return (
     <div className={`app-shell ${tab === 'hoved' ? 'is-hoved' : ''}`}>
       <PanicButton active={state.emergencyStop} onToggle={api.setEmergencyStop} />
+      <header className="dash-hero">
+        <div>
+          <p className="eyebrow">Kontrolpanel</p>
+          <h1 className="dash-hero__title">
+            Hej <span className="accent">Frida</span>
+          </h1>
+          <p className="muted tiny dash-hero__meta">
+            {timeLabel} · {state.profile.dayMode}-dag · {state.pointsBalance} p
+            {performance.sessionCount > 0 ? ` · ${performance.score}` : ''}
+          </p>
+        </div>
+        {(sexPending || sexStrafDue.due) && (
+          <button type="button" className="sex-pill-badge" onClick={() => setTab('sex')}>
+            <i className="nav-badge" aria-hidden />
+            Sex-straf
+          </button>
+        )}
+      </header>
       <header className="topbar">
         <div>
           <p className="eyebrow">Personligt kontrolpanel · da-DK</p>
@@ -206,6 +224,7 @@ export function Dashboard({ api }: { api: Hook }) {
             context={state.context}
             underwear={state.underwearToday}
             performance={performance}
+            calendarToday={calendarToday}
             paused={state.emergencyStop}
             onContext={api.updateContext}
             onProfile={api.updateProfile}
@@ -221,6 +240,7 @@ export function Dashboard({ api }: { api: Hook }) {
             active={state.activeChallenges}
             log={state.challengeLog}
             performance={performance}
+            calendarToday={calendarToday}
             paused={state.emergencyStop}
             onRefresh={() => refreshChallenges(3)}
             onResolve={resolveChallenge}
@@ -234,6 +254,7 @@ export function Dashboard({ api }: { api: Hook }) {
             active={state.activeSexStraf}
             log={state.sexStrafLog}
             due={sexStrafDue}
+            calendarToday={calendarToday}
             paused={state.emergencyStop}
             pointsBalance={state.pointsBalance}
             onClaim={api.claimSexStraf}
