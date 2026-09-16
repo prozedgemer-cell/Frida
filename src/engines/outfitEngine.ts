@@ -140,8 +140,26 @@ function calendarRoleBoost(tags: string[], cal?: CalendarSummary | null): number
     if (role === 'office-milf' && (tags.includes('work') || tags.includes('diskret') || tags.includes('milf'))) m *= 1.7;
     if (role === 'soft-everyday-femme' && (tags.includes('gaming') || tags.includes('komfort') || tags.includes('soft') || tags.includes('cute')))
       m *= 1.65;
-    if (role === 'hentai-anime' && (tags.includes('anime') || tags.includes('hentai') || tags.includes('cute'))) m *= 1.7;
-    if (role === 'fantasy-femme' && (tags.includes('fantasy') || tags.includes('aften') || tags.includes('drama'))) m *= 1.6;
+    if ((role === 'hentai-anime' || role === 'hentai-inspireret') && (tags.includes('anime') || tags.includes('hentai') || tags.includes('cute')))
+      m *= 1.7;
+    if ((role === 'fantasy-femme' || role === 'fantasy-look') && (tags.includes('fantasy') || tags.includes('aften') || tags.includes('drama')))
+      m *= 1.6;
+    if (role === 'familie-sikker' && (tags.includes('diskret') || tags.includes('usynlig') || tags.includes('hverdag')))
+      m *= 1.9;
+    if (role === 'traening-gym' && (tags.includes('træning') || tags.includes('gym') || tags.includes('sport') || tags.includes('praktisk')))
+      m *= 1.8;
+    if (role === 'fest-aften' && (tags.includes('fest') || tags.includes('aften') || tags.includes('sexy') || tags.includes('luksus')))
+      m *= 1.75;
+    if (role === 'sex-scene' && (tags.includes('sex') || tags.includes('tease') || tags.includes('sexy'))) m *= 1.8;
+    if (role === 'gaming-praktisk' && (tags.includes('gaming') || tags.includes('praktisk') || tags.includes('komfort') || tags.includes('session')))
+      m *= 1.8;
+    if (role === 'anime-soft' && (tags.includes('anime') || tags.includes('cute') || tags.includes('soft'))) m *= 1.65;
+    if (role === 'hjemme-lounge' && (tags.includes('hjemme') || tags.includes('lounge') || tags.includes('komfort')))
+      m *= 1.6;
+    if ((role === 'bytur-gaatur' || role === 'handel-shopping') && (tags.includes('hverdag') || tags.includes('out') || tags.includes('femme')))
+      m *= 1.55;
+    if (role === 'bil-trafik' && (tags.includes('praktisk') || tags.includes('diskret') || tags.includes('bil')))
+      m *= 1.6;
   }
   if (cal.noteBoost) m *= 1 + cal.noteBoost;
   return m;
@@ -317,7 +335,10 @@ export function pickRolePack(
     if (role.irlBias?.length) {
       if (role.irlBias.includes(context.irlStatus)) contextMul *= 1.85;
       else if (context.irlStatus === 'work' || context.irlStatus === 'public') {
-        contextMul *= role.id === 'office-milf' ? 2.2 : 0.12;
+        contextMul *=
+          role.id === 'office-milf' || role.id === 'familie-sikker' || role.id === 'bil-trafik'
+            ? 2.2
+            : 0.12;
       } else contextMul *= 0.55;
     }
 
@@ -333,9 +354,13 @@ export function pickRolePack(
     if (cal?.roleHints?.includes('bdsm-hard') && role.id === 'g-string-milf') contextMul *= 0.15;
     if (cal?.roleHints?.includes('brazilian-cut') && role.id === 'bdsm-hard') contextMul *= 0.35;
     if (cal?.roleHints?.includes('g-string-milf') && role.id === 'bdsm-hard') contextMul *= 0.25;
-    if (cal?.roleHints?.includes('office-milf') && (role.id === 'g-string-milf' || role.id === 'bdsm-hard'))
+    if (cal?.roleHints?.includes('office-milf') && (role.id === 'g-string-milf' || role.id === 'bdsm-hard' || role.id === 'hentai-inspireret'))
       contextMul *= 0.2;
+    if (cal?.roleHints?.includes('familie-sikker') && (role.id === 'g-string-milf' || role.id === 'bdsm-hard' || role.id === 'sex-scene' || role.id === 'hentai-inspireret' || role.id === 'fest-aften'))
+      contextMul *= 0.08;
     if (cal?.roleHints?.includes('soft-everyday-femme') && role.id === 'bdsm-hard') contextMul *= 0.3;
+    if (cal?.roleHints?.includes('gaming-praktisk') && (role.id === 'fest-aften' || role.id === 'bdsm-hard' || role.id === 'g-string-milf'))
+      contextMul *= 0.25;
 
     const score = Math.max(role.weight * blendContextGaming(contextMul, gamingMul), 0.01);
     return { item: role, score };
@@ -410,7 +435,7 @@ export function pickOutfitLayersForRole(
     }
   }
 
-  if (!usedLayers.has('legs') && chance(role.id === 'bdsm-hard' || role.id === 'fantasy-femme' || role.id === 'brazilian-cut' ? 0.85 : 0.45)) {
+  if (!usedLayers.has('legs') && chance(role.id === 'bdsm-hard' || role.id === 'fantasy-femme' || role.id === 'fantasy-look' || role.id === 'fest-aften' || role.id === 'hentai-inspireret' || role.id === 'brazilian-cut' ? 0.85 : 0.45)) {
     const legs = pickLayer('legs', profile, context, now, perf, cal, undefined, gamingTags);
     if (legs) layers.push(toLayerPick(legs));
   }
@@ -418,7 +443,7 @@ export function pickOutfitLayersForRole(
   const outerP =
     perf?.band === 'poor'
       ? 0.9
-      : context.irlStatus === 'work' || context.irlStatus === 'out' || role.id === 'bdsm-hard' || role.id === 'office-milf'
+      : context.irlStatus === 'work' || context.irlStatus === 'out' || role.id === 'bdsm-hard' || role.id === 'office-milf' || role.id === 'familie-sikker' || role.id === 'fest-aften' || role.id === 'fantasy-look'
         ? 0.75
         : 0.3;
   if (!usedLayers.has('outerwear') && chance(outerP)) {
@@ -633,7 +658,7 @@ export function attachOutfitToPick(
 
   // Occasional photographed look override only if it doesn't fight hard roles
   const look =
-    role.id === 'bdsm-hard' || role.id === 'brazilian-cut' || role.id === 'g-string-milf'
+    role.id === 'bdsm-hard' || role.id === 'brazilian-cut' || role.id === 'g-string-milf' || role.id === 'hentai-inspireret' || role.id === 'sex-scene' || role.id === 'familie-sikker'
       ? null
       : pickPhotographedLook(profile, context, {
           now: opts?.now,

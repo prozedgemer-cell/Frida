@@ -50,7 +50,19 @@ export type RoleId =
   | 'hentai-anime'
   | 'fantasy-femme'
   | 'office-milf'
-  | 'bdsm-soft';
+  | 'bdsm-soft'
+  | 'fest-aften'
+  | 'traening-gym'
+  | 'sex-scene'
+  | 'bytur-gaatur'
+  | 'familie-sikker'
+  | 'bil-trafik'
+  | 'handel-shopping'
+  | 'hjemme-lounge'
+  | 'gaming-praktisk'
+  | 'hentai-inspireret'
+  | 'fantasy-look'
+  | 'anime-soft';
 
 export interface Profile {
   name: 'Frida';

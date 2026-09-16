@@ -1,3 +1,4 @@
+import { ROLE_PACKS } from '../data/rolePacks';
 import type { CalendarEntry, CalendarSignal, RoleId } from '../types';
 import { CALENDAR_SIGNAL_LABELS_DA } from '../types';
 
@@ -78,49 +79,71 @@ export function parsePlanText(entries: CalendarEntry[]): {
     if (!hints.includes(id)) hints.push(id);
   };
 
-  if (/bdsm\s*hard|dominatrix|latex|læder|leather|harness|korset|domme\b|pvc/.test(blob)) {
+  // Match each pack's kalender[] keywords against the day's written plan
+  const scored: { id: RoleId; hits: number }[] = [];
+  for (const pack of ROLE_PACKS) {
+    let hits = 0;
+    for (const kw of pack.kalender) {
+      const k = kw.toLowerCase();
+      if (k.length < 2) continue;
+      if (blob.includes(k)) hits += 1;
+    }
+    // Extra hard aliases for core Frida Mode packs
+    if (pack.id === 'bdsm-hard' && /dominatrix|latex|læder|leather|harness|domme\b|pvc/.test(blob))
+      hits += 2;
+    if (pack.id === 'g-string-milf' && /g-?\s*string|gstring|skamløs/.test(blob)) hits += 2;
+    if (pack.id === 'brazilian-cut' && /brazilian|peach/.test(blob)) hits += 2;
+    if (pack.id === 'familie-sikker' && /familie|forældre|børn|slægt/.test(blob)) hits += 2;
+    if (pack.id === 'traening-gym' && /gym|fitness|træning|yoga|crossfit/.test(blob)) hits += 2;
+    if (pack.id === 'fest-aften' && /fest|party|klub|nytår/.test(blob)) hits += 2;
+    if (pack.id === 'sex-scene' && /\bsex\b|intim|tease|scene/.test(blob)) hits += 2;
+    if (pack.id === 'gaming-praktisk' && /ranked|scrim|lang gaming/.test(blob)) hits += 2;
+    if (hits > 0) scored.push({ id: pack.id, hits });
+  }
+  scored.sort((a, b) => b.hits - a.hits);
+  for (const s of scored.slice(0, 4)) push(s.id);
+
+  // High-priority regex overrides (core aesthetic packs)
+  if (/bdsm\s*hard|dominatrix|latex|læder|leather|harness|domme\b|pvc/.test(blob)) {
     push('bdsm-hard');
   }
   if (/collar|choker|soft\s*bdsm|bdsm\s*lite|blød\s*bdsm/.test(blob)) {
     push('bdsm-soft');
   }
-  if (/brazilian|peach|pencil|brazilian.?cut/.test(blob)) {
-    push('brazilian-cut');
-  }
-  if (/g-?\s*string|gstring|string.?tease|skamløs|tager meget|g-string.?milf/.test(blob)) {
+  if (/g-?\s*string|gstring|string.?tease|g-string.?milf/.test(blob)) {
     push('g-string-milf');
   }
-  if (/hentai|anime|cosplay|waifu|thigh.?high/.test(blob)) {
+  if (/hentai.?overdrive|ecchi|hentai.?inspireret/.test(blob)) {
+    push('hentai-inspireret');
+  } else if (/hentai|anime.?aften|cosplay|thigh.?high/.test(blob)) {
     push('hentai-anime');
   }
-  if (/fantasy|elver|heks|magisk|korset.?look|ridderinde/.test(blob)) {
+  if (/anime.?soft|waifu|manga|cute.?day|con.?casual/.test(blob)) {
+    push('anime-soft');
+  }
+  if (/fantasy.?look|larp|succubus|elf\b|rpg.?aften/.test(blob)) {
+    push('fantasy-look');
+  } else if (/fantasy|elver|heks|magisk|ridderinde/.test(blob)) {
     push('fantasy-femme');
   }
-  if (/office.?milf|kontor.?milf|kontor.?sexy|milf/.test(blob) && /work|arbejde|kontor|møde|office/.test(blob)) {
+  if (/work|arbejde|kontor|møde|office/.test(blob)) {
     push('office-milf');
-  } else if (/work|arbejde|kontor|møde|office/.test(blob)) {
-    push('office-milf');
-  } else if (/\bmilf\b|voksen.?sexy|date.?milf/.test(blob)) {
+  }
+  if (/\bmilf\b|brazilian|peach|date.?milf/.test(blob) && !/kontor|office|work/.test(blob)) {
     push('brazilian-cut');
   }
-  if (/date|aftale|middag|biograf|romantik/.test(blob)) {
-    push('brazilian-cut');
-  }
-  if (/rank|gaming|cs2|lol|fortnite|wardogs|diablo|session.?spil|ranked/.test(blob)) {
-    push('soft-everyday-femme');
-  }
-  if (/hvile|rest|soft.?dag|belønning|cute|hverdags.?femme|blød/.test(blob)) {
-    push('soft-everyday-femme');
-  }
-  if (/straf|ydmyg|punish|nederlag|fail/.test(blob)) {
+  if (/straf|ydmyg|punish/.test(blob)) {
     push('bdsm-hard');
   }
 
   // signal → role
   for (const e of entries) {
     if (e.signal === 'date') push('brazilian-cut');
-    if (e.signal === 'gaming') push('soft-everyday-femme');
-    if (e.signal === 'rest' || e.signal === 'soft' || e.signal === 'reward') push('soft-everyday-femme');
+    if (e.signal === 'gaming') push('gaming-praktisk');
+    if (e.signal === 'rest' || e.signal === 'soft' || e.signal === 'reward') {
+      push('soft-everyday-femme');
+      push('hjemme-lounge');
+    }
     if (e.signal === 'hard' || e.signal === 'straf') push('bdsm-hard');
     if (e.signal === 'clothing') push('brazilian-cut');
   }
@@ -215,7 +238,7 @@ export function calendarUnderwearMultiplier(
     m *= itemTags.includes('gaming') || itemTags.includes('komfort') ? 1.35 : 1;
   }
 
-  // Written plan → role tag alignment (Frida Mode packs)
+  // Written plan → role tag alignment (Frida Mode + situation packs)
   for (const role of cal.roleHints ?? []) {
     if (role === 'brazilian-cut' && (itemTags.includes('brazilian') || itemTags.includes('milf')))
       m *= 1.7;
@@ -229,9 +252,27 @@ export function calendarUnderwearMultiplier(
       m *= 1.6;
     if (role === 'soft-everyday-femme' && (itemSoft || itemTags.includes('komfort') || itemTags.includes('cute')))
       m *= 1.55;
-    if (role === 'hentai-anime' && (itemTags.includes('anime') || itemTags.includes('cute') || itemTags.includes('hentai')))
+    if ((role === 'hentai-anime' || role === 'hentai-inspireret') && (itemTags.includes('anime') || itemTags.includes('cute') || itemTags.includes('hentai')))
       m *= 1.7;
-    if (role === 'fantasy-femme' && (itemTags.includes('fantasy') || itemTags.includes('luksus') || itemTags.includes('sexy')))
+    if ((role === 'fantasy-femme' || role === 'fantasy-look') && (itemTags.includes('fantasy') || itemTags.includes('luksus') || itemTags.includes('sexy')))
+      m *= 1.55;
+    if (role === 'familie-sikker' && (itemTags.includes('diskret') || itemTags.includes('usynlig')))
+      m *= 1.8;
+    if (role === 'traening-gym' && (itemTags.includes('sport') || itemTags.includes('gaming') || itemTags.includes('praktisk')))
+      m *= 1.65;
+    if (role === 'fest-aften' && (itemTags.includes('sexy') || itemTags.includes('aften') || itemTags.includes('sæt')))
+      m *= 1.65;
+    if (role === 'sex-scene' && (itemTags.includes('sexy') || itemTags.includes('tease') || itemTags.includes('sæt')))
+      m *= 1.7;
+    if (role === 'gaming-praktisk' && (itemTags.includes('gaming') || itemTags.includes('komfort') || itemTags.includes('praktisk')))
+      m *= 1.7;
+    if (role === 'anime-soft' && (itemTags.includes('anime') || itemTags.includes('cute') || itemTags.includes('soft')))
+      m *= 1.6;
+    if (role === 'hjemme-lounge' && (itemTags.includes('hjemme') || itemTags.includes('komfort') || itemTags.includes('soft')))
+      m *= 1.55;
+    if ((role === 'bytur-gaatur' || role === 'handel-shopping') && (itemTags.includes('hverdag') || itemTags.includes('brazilian') || itemTags.includes('diskret')))
+      m *= 1.5;
+    if (role === 'bil-trafik' && (itemTags.includes('diskret') || itemTags.includes('praktisk') || itemTags.includes('komfort')))
       m *= 1.55;
   }
   if (cal.noteBoost) m *= 1 + cal.noteBoost;
@@ -256,9 +297,14 @@ export function calendarChallengeMultiplier(
   if (
     cal.roleHints?.includes('soft-everyday-femme') ||
     cal.roleHints?.includes('brazilian-cut') ||
-    cal.roleHints?.includes('bdsm-soft')
+    cal.roleHints?.includes('bdsm-soft') ||
+    cal.roleHints?.includes('hjemme-lounge') ||
+    cal.roleHints?.includes('anime-soft')
   ) {
     w *= isReward ? 1.35 : isStraf ? 0.7 : 1.05;
+  }
+  if (cal.roleHints?.includes('familie-sikker')) {
+    w *= isStraf ? 0.35 : 0.85;
   }
   if (cal.noteBoost) w *= 1 + cal.noteBoost * 0.8;
   return Math.max(w, 0.08);
