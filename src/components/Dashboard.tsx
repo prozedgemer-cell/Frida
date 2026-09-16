@@ -110,7 +110,6 @@ export function Dashboard({ api }: { api: Hook }) {
               Sex
             </button>
           )}
-          <PanicButton active={state.emergencyStop} onToggle={api.setEmergencyStop} />
           <button
             type="button"
             className={`header-profile-btn ${tab === 'profil' ? 'is-active' : ''}`}
@@ -125,6 +124,7 @@ export function Dashboard({ api }: { api: Hook }) {
               />
             </svg>
           </button>
+          <PanicButton active={state.emergencyStop} onToggle={api.setEmergencyStop} />
         </div>
       </header>
 
@@ -156,6 +156,7 @@ export function Dashboard({ api }: { api: Hook }) {
             intensity={state.profile.intensity}
             dayMode={state.profile.dayMode}
             playingGame={state.context.playingGame}
+            irlStatus={state.context.irlStatus}
             activeChallenge={primaryChallenge}
             inGameChallenge={state.activeInGameChallenge}
             emergencyStop={state.emergencyStop}
@@ -163,6 +164,8 @@ export function Dashboard({ api }: { api: Hook }) {
             onGoSex={() => setTab('sex')}
             onGoCalendar={() => setTab('kalender')}
             onGoGaming={() => setTab('gaming')}
+            onGoProfil={() => setTab('profil')}
+            onIrl={(irlStatus) => api.updateContext({ irlStatus })}
             sexActive={state.activeSexStraf}
             sexDue={sexStrafDue}
             calendarToday={calendarToday}
