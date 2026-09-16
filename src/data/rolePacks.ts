@@ -2,12 +2,13 @@ import type { Intensity, IrlStatus, OutfitLayerPick, ThemePack } from '../types'
 
 /**
  * Coherent FULL-OUTFIT role packs (undertøj + ydre lag).
- * Research seed (milf/brazilian vs BDSM domme):
- * - Brazilian-cut: cheekier than boyshort, fuller than g-string; flattering "peach" rear —
- *   fits milf / feminine everyday-sexy, NOT classic domme.
- * - G-string / string: minimal rear — tease / "takes many things" slutty-milf vibe.
- * - BDSM domme: black leather/latex/PVC, corset/bodysuit, harness, stockings, boots,
- *   gloves, commanding accessories — NOT a g-string milf look.
+ * Research seed (lingerie cuts + Domme conventions):
+ * - Brazilian-cut: ~50% cheek coverage — scooped rear strip, high leg; flattering "peach"
+ *   milf everyday-sexy. More secure/wearable than thong; NOT latex-domme.
+ * - Thong: thin rear strap; G-string: string-width rear — most minimal / tease /
+ *   "tager meget"-energi. Short-wear statement, not commanding Domme.
+ * - BDSM Domme: leather / latex / PVC, structured corset or harness, boots (thigh/knee),
+ *   gloves, collar — materials signal power. ≠ peachy Brazilian-milf or g-string tease.
  */
 
 export type RoleId =
@@ -46,8 +47,8 @@ export const ROLE_PACKS: RolePack[] = [
     id: 'milf-brazilian',
     nameDa: 'MILF · Brazilian',
     commandVoiceDa:
-      'Frida — ROLE: MILF. Brazilian-cut trusse der skærer over kinderne (ikke g-string), matching BH, figurnær bluse eller wrap, pencil/midi-nederdel, strømper valgfrit, pæne hæle eller rene sneakers. Du ser voksen, sexet og samlet ud — ikke latex-domme.',
-    contrastDa: 'Brazilian = mere dækning end string, cheekier end boyshort. Ikke BDSM-domme.',
+      'Frida — ROLE: MILF. Brazilian-cut (~halv kind synlig — mere end boyshort, fyldigere end g-string), matching BH, figurnær bluse/wrap, pencil eller midi-nederdel, sheer strømper valgfrit, nude hæle. Voksen, samlet, peachy — IKKE latex/korset-domme.',
+    contrastDa: 'Brazilian ≈ 50% bagdækning. Wearable milf ≠ string-tease ≠ Domme.',
     tags: ['milf', 'brazilian', 'sexy', 'date', 'hverdag', 'femme'],
     intensity: ['soft', 'hard'],
     themes: ['clothing', 'sex', 'irl'],
@@ -62,8 +63,8 @@ export const ROLE_PACKS: RolePack[] = [
     id: 'gstring-tease',
     nameDa: 'G-string tease',
     commandVoiceDa:
-      'Frida — ROLE: G-string tease. Ultrasmal string / g-string, BH der løfter, crop eller åben skjorte, mini eller stramme jeans, hæle. Du er den milf der tager meget — synlig kontur, lidt skamløs. Det er IKKE domme-look.',
-    contrastDa: 'Minimal bagdel + tease — ikke læder/korset-dominans.',
+      'Frida — ROLE: G-string tease. Ultrasmal g-string (string-bredde bag — mere ekstrem end thong), BH der løfter, crop eller åben skjorte, mini, sorte hæle, choker. Du er den milf der tager meget — synlig kontur. IKKE læder/korset-Domme.',
+    contrastDa: 'Minimal string-bag + tease ≠ læder/latex-magt.',
     tags: ['g-string', 'string', 'tease', 'sexy', 'hard', 'synlig', 'milf'],
     intensity: ['hard'],
     themes: ['clothing', 'sex', 'porn'],
@@ -78,8 +79,8 @@ export const ROLE_PACKS: RolePack[] = [
     id: 'bdsm-domme',
     nameDa: 'BDSM Domme',
     commandVoiceDa:
-      'Frida — ROLE: Domme. Sort læder/latex/PVC-vibe: korset eller stram bodysuit, hofteholder/strømper, knæstøvler eller høje hæle, handsker, halsbånd eller harness som accessory. Undertøj er sort blonde eller harness-trusse — IKKE brazilian-milf og IKKE sød g-string-tease. Du leder.',
-    contrastDa: 'Læder/latex/korset/støvler = magt. ≠ peachy Brazilian-milf.',
+      'Frida — ROLE: Domme. Materialer: sort læder/latex/PVC. Korset eller stram bodysuit, fishnet/hofteholder, knæstøvler, harness eller choker, evt. handsker. Undertøj: harness-trusse — IKKE Brazilian-milf og IKKE g-string-tease. Du leder; looket signalerer magt.',
+    contrastDa: 'Læder/latex/korset/støvler/harness = magt. ≠ peachy Brazilian.',
     tags: ['bdsm', 'domme', 'fetish', 'hard', 'kontrol', 'leather', 'latex'],
     intensity: ['hard'],
     themes: ['bdsm', 'clothing', 'sex'],

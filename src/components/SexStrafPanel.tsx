@@ -178,7 +178,7 @@ export function SexStrafPanel({
         <ImageGallery
           slot="sex-straf"
           titleDa="RP-billeder"
-          hintDa="Stemningsfotos til fiktiv sex-straf. Lokalt. Ingen upload til server."
+          hintDa="Stemningsfotos til fiktiv sex-straf. Lokalt file-pick — ingen server-upload."
         />
       </section>
 

@@ -53,7 +53,7 @@ export function UnderwearOrder({ pick, paused, onReroll }: Props) {
       <ImageGallery
         slot="outfit"
         titleDa="Outfit-referencer"
-        hintDa="Egne fotos af looks. Gemmes kun på denne enhed."
+        hintDa="Egne fotos af fulde looks (undertøj + ydre lag). Lokalt file-pick — ingen server."
       />
     </section>
   );

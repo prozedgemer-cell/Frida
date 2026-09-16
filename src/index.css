@@ -1693,3 +1693,14 @@ html.is-standalone body {
   border-radius: 10px;
   border: 1px solid rgba(255, 255, 255, 0.12);
 }
+
+.img-tile.is-selected {
+  outline: 2px solid var(--pink);
+  outline-offset: 2px;
+}
+.img-tile__acts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem 0.65rem;
+  margin-top: 0.25rem;
+}

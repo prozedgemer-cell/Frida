@@ -6,6 +6,10 @@ type Props = {
   slot: ImageSlot;
   titleDa: string;
   hintDa?: string;
+  /** When set, user uploads can attach to a note/outfit/sex entry (local file pick). */
+  onSelect?: (imageId: string) => void;
+  selectedId?: string;
+  selectLabelDa?: string;
 };
 
 const SLOT_TO_SEED: Record<ImageSlot, SeedImageSlot> = {
@@ -15,7 +19,14 @@ const SLOT_TO_SEED: Record<ImageSlot, SeedImageSlot> = {
   calendar: 'calendar',
 };
 
-export function ImageGallery({ slot, titleDa, hintDa }: Props) {
+export function ImageGallery({
+  slot,
+  titleDa,
+  hintDa,
+  onSelect,
+  selectedId,
+  selectLabelDa = 'Sæt på note',
+}: Props) {
   const { items, urls, error, busy, add, remove } = useImageLibrary(slot);
   const seeds = seedImagesFor(SLOT_TO_SEED[slot]);
 
@@ -42,6 +53,11 @@ export function ImageGallery({ slot, titleDa, hintDa }: Props) {
         </label>
       </div>
       {hintDa && <p className="tiny muted">{hintDa}</p>}
+      {onSelect && (
+        <p className="tiny muted">
+          Tryk «{selectLabelDa}» på et upload for at hænge det på den aktuelle note.
+        </p>
+      )}
       {error && <p className="banner banner--warn">{error}</p>}
       <div className="img-grid">
         {seeds.map((s) => (
@@ -51,13 +67,27 @@ export function ImageGallery({ slot, titleDa, hintDa }: Props) {
           </figure>
         ))}
         {items.map((m) => (
-          <figure key={m.id} className="img-tile">
+          <figure
+            key={m.id}
+            className={`img-tile ${selectedId === m.id ? 'is-selected' : ''}`}
+          >
             {urls[m.id] ? <img src={urls[m.id]} alt={m.name} /> : <div className="img-tile__ph" />}
             <figcaption>
               {m.name}
-              <button type="button" className="linkish" onClick={() => void remove(m.id)}>
-                Slet
-              </button>
+              <span className="img-tile__acts">
+                {onSelect && (
+                  <button
+                    type="button"
+                    className="linkish"
+                    onClick={() => onSelect(m.id)}
+                  >
+                    {selectedId === m.id ? 'Valgt ✓' : selectLabelDa}
+                  </button>
+                )}
+                <button type="button" className="linkish" onClick={() => void remove(m.id)}>
+                  Slet
+                </button>
+              </span>
             </figcaption>
           </figure>
         ))}

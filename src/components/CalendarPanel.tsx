@@ -344,6 +344,9 @@ export function CalendarPanel({ entries, paused, onUpsert, onDelete }: Props) {
         slot="calendar"
         titleDa="Kalender-billeder"
         hintDa="Upload referencefotos til noter/planer. Kun lokalt på enheden. Outfit- og sex-straf-galleri findes under Hverdag / Sex."
+        onSelect={(id) => setImageId(id)}
+        selectedId={imageId}
+        selectLabelDa="Sæt på note"
       />
 
       {upcoming.length > 0 && (
