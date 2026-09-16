@@ -2098,3 +2098,10 @@ html.is-standalone body {
     display: none;
   }
 }
+
+button.status-chip {
+  font: inherit;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}

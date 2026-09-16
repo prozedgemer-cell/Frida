@@ -75,6 +75,15 @@ export function Dashboard({ api }: { api: Hook }) {
     window.scrollTo(0, 0);
   }, [tab]);
 
+  useEffect(() => {
+    const nav = navigator as Navigator & {
+      setAppBadge?: (n?: number) => Promise<void>;
+      clearAppBadge?: () => Promise<void>;
+    };
+    if (sexBadge) void nav.setAppBadge?.(1);
+    else void nav.clearAppBadge?.();
+  }, [sexBadge]);
+
   return (
     <div className={`app-shell ${tab === 'hoved' ? 'is-hoved' : ''}`}>
       <header className="dash-bar">
@@ -147,6 +156,7 @@ export function Dashboard({ api }: { api: Hook }) {
             intensity={state.profile.intensity}
             dayMode={state.profile.dayMode}
             playingGame={state.context.playingGame}
+            irlStatus={state.context.irlStatus}
             activeChallenge={primaryChallenge}
             inGameChallenge={state.activeInGameChallenge}
             emergencyStop={state.emergencyStop}
@@ -154,6 +164,8 @@ export function Dashboard({ api }: { api: Hook }) {
             onGoSex={() => setTab('sex')}
             onGoCalendar={() => setTab('kalender')}
             onGoGaming={() => setTab('gaming')}
+            onGoProfil={() => setTab('profil')}
+            onIrl={(irlStatus) => api.updateContext({ irlStatus })}
             sexActive={state.activeSexStraf}
             sexDue={sexStrafDue}
             calendarToday={calendarToday}
