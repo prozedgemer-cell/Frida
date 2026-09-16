@@ -11,7 +11,7 @@ import {
 import { CalendarInfluenceNote } from './CalendarInfluenceNote';
 import { addImage, getImageBlob } from '../storage/imageStore';
 import type { CalendarEntry, CalendarSignal } from '../types';
-import { CALENDAR_SIGNAL_LABELS_DA } from '../types';
+import { CALENDAR_SIGNAL_LABELS_DA, CALENDAR_TAG_PRESETS } from '../types';
 import { ImageGallery } from './ImageGallery';
 
 const SIGNALS: CalendarSignal[] = [
@@ -38,7 +38,9 @@ type Props = {
     noteDa: string;
     signal: CalendarSignal;
     imageId?: string;
+    imageUrl?: string;
     timeHm?: string;
+    tags?: string[];
   }) => void;
   onDelete: (id: string) => void;
 };
@@ -56,6 +58,8 @@ export function CalendarPanel({ entries, paused, onUpsert, onDelete }: Props) {
   const [signal, setSignal] = useState<CalendarSignal>('none');
   const [editingId, setEditingId] = useState<string | null>(null);
   const [imageId, setImageId] = useState<string | undefined>();
+  const [imageUrl, setImageUrl] = useState('');
+  const [tags, setTags] = useState<string[]>([]);
   const [thumbUrls, setThumbUrls] = useState<Record<string, string>>({});
   const [uploadErr, setUploadErr] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -122,6 +126,8 @@ export function CalendarPanel({ entries, paused, onUpsert, onDelete }: Props) {
     setSignal('none');
     setEditingId(null);
     setImageId(undefined);
+    setImageUrl('');
+    setTags([]);
     setUploadErr(null);
   };
 
@@ -135,7 +141,9 @@ export function CalendarPanel({ entries, paused, onUpsert, onDelete }: Props) {
       noteDa: noteDa.trim(),
       signal,
       imageId,
+      imageUrl: imageUrl.trim() || undefined,
       timeHm: normalizeTimeHm(timeHm),
+      tags,
     });
     resetForm();
   };
@@ -148,6 +156,8 @@ export function CalendarPanel({ entries, paused, onUpsert, onDelete }: Props) {
     setSignal(e.signal);
     setEditingId(e.id);
     setImageId(e.imageId);
+    setImageUrl(e.imageUrl ?? '');
+    setTags(e.tags ?? []);
   };
 
   const onPickImage = async (file: File | undefined) => {
@@ -204,7 +214,7 @@ export function CalendarPanel({ entries, paused, onUpsert, onDelete }: Props) {
           </div>
         </div>
         <p className="muted tiny">
-          Skriv dagens planer — dato, tid og signal-tags påvirker outfit, challenges og sex-straf (~70%).
+          Skriv noter/aftaler. Dagens + kommende tags (milf, bdsm, g-string, date, outing) styrer tøj og challenges (~70%).
           Straf/hård øger, hvile blødgør. Vedhæft billede til noter (lokalt).
         </p>
         <CalendarInfluenceNote calendar={summarizeCalendar(entries, today)} />
@@ -288,6 +298,39 @@ export function CalendarPanel({ entries, paused, onUpsert, onDelete }: Props) {
           </select>
         </label>
         <div className="field">
+          <span>Tags</span>
+          <div className="chip-grid cal-tag-grid">
+            {CALENDAR_TAG_PRESETS.map((tag) => {
+              const on = tags.includes(tag);
+              return (
+                <button
+                  key={tag}
+                  type="button"
+                  className={`chip ${on ? 'chip--on' : ''}`}
+                  disabled={paused}
+                  onClick={() =>
+                    setTags((cur) => (cur.includes(tag) ? cur.filter((x) => x !== tag) : [...cur, tag]))
+                  }
+                >
+                  {tag}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+        <label className="field">
+          <span>Billede-URL eller data: (valgfri, hold den lille)</span>
+          <input
+            value={imageUrl}
+            onChange={(e) => setImageUrl(e.target.value)}
+            placeholder="https://… eller data:image/…"
+            disabled={paused}
+          />
+        </label>
+        <p className="tiny muted">
+          Lokale uploads gemmes på enheden. Du kan også sende billeder til Chief of Staff, så de lægges i seed-galleriet.
+        </p>
+        <div className="field">
           <span>Billede til note</span>
           <div className="cal-attach-row">
             <label className={`btn btn--secondary ${busy || paused ? 'is-disabled' : ''}`}>
@@ -348,8 +391,20 @@ export function CalendarPanel({ entries, paused, onUpsert, onDelete }: Props) {
                   </span>
                 )}
                 {e.noteDa && <p className="tiny">{e.noteDa}</p>}
+                {!!e.tags?.length && (
+                  <p className="tiny">
+                    {e.tags.map((tg) => (
+                      <span key={tg} className="tag">
+                        {tg}
+                      </span>
+                    ))}
+                  </p>
+                )}
                 {e.imageId && thumbUrls[e.imageId] && (
                   <img src={thumbUrls[e.imageId]} alt="" className="cal-note-thumb" />
+                )}
+                {e.imageUrl && (
+                  <img src={e.imageUrl} alt="" className="cal-note-thumb" />
                 )}
               </div>
               <div className="cal-notes__act">

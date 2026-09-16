@@ -3,13 +3,14 @@ import { WEIGHT_FORMULA_DA } from '../engines/weightBlend';
 import { OutfitHero } from './OutfitHero';
 import { OutfitLayers } from './OutfitLayers';
 import { CalendarInfluenceNote } from './CalendarInfluenceNote';
-import { ImageGallery } from './ImageGallery';
 import type { CalendarSummary } from '../engines/calendarEngine';
 import type { SexStrafDue } from '../engines/sexStrafEngine';
 import type {
   ActiveChallenge,
   DayMode,
   Intensity,
+  IrlStatus,
+  MorningTrioState,
   PerformanceBand,
   PerformanceSnapshot,
   SexStrafInstance,
@@ -23,6 +24,14 @@ const BAND_DA: Record<PerformanceBand, string> = {
   godlike: 'Godlike',
 };
 
+const IRL: { value: IrlStatus; label: string }[] = [
+  { value: 'home', label: 'Hjemme' },
+  { value: 'alone', label: 'Alene' },
+  { value: 'out', label: 'Ude' },
+  { value: 'work', label: 'Arbejde' },
+  { value: 'public', label: 'Offentligt' },
+];
+
 type Props = {
   underwear: UnderwearPick | null;
   pointsBalance: number;
@@ -30,6 +39,7 @@ type Props = {
   intensity: Intensity;
   dayMode: DayMode;
   playingGame: string;
+  irlStatus: IrlStatus;
   activeChallenge: ActiveChallenge | null;
   inGameChallenge: ActiveChallenge | null;
   emergencyStop: boolean;
@@ -37,11 +47,12 @@ type Props = {
   onGoSex: () => void;
   onGoCalendar: () => void;
   onGoGaming: () => void;
-  onReroll: () => void;
+  onGoProfil: () => void;
+  onIrl: (irl: IrlStatus) => void;
   sexActive: SexStrafInstance | null;
   sexDue: SexStrafDue;
   calendarToday: CalendarSummary;
-  morningPending: number;
+  morningTrio: MorningTrioState | null;
 };
 
 function buildNextLines(opts: {
@@ -52,12 +63,15 @@ function buildNextLines(opts: {
   sexActive: SexStrafInstance | null;
   sexDue: SexStrafDue;
   calendarToday: CalendarSummary;
-  morningPending: number;
+  morningLeft: number;
 }): string[] {
   const lines: string[] = [];
   if (opts.paused) {
-    lines.push('Nødstop er ON — alt er pauset. Slå fra når du er klar.');
-    return lines.slice(0, 4);
+    lines.push('Nødstop ON — alt pauset.');
+    return lines;
+  }
+  if (opts.morningLeft) {
+    lines.push(`Morgen-trio: ${opts.morningLeft} DO/WEAR tilbage`);
   }
   const sexPending =
     opts.sexActive &&
@@ -67,28 +81,25 @@ function buildNextLines(opts: {
       `Sex-straf ${opts.sexActive.status === 'active' ? 'aktiv' : 'afventer'}: ${opts.sexActive.titleDa}`,
     );
   } else if (opts.sexDue.due) {
-    lines.push('Sex-straf er due — kræv den under Sex.');
-  }
-  if (opts.morningPending) {
-    lines.push(`Morgen-trio: ${opts.morningPending} DO/WEAR tilbage i dag`);
+    lines.push('Sex-straf er due — åbn Sex.');
   }
   if (opts.calendarToday.entries.length) {
     lines.push(`Kalender: ${opts.calendarToday.headlineDa}`);
   }
-  if (opts.activeChallenge) {
+  if (opts.activeChallenge && !opts.activeChallenge.morningTier) {
     lines.push(`Udfordring: ${opts.activeChallenge.titleDa}`);
   }
   if (opts.inGameChallenge) {
     const game = opts.playingGame.trim();
     lines.push(
       game
-        ? `In-game (${game}): ${opts.inGameChallenge.titleDa}`
-        : `In-game: ${opts.inGameChallenge.titleDa}`,
+        ? `I spil (${game}): ${opts.inGameChallenge.titleDa}`
+        : `I spil: ${opts.inGameChallenge.titleDa}`,
     );
   } else if (opts.playingGame.trim()) {
-    lines.push(`Spiller ${opts.playingGame.trim()} — log KDA under Gaming.`);
+    lines.push(`Spiller ${opts.playingGame.trim()} — log under Gaming.`);
   }
-  return lines.slice(0, 5);
+  return lines.slice(0, 4);
 }
 
 export function HomePanel({
@@ -98,6 +109,7 @@ export function HomePanel({
   intensity,
   dayMode,
   playingGame,
+  irlStatus,
   activeChallenge,
   inGameChallenge,
   emergencyStop,
@@ -105,13 +117,16 @@ export function HomePanel({
   onGoSex,
   onGoCalendar,
   onGoGaming,
-  onReroll,
+  onGoProfil,
+  onIrl,
   sexActive,
   sexDue,
   calendarToday,
-  morningPending,
+  morningTrio,
 }: Props) {
   const item = underwear ? getUnderwearById(underwear.itemId) : undefined;
+  const morningLeft =
+    morningTrio?.challenges.filter((c) => c.status === 'active').length ?? 0;
   const nextLines = buildNextLines({
     paused: emergencyStop,
     activeChallenge,
@@ -120,7 +135,7 @@ export function HomePanel({
     sexActive,
     sexDue,
     calendarToday,
-    morningPending,
+    morningLeft,
   });
   const softHard =
     intensity === dayMode
@@ -128,8 +143,6 @@ export function HomePanel({
         ? 'Hard'
         : 'Soft'
       : `${intensity}/${dayMode}-dag`;
-  const sexPending =
-    !!sexActive && (sexActive.status === 'pending' || sexActive.status === 'active');
   const now = new Date();
   const greetDate = now.toLocaleDateString('da-DK', {
     weekday: 'long',
@@ -137,6 +150,8 @@ export function HomePanel({
     month: 'long',
   });
   const clock = now.toLocaleTimeString('da-DK', { hour: '2-digit', minute: '2-digit' });
+  const sexPending =
+    !!sexActive && (sexActive.status === 'pending' || sexActive.status === 'active');
 
   return (
     <div className="mode-stack home-stack">
@@ -146,39 +161,31 @@ export function HomePanel({
           <strong>{underwear?.roleNameDa ?? underwear?.lookNameDa ?? 'Outfit'}</strong>
           <span>{clock} · {greetDate}</span>
         </button>
-        {(sexPending || sexDue.due) && (
+        {(sexPending || sexDue.due) ? (
           <button type="button" className="dash-card dash-card--hot" onClick={onGoSex}>
             <span className="dash-card__k">Sex-straf</span>
             <strong>{sexActive?.status === 'active' ? 'Aktiv' : sexPending ? 'Afventer' : 'Due'}</strong>
             <span>{sexActive?.titleDa ?? 'Kræv under Sex'}</span>
           </button>
-        )}
-        {calendarToday.entries.length > 0 && !sexPending && !sexDue.due && (
-          <button type="button" className="dash-card dash-card--cal" onClick={onGoCalendar}>
-            <span className="dash-card__k">Kalender</span>
-            <strong>{calendarToday.timedLabels[0] ?? calendarToday.entries[0]?.titleDa}</strong>
-            <span>{calendarToday.headlineDa}</span>
+        ) : (
+          <button type="button" className="dash-card dash-card--cal" onClick={onGoProfil}>
+            <span className="dash-card__k">IRL</span>
+            <strong>{IRL.find((o) => o.value === irlStatus)?.label ?? irlStatus}</strong>
+            <span>Profil & limits</span>
           </button>
         )}
       </div>
+
       <section className="panel panel--command panel--home-order">
         <div className="panel__head">
           <div>
-            <p className="eyebrow">Fuldt outfit · role</p>
-            <h2>{underwear?.roleNameDa ? underwear.roleNameDa : 'På dig lige nu'}</h2>
+            <p className="eyebrow">Tøj · role</p>
+            <h2>{underwear?.roleNameDa ? underwear.roleNameDa : 'På dig nu'}</h2>
           </div>
-          <button
-            type="button"
-            className="btn btn--ghost btn--tiny"
-            onClick={onReroll}
-            disabled={emergencyStop}
-          >
-            Reroll
-          </button>
         </div>
 
         {emergencyStop && (
-          <p className="banner banner--warn">Pauset — ingen nye ordrer før nødstop er af.</p>
+          <p className="banner banner--warn">Pauset — nødstop er ON.</p>
         )}
 
         {!underwear && <p className="muted">Ingen beording endnu…</p>}
@@ -196,13 +203,7 @@ export function HomePanel({
               <p className="home-item-meta">
                 <strong>{item.nameDa}</strong>
                 <span className="muted"> · {item.category}</span>
-                {item.colors.length > 0 && (
-                  <span className="muted"> · {item.colors.slice(0, 3).join(', ')}</span>
-                )}
               </p>
-            )}
-            {underwear.performanceInfluenceDa && (
-              <p className="influence-note">{underwear.performanceInfluenceDa}</p>
             )}
             <p className="tiny muted">{WEIGHT_FORMULA_DA}</p>
           </>
@@ -216,10 +217,7 @@ export function HomePanel({
             <span className="status-chip__k">Point</span>
             <strong>{pointsBalance}</strong>
           </span>
-          <span
-            className={`status-chip status-chip--band-${performance.band}`}
-            role="listitem"
-          >
+          <span className={`status-chip status-chip--band-${performance.band}`} role="listitem">
             <span className="status-chip__k">Præst.</span>
             <strong>
               {BAND_DA[performance.band]}
@@ -230,23 +228,12 @@ export function HomePanel({
             <span className="status-chip__k">Mode</span>
             <strong>{softHard}</strong>
           </span>
-          {underwear?.roleNameDa && (
-            <span className="status-chip" role="listitem">
-              <span className="status-chip__k">Role</span>
-              <strong>{underwear.roleNameDa}</strong>
-            </span>
-          )}
           {playingGame.trim() ? (
             <span className="status-chip status-chip--game" role="listitem">
               <span className="status-chip__k">Spil</span>
               <strong>{playingGame.trim()}</strong>
             </span>
-          ) : (
-            <span className="status-chip status-chip--muted" role="listitem">
-              <span className="status-chip__k">Spil</span>
-              <strong>Ingen</strong>
-            </span>
-          )}
+          ) : null}
           {emergencyStop && (
             <span className="status-chip status-chip--estop" role="listitem">
               <span className="status-chip__k">Sikkerhed</span>
@@ -259,24 +246,31 @@ export function HomePanel({
               <strong>Aktiv</strong>
             </span>
           )}
-          {morningPending > 0 && (
+          {morningLeft > 0 && (
             <span className="status-chip" role="listitem">
               <span className="status-chip__k">Morgen</span>
-              <strong>{morningPending}/3</strong>
+              <strong>{morningLeft}/3</strong>
             </span>
           )}
+        </div>
+        <div className="irl-row" role="group" aria-label="IRL-status">
+          {IRL.map((o) => (
+            <button
+              key={o.value}
+              type="button"
+              className={`chip ${irlStatus === o.value ? 'chip--on' : ''}`}
+              disabled={emergencyStop}
+              onClick={() => onIrl(o.value)}
+            >
+              {o.label}
+            </button>
+          ))}
         </div>
       </section>
 
       <section className="panel panel--home-next">
         <p className="eyebrow">Nu</p>
         <h2 className="home-next-title">Hvad sker der</h2>
-        {(sexPending || sexDue.due) && (
-          <button type="button" className="sex-pill-badge" onClick={onGoSex}>
-            <i className="nav-badge" aria-hidden />
-            Sex-straf {sexActive?.status === 'active' ? 'aktiv' : sexPending ? 'afventer' : 'due'}
-          </button>
-        )}
         <CalendarInfluenceNote calendar={calendarToday} compact />
         <ol className="home-next-list sched-list">
           {nextLines.map((line) => (
@@ -294,23 +288,13 @@ export function HomePanel({
               Åbn kalender →
             </button>
           )}
-          {(activeChallenge || morningPending > 0) && (
-            <button type="button" className="linkish" onClick={onGoChallenges}>
-              Åbn udfordring →
-            </button>
-          )}
+          <button type="button" className="linkish" onClick={onGoChallenges}>
+            Udfordringer →
+          </button>
           <button type="button" className="linkish" onClick={onGoGaming}>
-            Gaming-log →
+            Gaming →
           </button>
         </div>
-      </section>
-
-      <section className="panel panel--muted">
-        <ImageGallery
-          slot="outfit"
-          titleDa="Outfit-fotos"
-          hintDa="Egne billeder til dagens look. Kun på denne enhed."
-        />
       </section>
     </div>
   );

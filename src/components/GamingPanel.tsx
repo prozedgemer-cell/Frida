@@ -15,6 +15,9 @@ import {
   type MetricMap,
 } from '../engines/gameScoreEngine';
 import type {
+  ActiveChallenge,
+  ChallengeLogEntry,
+  ChallengeOutcome,
   ContextState,
   GameResult,
   GameSessionLog,
@@ -23,6 +26,7 @@ import type {
 } from '../types';
 import { RATING_LABELS_DA, RESULT_LABELS_DA } from '../types';
 import { parseTrackerPaste } from '../utils/trackerPaste';
+import { InGamePanel } from './InGamePanel';
 
 type Props = {
   context: ContextState;
@@ -34,6 +38,10 @@ type Props = {
   onAddSession: (entry: Omit<GameSessionLog, 'id' | 'at'> & { at?: string }) => void;
   onUpdateSession: (id: string, patch: Partial<Omit<GameSessionLog, 'id'>>) => void;
   onDeleteSession: (id: string) => void;
+  inGameChallenge: ActiveChallenge | null;
+  challengeLog: ChallengeLogEntry[];
+  onDrawInGame: () => void;
+  onResolveInGame: (outcome: ChallengeOutcome) => void;
 };
 
 const RESULTS: GameResult[] = ['win', 'loss', 'quit', 'draw', 'other'];
@@ -176,6 +184,10 @@ export function GamingPanel({
   onAddSession,
   onUpdateSession,
   onDeleteSession,
+  inGameChallenge,
+  challengeLog,
+  onDrawInGame,
+  onResolveInGame,
 }: Props) {
   const gaming = Boolean(context.playingGame.trim());
   const [form, setForm] = useState<FormState>(() =>
@@ -183,7 +195,7 @@ export function GamingPanel({
   );
   const [editingId, setEditingId] = useState<string | null>(null);
 
-  // Sync preset when context active game changes from In-game tab
+  // Sync preset when context active game changes
   useEffect(() => {
     if (editingId) return;
     if (context.activeGameId && context.activeGameId !== form.gameId) {
@@ -376,7 +388,7 @@ export function GamingPanel({
             </p>
             <h3 className="active-game-picker__title">Hvilket spil spiller du?</h3>
             <p className="tiny muted" style={{ margin: 0 }}>
-              Sætter spil for logging, in-game-udfordringer og præstation. Valget gemmes.
+              Sætter spil for logging, udfordringer i spillet og præstation. Valget gemmes.
             </p>
           </div>
           <div className="game-preset-grid game-preset-grid--prominent" role="list">
@@ -483,6 +495,20 @@ export function GamingPanel({
           </span>
         </div>
       </section>
+
+      <InGamePanel
+        embedded
+        challenge={inGameChallenge}
+        log={challengeLog}
+        performance={performance}
+        pointsBalance={pointsBalance}
+        playingGame={context.playingGame}
+        activeGameId={context.activeGameId}
+        paused={paused}
+        onDraw={onDrawInGame}
+        onResolve={onResolveInGame}
+        onChangeContext={onChange}
+      />
 
       <section className="panel panel--command">
         <p className="eyebrow">{editingId ? 'Rediger sidste session' : 'Log session'}</p>

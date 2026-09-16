@@ -1,15 +1,13 @@
 import { useEffect, useState } from 'react';
-import { TEMPLATE_COUNT } from '../data/challenges';
 import { estimateVariationSpace } from '../engines/challengeEngine';
 import type { useFridaState } from '../hooks/useFridaState';
 import { loadUiTab, saveUiTab } from '../storage/localStore';
 import { BottomNav, type AppTab } from './BottomNav';
 import { ChallengesPanel } from './ChallengesPanel';
-import { PanicButton, EstopSlimBanner } from './EmergencyStop';
+import { PanicButton } from './EmergencyStop';
 import { GamingPanel } from './GamingPanel';
 import { CalendarPanel } from './CalendarPanel';
 import { HomePanel } from './HomePanel';
-import { InGamePanel } from './InGamePanel';
 import { InstallBanner, InstallHint } from './InstallBanner';
 import { ProfilePanel } from './ProfilePanel';
 import { SexStrafPanel } from './SexStrafPanel';
@@ -18,10 +16,10 @@ type Hook = ReturnType<typeof useFridaState>;
 
 const TAB_TITLES: Record<AppTab, { eyebrow: string; title: string }> = {
   hoved: { eyebrow: 'Hoved', title: 'Overblik' },
-  gaming: { eyebrow: 'Gaming', title: 'Session & in-game' },
-  udfordringer: { eyebrow: 'Udfordringer', title: 'Morgen-trio + ordrer' },
+  gaming: { eyebrow: 'Gaming', title: 'Session & log' },
+  kalender: { eyebrow: 'Kalender', title: 'Noter & tags' },
+  udfordringer: { eyebrow: 'Udfordringer', title: 'Ordrer' },
   sex: { eyebrow: 'Sex-straf', title: 'Indløs stats' },
-  kalender: { eyebrow: 'Kalender', title: 'Noter & signaler' },
   profil: { eyebrow: 'Profil', title: 'Frida' },
 };
 
@@ -31,7 +29,6 @@ const MODE_RAIL: { id: AppTab; label: string }[] = [
   { id: 'kalender', label: 'Kalender' },
   { id: 'udfordringer', label: 'Udfordringer' },
   { id: 'sex', label: 'Sex' },
-  { id: 'profil', label: 'Profil' },
 ];
 
 export function Dashboard({ api }: { api: Hook }) {
@@ -56,13 +53,13 @@ export function Dashboard({ api }: { api: Hook }) {
   });
   const mode = TAB_TITLES[tab];
   const primaryChallenge =
-    state.activeChallenges.find((c) => c.status === 'active' && !c.morningTier) ??
     state.activeChallenges.find((c) => c.status === 'active') ??
     state.activeChallenges[0] ??
     null;
   const sexPending =
     !!state.activeSexStraf &&
     (state.activeSexStraf.status === 'pending' || state.activeSexStraf.status === 'active');
+  const sexBadge = sexPending || sexStrafDue.due;
 
   useEffect(() => {
     ensureMorningTrio();
@@ -81,34 +78,39 @@ export function Dashboard({ api }: { api: Hook }) {
   return (
     <div className={`app-shell ${tab === 'hoved' ? 'is-hoved' : ''}`}>
       <PanicButton active={state.emergencyStop} onToggle={api.setEmergencyStop} />
+
       <header className="dash-bar">
-        <div className="dash-bar__left">
-          <p className="eyebrow">Kontrolpanel</p>
+        <div>
+          <p className="eyebrow">{mode.eyebrow}</p>
           <h1 className="dash-bar__title">
-            Hej <span className="accent">Frida</span>
+            {tab === 'hoved' ? (
+              <>
+                Hej <span className="accent">Frida</span>
+              </>
+            ) : (
+              mode.title
+            )}
           </h1>
           <p className="muted tiny dash-bar__meta">
             {timeLabel} · {state.profile.dayMode}-dag · {state.pointsBalance} p
             {performance.sessionCount > 0 ? ` · ${performance.score}` : ''}
-            {' · '}
-            {mode.eyebrow}
           </p>
         </div>
         <div className="dash-bar__right">
-          {(sexPending || sexStrafDue.due) && (
+          {sexBadge && (
             <button type="button" className="sex-pill-badge" onClick={() => setTab('sex')}>
               <i className="nav-badge" aria-hidden />
-              Sex-straf
+              Sex
             </button>
           )}
           <button
             type="button"
             className={`header-profile-btn ${tab === 'profil' ? 'is-active' : ''}`}
-            aria-label="Profil"
-            aria-current={tab === 'profil' ? 'page' : undefined}
             onClick={() => setTab('profil')}
+            aria-label="Profil"
+            title="Profil"
           >
-            <svg viewBox="0 0 24 24" aria-hidden className="nav-svg">
+            <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden>
               <path
                 fill="currentColor"
                 d="M12 4a4 4 0 1 1 0 8 4 4 0 0 1 0-8Zm0 10c3.8 0 8 1.8 8 5v2H4v-2c0-3.2 4.2-5 8-5Z"
@@ -117,7 +119,6 @@ export function Dashboard({ api }: { api: Hook }) {
           </button>
         </div>
       </header>
-      <EstopSlimBanner active={state.emergencyStop} />
 
       <InstallBanner />
 
@@ -131,7 +132,7 @@ export function Dashboard({ api }: { api: Hook }) {
             onClick={() => setTab(id)}
           >
             {label}
-            {(id === 'sex' || id === 'hoved') && (sexPending || sexStrafDue.due) && (
+            {(id === 'sex' || id === 'hoved') && sexBadge && (
               <i className="nav-badge nav-badge--inline" />
             )}
           </button>
@@ -147,6 +148,7 @@ export function Dashboard({ api }: { api: Hook }) {
             intensity={state.profile.intensity}
             dayMode={state.profile.dayMode}
             playingGame={state.context.playingGame}
+            irlStatus={state.context.irlStatus}
             activeChallenge={primaryChallenge}
             inGameChallenge={state.activeInGameChallenge}
             emergencyStop={state.emergencyStop}
@@ -154,13 +156,12 @@ export function Dashboard({ api }: { api: Hook }) {
             onGoSex={() => setTab('sex')}
             onGoCalendar={() => setTab('kalender')}
             onGoGaming={() => setTab('gaming')}
-            onReroll={api.rerollUnderwear}
+            onGoProfil={() => setTab('profil')}
+            onIrl={(irlStatus) => api.updateContext({ irlStatus })}
             sexActive={state.activeSexStraf}
             sexDue={sexStrafDue}
             calendarToday={calendarToday}
-            morningPending={
-              state.morningTrio?.challenges.filter((c) => c.status === 'active').length ?? 0
-            }
+            morningTrio={state.morningTrio}
           />
         </div>
 
@@ -175,19 +176,10 @@ export function Dashboard({ api }: { api: Hook }) {
             onAddSession={api.addGameSession}
             onUpdateSession={api.updateGameSession}
             onDeleteSession={api.deleteGameSession}
-          />
-          <InGamePanel
-            embedded
-            challenge={state.activeInGameChallenge}
-            log={state.challengeLog}
-            performance={performance}
-            pointsBalance={state.pointsBalance}
-            playingGame={state.context.playingGame}
-            activeGameId={state.context.activeGameId}
-            paused={state.emergencyStop}
-            onDraw={api.drawNewInGameChallenge}
-            onResolve={api.resolveInGameChallenge}
-            onChangeContext={api.updateContext}
+            inGameChallenge={state.activeInGameChallenge}
+            challengeLog={state.challengeLog}
+            onDrawInGame={api.drawNewInGameChallenge}
+            onResolveInGame={api.resolveInGameChallenge}
           />
         </div>
 
@@ -234,9 +226,7 @@ export function Dashboard({ api }: { api: Hook }) {
         <div className={`tab-panel ${tab === 'profil' ? 'is-active' : ''}`} data-tab="profil">
           <ProfilePanel
             profile={state.profile}
-            context={state.context}
             onChange={api.updateProfile}
-            onContext={api.updateContext}
             disabled={state.emergencyStop}
           />
           <section className="panel panel--muted">
@@ -245,14 +235,12 @@ export function Dashboard({ api }: { api: Hook }) {
           </section>
           <section className="panel panel--muted">
             <p className="eyebrow">Skala</p>
-            <p className="tiny">
-              {variation.noteDa} · {TEMPLATE_COUNT} challenge-skabeloner.
-            </p>
+            <p className="tiny">{variation.noteDa}</p>
           </section>
         </div>
       </div>
 
-      <BottomNav tab={tab} onChange={setTab} sexBadge={sexPending || sexStrafDue.due} />
+      <BottomNav tab={tab} onChange={setTab} sexBadge={sexBadge} />
     </div>
   );
 }
