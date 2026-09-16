@@ -98,7 +98,6 @@ function performanceWeight(
   perf?: PerformanceSnapshot | null,
   cal?: CalendarSummary | null,
 ): number {
-  if (!perf || perf.sessionCount === 0) return 1;
   const kind = t.kind ?? 'normal';
   const tags = t.tags.map((x) => x.toLowerCase());
   const isStraf =
@@ -114,15 +113,15 @@ function performanceWeight(
   const bias = t.performanceBias;
 
   let w = 1;
-  if (perf.band === 'poor') {
+  if (perf && perf.sessionCount > 0 && perf.band === 'poor') {
     if (isStraf || bias === 'poor') w *= 3.2;
     if (isReward || bias === 'good' || bias === 'godlike') w *= 0.35;
     if (kind === 'tease') w *= 0.7;
-  } else if (perf.band === 'good' || perf.band === 'godlike') {
+  } else if (perf && perf.sessionCount > 0 && (perf.band === 'good' || perf.band === 'godlike')) {
     if (isReward || bias === 'good' || bias === 'godlike') w *= 2.6;
     if (isStraf || bias === 'poor') w *= 0.3;
     if (kind === 'tease') w *= 1.5;
-  } else {
+  } else if (perf && perf.sessionCount > 0) {
     if (isStraf) w *= 0.9;
     if (isReward) w *= 1.1;
   }

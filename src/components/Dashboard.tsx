@@ -82,7 +82,7 @@ export function Dashboard({ api }: { api: Hook }) {
   }, [tab]);
 
   return (
-    <div className="app-shell">
+    <div className={`app-shell ${tab === 'hoved' ? 'is-hoved' : ''}`}>
       <header className="topbar">
         <div>
           <p className="eyebrow">Personligt kontrolpanel · da-DK</p>
@@ -145,7 +145,7 @@ export function Dashboard({ api }: { api: Hook }) {
             onClick={() => setTab(id)}
           >
             {label}
-            {id === 'sex' && sexPending && <i className="nav-badge nav-badge--inline" />}
+            {(id === 'sex' || id === 'hoved') && (sexPending || sexStrafDue.due) && <i className="nav-badge nav-badge--inline" />}
           </button>
         ))}
       </nav>

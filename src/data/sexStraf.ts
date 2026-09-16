@@ -367,6 +367,7 @@ export const SEX_STRAF_TEMPLATES: SexStrafTemplate[] = [
     hardnessPool: ['blød', 'medium'],
     themes: ['bdsm', 'sex', 'fantasy'],
     intensity: ['soft', 'hard'],
+    allowsSemenCollection: true,
     bonusPoints: 14,
     penaltyPoints: 7,
   },

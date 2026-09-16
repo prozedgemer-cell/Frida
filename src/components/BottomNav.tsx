@@ -112,7 +112,7 @@ export function BottomNav({ tab, onChange, sexBadge }: Props) {
             key={t.id}
             t={t}
             active={tab === t.id}
-            badge={false}
+            badge={t.id === 'hoved' && !!sexBadge}
             onClick={() => onChange(t.id)}
           />
         ))}
@@ -130,7 +130,7 @@ export function BottomNav({ tab, onChange, sexBadge }: Props) {
             key={t.id}
             t={t}
             active={tab === t.id}
-            badge={t.id === 'sex' && !!sexBadge}
+            badge={(t.id === 'sex' || t.id === 'hoved') && !!sexBadge}
             onClick={() => onChange(t.id)}
           />
         ))}

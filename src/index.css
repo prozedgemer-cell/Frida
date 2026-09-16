@@ -1534,3 +1534,8 @@ html.is-standalone body {
     display: none;
   }
 }
+@media (max-width: 859px) {
+  .app-shell.is-hoved .topbar {
+    display: none;
+  }
+}

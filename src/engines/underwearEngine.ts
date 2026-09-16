@@ -13,11 +13,12 @@ import type {
 import { influenceTextDa } from './performanceEngine';
 import {
   calendarUnderwearMultiplier,
+  localDateKey,
   type CalendarSummary,
 } from './calendarEngine';
 
 function dateKey(d = new Date()): string {
-  return d.toISOString().slice(0, 10);
+  return localDateKey(d);
 }
 
 function isWeekend(d = new Date()): boolean {
