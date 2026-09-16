@@ -112,7 +112,7 @@ textarea {
 .app-shell {
   max-width: 1100px;
   margin: 0 auto;
-  padding: calc(0.75rem + var(--sat)) max(3.1rem, var(--sar)) calc(5.5rem + var(--sab))
+  padding: calc(0.75rem + var(--sat)) max(1rem, var(--sar)) calc(5.5rem + var(--sab))
     max(1rem, var(--sal));
 }
 
@@ -1544,10 +1544,8 @@ html.is-standalone body {
 }
 
 .panic-btn {
-  position: fixed;
-  top: calc(0.55rem + var(--sat));
-  right: max(0.7rem, var(--sar));
-  z-index: 60;
+  position: relative;
+  z-index: 2;
   width: 40px;
   height: 40px;
   padding: 0;
@@ -1559,6 +1557,7 @@ html.is-standalone body {
   place-items: center;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
   backdrop-filter: blur(10px);
+  flex-shrink: 0;
 }
 .panic-btn__icon {
   width: 18px;
@@ -1815,7 +1814,7 @@ html.is-standalone body {
   align-items: flex-end;
   gap: 0.75rem;
   margin-bottom: 0.85rem;
-  padding: 0.2rem 2.6rem 0.15rem 0.1rem;
+  padding: 0.2rem 0.1rem 0.15rem 0.1rem;
 }
 .dash-bar__title {
   font-size: clamp(1.25rem, 4vw, 1.7rem);
@@ -2104,4 +2103,20 @@ button.status-chip {
   color: inherit;
   text-align: left;
   cursor: pointer;
+}
+
+.status-chips button.status-chip {
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+  text-align: left;
+}
+.status-chip--sex {
+  border-color: rgba(255, 77, 154, 0.5);
+  background: rgba(255, 77, 154, 0.16);
+}
+.home-stack .panel--home-order .img-gallery {
+  margin-top: 1.1rem;
+  padding-top: 0.85rem;
+  border-top: 1px solid var(--border);
 }
