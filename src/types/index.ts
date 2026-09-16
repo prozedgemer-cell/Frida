@@ -43,14 +43,14 @@ export type ChallengeActionClass = 'do' | 'wear' | 'say' | 'write';
 export type MorningTier = 'easy' | 'hard' | 'boundary';
 
 export type RoleId =
-  | 'milf-brazilian'
-  | 'gstring-tease'
-  | 'bdsm-domme'
-  | 'office-diskret'
-  | 'gaming-comfort'
-  | 'date-night'
-  | 'soft-girl'
-  | 'straf-hard';
+  | 'g-string-milf'
+  | 'brazilian-cut'
+  | 'bdsm-hard'
+  | 'soft-everyday-femme'
+  | 'hentai-anime'
+  | 'fantasy-femme'
+  | 'office-milf'
+  | 'bdsm-soft';
 
 export interface Profile {
   name: 'Frida';

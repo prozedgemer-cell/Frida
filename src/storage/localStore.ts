@@ -1,4 +1,5 @@
 import type { GamePresetId } from '../data/gameProfiles';
+import { resolveRoleId, getRolePack } from '../data/rolePacks';
 import type {
   AppState,
   CalendarEntry,
@@ -186,6 +187,28 @@ function migrateMorningTrio(raw: unknown): AppState['morningTrio'] {
   };
 }
 
+
+/** Map legacy role ids on saved daily outfit so engines keep working. */
+function migrateUnderwearToday(raw: unknown): AppState['underwearToday'] {
+  if (!raw || typeof raw !== 'object') return null;
+  const u = { ...(raw as NonNullable<AppState['underwearToday']>) };
+  if (u.roleId) {
+    const legacy = String(u.roleId);
+    const resolved = resolveRoleId(legacy);
+    if (resolved) {
+      u.roleId = resolved;
+      if (legacy !== resolved) {
+        const pack = getRolePack(resolved);
+        if (pack) u.roleNameDa = pack.nameDa;
+      }
+    } else {
+      delete u.roleId;
+      delete u.roleNameDa;
+    }
+  }
+  return u;
+}
+
 export function loadState(): AppState {
   try {
     const raw = localStorage.getItem(KEY);
@@ -234,7 +257,7 @@ export function loadState(): AppState {
       profile: parsed.profile as Profile,
       context,
       emergencyStop: typeof parsed.emergencyStop === 'boolean' ? parsed.emergencyStop : false,
-      underwearToday: parsed.underwearToday ?? null,
+      underwearToday: migrateUnderwearToday(parsed.underwearToday),
       activeChallenges: Array.isArray(parsed.activeChallenges) ? parsed.activeChallenges : [],
       challengeLog: Array.isArray(parsed.challengeLog) ? parsed.challengeLog : [],
       gameSessions,

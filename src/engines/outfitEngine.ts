@@ -4,6 +4,7 @@ import {
   ROLE_FALLBACK_LAYERS,
   ROLE_PACKS,
   getRolePack,
+  resolveRoleId,
   type RolePack,
 } from '../data/rolePacks';
 import { UNDERWEAR_CATALOG } from '../data/underwear';
@@ -128,21 +129,74 @@ function calendarRoleBoost(tags: string[], cal?: CalendarSummary | null): number
   if (!cal) return 1;
   let m = 1;
   for (const role of cal.roleHints ?? []) {
-    if (role === 'milf-brazilian' && (tags.includes('milf') || tags.includes('brazilian') || tags.includes('date')))
+    if (role === 'brazilian-cut' && (tags.includes('milf') || tags.includes('brazilian') || tags.includes('date')))
       m *= 1.8;
-    if (role === 'bdsm-domme' && (tags.includes('bdsm') || tags.includes('domme') || tags.includes('fetish') || tags.includes('leather')))
+    if (role === 'bdsm-hard' && (tags.includes('bdsm') || tags.includes('domme') || tags.includes('fetish') || tags.includes('leather')))
       m *= 1.9;
-    if (role === 'gstring-tease' && (tags.includes('g-string') || tags.includes('tease') || tags.includes('synlig')))
-      m *= 1.75;
-    if (role === 'office-diskret' && (tags.includes('work') || tags.includes('diskret'))) m *= 1.7;
-    if (role === 'gaming-comfort' && (tags.includes('gaming') || tags.includes('komfort'))) m *= 1.65;
-    if (role === 'date-night' && (tags.includes('date') || tags.includes('aften'))) m *= 1.6;
-    if (role === 'soft-girl' && (tags.includes('soft') || tags.includes('cute'))) m *= 1.55;
-    if (role === 'straf-hard' && (tags.includes('hard') || tags.includes('straf') || tags.includes('kontrol')))
+    if (role === 'bdsm-soft' && (tags.includes('bdsm') || tags.includes('collar') || tags.includes('choker') || tags.includes('soft')))
       m *= 1.7;
+    if (role === 'g-string-milf' && (tags.includes('g-string') || tags.includes('tease') || tags.includes('synlig')))
+      m *= 1.75;
+    if (role === 'office-milf' && (tags.includes('work') || tags.includes('diskret') || tags.includes('milf'))) m *= 1.7;
+    if (role === 'soft-everyday-femme' && (tags.includes('gaming') || tags.includes('komfort') || tags.includes('soft') || tags.includes('cute')))
+      m *= 1.65;
+    if (role === 'hentai-anime' && (tags.includes('anime') || tags.includes('hentai') || tags.includes('cute'))) m *= 1.7;
+    if (role === 'fantasy-femme' && (tags.includes('fantasy') || tags.includes('aften') || tags.includes('drama'))) m *= 1.6;
   }
   if (cal.noteBoost) m *= 1 + cal.noteBoost;
   return m;
+}
+
+/** Match pack.kalender against calendar signals + time-of-day / event tags. */
+function calendarPackMatch(role: RolePack, cal?: CalendarSummary | null, now = new Date()): number {
+  if (!role.kalender?.length) return 1;
+  const h = now.getHours();
+  const tod = h < 6 ? 'night' : h < 11 ? 'morning' : h < 17 ? 'day' : h < 22 ? 'evening' : 'night';
+  const weekend = now.getDay() === 0 || now.getDay() === 6;
+  const bag = new Set<string>([
+    tod,
+    weekend ? 'weekend' : 'hverdag',
+    ...(cal?.signals ?? []),
+    ...(cal?.roleHints ?? []),
+  ]);
+  if (cal?.hasDate) bag.add('date');
+  if (cal?.hasClothing) bag.add('clothing');
+  if (cal?.hasGaming) bag.add('gaming');
+  if (cal?.hasHard || cal?.hasStraf) {
+    bag.add('hard');
+    bag.add('straf');
+  }
+  if (cal?.hasSoft || cal?.hasReward) {
+    bag.add('soft');
+    bag.add('reward');
+  }
+  if (cal?.hasRest) bag.add('rest');
+  let hits = 0;
+  for (const k of role.kalender) {
+    if (bag.has(k) || [...bag].some((b) => b.includes(k) || k.includes(b))) hits += 1;
+  }
+  if (!hits) return cal && cal.entries.length ? 0.75 : 1;
+  return 1 + hits * 0.35;
+}
+
+function gamingPackModifier(role: RolePack, perf?: PerformanceSnapshot | null): {
+  mul: number;
+  noteDa: string;
+} {
+  if (!perf || perf.sessionCount === 0) return { mul: 1, noteDa: '' };
+  if (perf.band === 'poor') {
+    return {
+      mul: 1.05,
+      noteDa: ` Gaming-dårlig → ${role.gaming_daarlig}`,
+    };
+  }
+  if (perf.band === 'good' || perf.band === 'godlike') {
+    return {
+      mul: 1.08,
+      noteDa: ` Gaming-god → ${role.gaming_god}`,
+    };
+  }
+  return { mul: 1, noteDa: '' };
 }
 
 function scorePiece(
@@ -257,12 +311,13 @@ export function pickRolePack(
       intensityFit(role.intensity, profile.intensity, profile.dayMode) *
       irlFit(role.tags, context.irlStatus, 'top') *
       timeFit(role.tags, now, 'top') *
-      calendarRoleBoost(role.tags, cal);
+      calendarRoleBoost(role.tags, cal) *
+      calendarPackMatch(role, cal, now);
 
     if (role.irlBias?.length) {
       if (role.irlBias.includes(context.irlStatus)) contextMul *= 1.85;
       else if (context.irlStatus === 'work' || context.irlStatus === 'public') {
-        contextMul *= role.id === 'office-diskret' ? 2.2 : 0.12;
+        contextMul *= role.id === 'office-milf' ? 2.2 : 0.12;
       } else contextMul *= 0.55;
     }
 
@@ -271,12 +326,16 @@ export function pickRolePack(
 
     const gamingMul =
       gamingFit(role.tags, context.playingGame) *
-      performanceFit(role.tags, role.intensity, perf);
+      performanceFit(role.tags, role.intensity, perf) *
+      gamingPackModifier(role, perf).mul;
 
-    // Domme ≠ g-string milf coherence: if calendar wants domme, crush gstring; vice versa
-    if (cal?.roleHints?.includes('bdsm-domme') && role.id === 'gstring-tease') contextMul *= 0.15;
-    if (cal?.roleHints?.includes('milf-brazilian') && role.id === 'bdsm-domme') contextMul *= 0.35;
-    if (cal?.roleHints?.includes('gstring-tease') && role.id === 'bdsm-domme') contextMul *= 0.25;
+    // Coherence: hard Domme ≠ g-string milf ≠ soft everyday
+    if (cal?.roleHints?.includes('bdsm-hard') && role.id === 'g-string-milf') contextMul *= 0.15;
+    if (cal?.roleHints?.includes('brazilian-cut') && role.id === 'bdsm-hard') contextMul *= 0.35;
+    if (cal?.roleHints?.includes('g-string-milf') && role.id === 'bdsm-hard') contextMul *= 0.25;
+    if (cal?.roleHints?.includes('office-milf') && (role.id === 'g-string-milf' || role.id === 'bdsm-hard'))
+      contextMul *= 0.2;
+    if (cal?.roleHints?.includes('soft-everyday-femme') && role.id === 'bdsm-hard') contextMul *= 0.3;
 
     const score = Math.max(role.weight * blendContextGaming(contextMul, gamingMul), 0.01);
     return { item: role, score };
@@ -330,14 +389,20 @@ export function pickOutfitLayersForRole(
     usedLayers.add(pick.layer);
   }
 
-  // Fill mandatory gaps from catalog with role tag boost
+  // Fill mandatory gaps from catalog with role tag boost (+ gaming soften/reveal)
+  const gamingTags: string[] = [...role.outerTags];
+  if (perf?.band === 'poor') {
+    gamingTags.push('diskret', 'komfort', 'hverdag', 'work');
+  } else if (perf?.band === 'good' || perf?.band === 'godlike') {
+    gamingTags.push('sexy', 'synlig', 'tease', 'belønning', 'luksus');
+  }
   const need: OutfitPiece['layer'][] = ['top', 'shoes'];
   if (!layers.some((l) => l.layer === 'top' && OUTFIT_CATALOG.find((p) => p.id === l.pieceId)?.coversBottom)) {
     if (!usedLayers.has('bottom')) need.push('bottom');
   }
   for (const layer of need) {
     if (usedLayers.has(layer)) continue;
-    const piece = pickLayer(layer, profile, context, now, perf, cal, undefined, role.outerTags);
+    const piece = pickLayer(layer, profile, context, now, perf, cal, undefined, gamingTags);
     if (piece) {
       layers.push(toLayerPick(piece));
       usedLayers.add(layer);
@@ -345,16 +410,23 @@ export function pickOutfitLayersForRole(
     }
   }
 
-  if (!usedLayers.has('legs') && chance(role.id === 'bdsm-domme' || role.id === 'date-night' ? 0.85 : 0.45)) {
-    const legs = pickLayer('legs', profile, context, now, perf, cal, undefined, role.outerTags);
+  if (!usedLayers.has('legs') && chance(role.id === 'bdsm-hard' || role.id === 'fantasy-femme' || role.id === 'brazilian-cut' ? 0.85 : 0.45)) {
+    const legs = pickLayer('legs', profile, context, now, perf, cal, undefined, gamingTags);
     if (legs) layers.push(toLayerPick(legs));
   }
-  if (!usedLayers.has('outerwear') && chance(context.irlStatus === 'work' || context.irlStatus === 'out' || role.id === 'bdsm-domme' ? 0.75 : 0.3)) {
-    const outer = pickLayer('outerwear', profile, context, now, perf, cal, undefined, role.outerTags);
+  // Poor gaming → prefer cover (outerwear); good → optional reveal (less forced cover)
+  const outerP =
+    perf?.band === 'poor'
+      ? 0.9
+      : context.irlStatus === 'work' || context.irlStatus === 'out' || role.id === 'bdsm-hard' || role.id === 'office-milf'
+        ? 0.75
+        : 0.3;
+  if (!usedLayers.has('outerwear') && chance(outerP)) {
+    const outer = pickLayer('outerwear', profile, context, now, perf, cal, undefined, gamingTags);
     if (outer) layers.push(toLayerPick(outer));
   }
   if (!usedLayers.has('accessory') && chance(0.8)) {
-    const acc = pickLayer('accessory', profile, context, now, perf, cal, undefined, role.outerTags);
+    const acc = pickLayer('accessory', profile, context, now, perf, cal, undefined, gamingTags);
     if (acc) layers.push(toLayerPick(acc));
   }
 
@@ -423,22 +495,22 @@ export function buildOutfitOrderText(
   const uw = layers.find((l) => l.layer === 'underwear');
   const rest = layers.filter((l) => l.layer !== 'underwear');
   const list = rest.map((l) => `${OUTFIT_LAYER_LABELS_DA[l.layer]}: ${l.nameDa}`).join('; ');
+  const gameNote = role ? gamingPackModifier(role, perf).noteDa : '';
   let extra = '';
-  if (perf && perf.sessionCount > 0) {
+  if (perf && perf.sessionCount > 0 && !gameNote) {
     if (perf.band === 'poor') {
-      extra =
-        ' Din seneste gaming-præstation var svag — så looket hælder til strengere / mere synlig kontrol. ';
+      extra = ' Gaming svag — dæk mere til. ';
     } else if (perf.band === 'good' || perf.band === 'godlike') {
-      extra = ' Din seneste gaming-præstation fortjener et blødere / mere komfortabelt look. ';
+      extra = ' Gaming stærk — belønning/reveal inden for rollen. ';
     }
   }
   const roleBlock = role
-    ? `${role.commandVoiceDa} (${role.contrastDa}) `
+    ? `${role.commandVoiceDa} Vibe: ${role.vibe} Undertøj: ${role.undertøj} Ydre: ${role.ydre_lag} Sko/acc: ${role.sko_accessories} (${role.contrastDa}) `
     : 'FULD BEORDING — undertøj + ydre lag. ';
   return (
     `Frida — FULDT OUTFIT / ROLE: ${role?.nameDa ?? 'Uniform'}. ${roleBlock}` +
-    `Tag "${uw?.nameDa ?? 'beordret undertøj'}" på, plus hele outfittet (${list || 'ydre lag vælges'}). ` +
-    `Dine ${profile.breastSize}-bryster skal sidde støttet. ${extra}` +
+    `FULDT LOOK: Tag "${uw?.nameDa ?? 'beordret undertøj'}" på + hele outfittet (${list || 'ydre lag vælges'}). ` +
+    `Dine ${profile.breastSize}-bryster skal sidde støttet.${gameNote}${extra} ` +
     `${WEIGHT_FORMULA_DA} Ingen improvisation — det er dagens uniform.`
   );
 }
@@ -545,11 +617,13 @@ export function attachOutfitToPick(
     perf && perf.sessionCount > 0 ? influenceTextDa(perf, 'outfittet') : pick.performanceInfluenceDa;
 
   // Role-first full outfit (life control via FULL OUTFIT)
+  const excludeResolved =
+    resolveRoleId(opts?.excludeRoleId ?? pick.roleId) ?? opts?.excludeRoleId ?? pick.roleId;
   const role = pickRolePack(profile, context, {
     now: opts?.now,
     performance: perf,
     calendar: opts?.calendar,
-    excludeRoleId: opts?.excludeRoleId ?? pick.roleId,
+    excludeRoleId: excludeResolved,
   });
   const uw =
     UNDERWEAR_CATALOG.find((i) => i.id === pick.itemId) ?? pickUnderwearForRole(role);
@@ -559,7 +633,7 @@ export function attachOutfitToPick(
 
   // Occasional photographed look override only if it doesn't fight hard roles
   const look =
-    role.id === 'bdsm-domme' || role.id === 'milf-brazilian'
+    role.id === 'bdsm-hard' || role.id === 'brazilian-cut' || role.id === 'g-string-milf'
       ? null
       : pickPhotographedLook(profile, context, {
           now: opts?.now,
