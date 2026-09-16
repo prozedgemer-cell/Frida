@@ -17,6 +17,8 @@ import {
 } from '../src/engines/sexStrafEngine';
 import { filterTemplates } from '../src/engines/challengeEngine';
 import { blendContextGaming } from '../src/engines/weightBlend';
+import { ROLE_PACKS } from '../src/data/rolePacks';
+import { buildOutfitOrderText } from '../src/engines/outfitEngine';
 import { defaultProfile } from '../src/storage/localStore';
 import type { CalendarEntry, PerformanceSnapshot, SexStrafInstance } from '../src/types';
 import { ALL_THEMES } from '../src/types';
@@ -154,6 +156,37 @@ const vaginalCh = CHALLENGE_TEMPLATES.filter(
 assert(vaginalCh.length === 0, 'no vaginal-use challenge templates without exception');
 
 assert(Math.abs(blendContextGaming(2, 1) - (0.7 * 2 + 0.3 * 1)) < 1e-9, '70/30 blend');
+
+const core8 = [
+  'g-string-milf',
+  'brazilian-cut',
+  'bdsm-hard',
+  'soft-everyday-femme',
+  'hentai-anime',
+  'fantasy-femme',
+  'office-milf',
+  'bdsm-soft',
+] as const;
+const revealRe = /synlig|afslørende|åbn|kortere|strammere|sheer af|blazer af|crop|mere hud|ekspon|straf|kun lingeri|fallen|tease/i;
+const coverRe = /lukket|cover|hoodie op|bliv i comfort|dækket|skjult|mesh på|power suit|længere|sofistikeret|hemmelig|blødere/i;
+for (const id of core8) {
+  const pack = ROLE_PACKS.find((r) => r.id === id);
+  assert(!!pack, `core pack ${id} exists`);
+  if (!pack) continue;
+  assert(revealRe.test(pack.gaming_daarlig), `${id} gaming_daarlig is revealing/punish`);
+  assert(coverRe.test(pack.gaming_god), `${id} gaming_god is cover/reward`);
+}
+const testLayers = [
+  { layer: 'underwear' as const, pieceId: 'uw-01', nameDa: 'Test UW', descriptionDa: 't', colors: ['sort'] },
+  { layer: 'top' as const, pieceId: 'top-01', nameDa: 'Test top', descriptionDa: 't', colors: ['sort'] },
+];
+const poorOrder = buildOutfitOrderText(testLayers, profile, poor, ROLE_PACKS[0]);
+assert(/afslørende|straffet|Gaming-dårlig/i.test(poorOrder), 'poor order uses punish/reveal voice');
+assert(!/dæk mere til|belønning\/reveal/i.test(poorOrder), 'poor order not inverted cover/reveal');
+const goodPerf: PerformanceSnapshot = { ...poor, band: 'good', score: 80, summaryDa: 'god' };
+const goodOrder = buildOutfitOrderText(testLayers, profile, goodPerf, ROLE_PACKS[0]);
+assert(/dækket|belønning|Gaming-god|blødere/i.test(goodOrder), 'good order uses cover/reward voice');
+
 
 if (failed) {
   console.error(`\n${failed} failed`);

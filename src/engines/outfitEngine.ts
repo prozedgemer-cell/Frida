@@ -100,6 +100,17 @@ function performanceFit(tags: string[], intensity: Intensity[], perf?: Performan
   const hardish =
     intensity.includes('hard') &&
     (tags.includes('hard') || tags.includes('fetish') || tags.includes('bdsm') || tags.includes('kontrol'));
+  const revealing =
+    tags.includes('synlig') ||
+    tags.includes('sexy') ||
+    tags.includes('tease') ||
+    tags.includes('string') ||
+    tags.includes('g-string');
+  const covered =
+    tags.includes('diskret') ||
+    tags.includes('usynlig') ||
+    tags.includes('komfort') ||
+    tags.includes('work');
   const softish =
     tags.includes('komfort') ||
     tags.includes('soft') ||
@@ -109,16 +120,18 @@ function performanceFit(tags: string[], intensity: Intensity[], perf?: Performan
     (intensity.includes('soft') && !intensity.includes('hard'));
   switch (perf.band) {
     case 'poor':
-      if (hardish) return 2;
-      if (softish) return 0.5;
+      // Dårlig → mere afslørende / straffet silhuet
+      if (revealing || hardish) return 2;
+      if (covered || softish) return 0.5;
       return 0.9;
     case 'good':
-      if (softish || tags.includes('gaming')) return 1.5;
-      if (hardish) return 0.7;
+      // God → blødere / mere dækket belønning
+      if (covered || softish || tags.includes('gaming')) return 1.5;
+      if (revealing || hardish) return 0.7;
       return 1.05;
     case 'godlike':
-      if (softish || tags.includes('luksus')) return 1.85;
-      if (hardish) return 0.4;
+      if (covered || softish || tags.includes('luksus')) return 1.85;
+      if (revealing || hardish) return 0.4;
       return 1.1;
     default:
       return 1;
@@ -414,12 +427,14 @@ export function pickOutfitLayersForRole(
     usedLayers.add(pick.layer);
   }
 
-  // Fill mandatory gaps from catalog with role tag boost (+ gaming soften/reveal)
+  // Fill mandatory gaps from catalog with role tag boost (+ gaming punish/reward)
   const gamingTags: string[] = [...role.outerTags];
   if (perf?.band === 'poor') {
-    gamingTags.push('diskret', 'komfort', 'hverdag', 'work');
+    // Dårlig → mere afslørende / straffet look
+    gamingTags.push('sexy', 'synlig', 'tease', 'hard', 'straf');
   } else if (perf?.band === 'good' || perf?.band === 'godlike') {
-    gamingTags.push('sexy', 'synlig', 'tease', 'belønning', 'luksus');
+    // God → blødere / mere dækket / sofistikeret belønning
+    gamingTags.push('diskret', 'komfort', 'hverdag', 'luksus', 'belønning');
   }
   const need: OutfitPiece['layer'][] = ['top', 'shoes'];
   if (!layers.some((l) => l.layer === 'top' && OUTFIT_CATALOG.find((p) => p.id === l.pieceId)?.coversBottom)) {
@@ -439,13 +454,15 @@ export function pickOutfitLayersForRole(
     const legs = pickLayer('legs', profile, context, now, perf, cal, undefined, gamingTags);
     if (legs) layers.push(toLayerPick(legs));
   }
-  // Poor gaming → prefer cover (outerwear); good → optional reveal (less forced cover)
+  // Poor gaming → less outer cover (mere afslørende); good → prefer outerwear cover
   const outerP =
-    perf?.band === 'poor'
+    perf?.band === 'good' || perf?.band === 'godlike'
       ? 0.9
-      : context.irlStatus === 'work' || context.irlStatus === 'out' || role.id === 'bdsm-hard' || role.id === 'office-milf' || role.id === 'familie-sikker' || role.id === 'fest-aften' || role.id === 'fantasy-look'
-        ? 0.75
-        : 0.3;
+      : perf?.band === 'poor'
+        ? 0.18
+        : context.irlStatus === 'work' || context.irlStatus === 'out' || role.id === 'bdsm-hard' || role.id === 'office-milf' || role.id === 'familie-sikker' || role.id === 'fest-aften' || role.id === 'fantasy-look'
+          ? 0.75
+          : 0.3;
   if (!usedLayers.has('outerwear') && chance(outerP)) {
     const outer = pickLayer('outerwear', profile, context, now, perf, cal, undefined, gamingTags);
     if (outer) layers.push(toLayerPick(outer));
@@ -524,9 +541,9 @@ export function buildOutfitOrderText(
   let extra = '';
   if (perf && perf.sessionCount > 0 && !gameNote) {
     if (perf.band === 'poor') {
-      extra = ' Gaming svag — dæk mere til. ';
+      extra = ' Gaming svag — mere afslørende / straffet look inden for rollen. ';
     } else if (perf.band === 'good' || perf.band === 'godlike') {
-      extra = ' Gaming stærk — belønning/reveal inden for rollen. ';
+      extra = ' Gaming stærk — blødere / mere dækket belønning inden for rollen. ';
     }
   }
   const roleBlock = role
