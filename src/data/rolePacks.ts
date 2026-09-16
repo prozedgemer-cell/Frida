@@ -7,7 +7,7 @@ import type { Intensity, IrlStatus, OutfitLayerPick, RoleId, ThemePack } from '.
  * Engine fields (underwearIds / preferredPieceIds / tags) keep outfitEngine
  * compatible; Frida Mode fields (rolle, vibe, undertøj, ydre_lag,
  * sko_accessories, kalender, gaming_daarlig, gaming_god) drive calendar
- * matching and gaming punish/reward modifiers. Dårlig = mere afslørende; god = mere dækket.
+ * matching and gaming soften/reveal modifiers. Dårlig = soften/cover; god = reveal/reward.
  */
 
 export interface RolePack {
@@ -21,9 +21,9 @@ export interface RolePack {
   sko_accessories: string;
   /** Calendar signals / TOD / event tags this pack prefers */
   kalender: string[];
-  /** Poor play: more revealing / punished look */
+  /** Soften / cover when gaming performance is poor */
   gaming_daarlig: string;
-  /** Good play: softer / covered / sophisticated reward */
+  /** Reveal / reward when gaming performance is good */
   gaming_god: string;
   commandVoiceDa: string;
   contrastDa: string;
@@ -66,18 +66,18 @@ export const ROLE_PACKS: RolePack[] = [
   {
     id: 'g-string-milf',
     nameDa: 'G-STRING MILF',
-    rolle: 'G-string milf · moden wrap/pencil',
-    vibe: 'Moden milf-tease med g-string og wrap/pencil. Dårlig gør stringen mere synlig; god lukker wrap-laget.',
+    rolle: 'G-string milf',
+    vibe: 'Skamløs, voksen tease — minimal bag, løftede bryster, synlig kontur. Du tager meget, men det er milf-energi, ikke latex-domme.',
     undertøj: 'Ultrasmal sort eller rød g-string (string-bredde bag) + push-up / demi-BH der løfter dine fake bryster. Matching sæt hvis muligt.',
     ydre_lag: 'Åben skjorte eller crop top, mini-nederdel eller stramme jeans med lav talje, synlig g-string-kontur når du bøjer dig.',
     sko_accessories: 'Sorte pumps, tynd choker, hoop-øreringe. Evt. sheer strømper.',
     kalender: ['date', 'clothing', 'hard', 'aften', 'sexy', 'tease', 'milf'],
     gaming_daarlig:
-      'Straf: mere synlig g-string — åbn wrap, kortere nederdel og tydeligere string-kontur.',
+      'Dæk til: længere top, jakke over, g-string skjules under mere stof — stadig på, men softer silhuet.',
     gaming_god:
-      'Belønning: wrap lukket, længere pencil og g-string skjult under et sofistikeret milf-lag.',
+      'Belønning: åbn skjorten et knap mere, mini kortere, lad g-string-konturen synes. Tease-opgradering.',
     commandVoiceDa:
-      'Frida — ROLE: G-STRING MILF. Ultrasmal g-string + løftende BH, wrap/pencil, sorte hæle og choker. Moden milf — IKKE CEO power-suit og IKKE læder-Domme.',
+      'Frida — ROLE: G-STRING MILF. Ultrasmal g-string + løftende BH, åben skjorte/crop, mini, sorte hæle, choker. Synlig kontur. Du er den milf der tager meget — IKKE læder/korset-Domme.',
     contrastDa: 'Minimal string-bag + milf-tease ≠ læder/latex-magt ≠ brazilian-peach.',
     tags: ['g-string', 'string', 'tease', 'sexy', 'hard', 'synlig', 'milf', 'aften'],
     intensity: ['hard'],
@@ -92,18 +92,18 @@ export const ROLE_PACKS: RolePack[] = [
   {
     id: 'brazilian-cut',
     nameDa: 'BRAZILIAN FOKUS',
-    rolle: 'Brazilian milf · sommer',
-    vibe: 'Peachy sommer-milf med brazilian-cut. Dårlig gør den mere synlig; god giver cover-up.',
+    rolle: 'Brazilian milf',
+    vibe: 'Peachy, voksen, wearable sexy — ~50% kind synlig. Samlet milf, ikke skamløs string og ikke Domme.',
     undertøj: 'Brazilian-cut trusse (scoop bag, høj benudskæring) + matching BH. Satin eller blonde. Farve: sort, nude eller vinrød.',
     ydre_lag: 'Figurnær bluse/wrap, pencil- eller midi-nederdel, evt. sheer strømper. Silhuet der fremhæver hofter og bryster.',
     sko_accessories: 'Nude eller sorte hæle, hoop-øreringe, diskret smykke. Evt. frakke til date.',
     kalender: ['date', 'clothing', 'soft', 'reward', 'milf', 'hverdag', 'aften'],
     gaming_daarlig:
-      'Straf: mere synlig brazilian — strammere wrap, kortere sommerlag og mere peach-kontur.',
+      'Blødere lag: cardigan/blazer over, længere nederdel, brazilian bliver hemmelig under tøjet.',
     gaming_god:
-      'Belønning: cover-up på — cardigan, blazer eller længere nederdel; brazilian bliver hemmelig under tøjet.',
+      'Afslør peach: strammere wrap, nederdel der følger kinderne, mere hud ved dekolletage.',
     commandVoiceDa:
-      'Frida — ROLE: BRAZILIAN FOKUS. Brazilian-cut, matching BH, sommer-wrap/pencil, nude hæle. Voksen, peachy — IKKE latex/korset og IKKE g-string.',
+      'Frida — ROLE: BRAZILIAN FOKUS. Brazilian-cut (~halv kind), matching BH, figurnær bluse/wrap, pencil/midi, nude hæle. Voksen, samlet, peachy — IKKE latex/korset og IKKE g-string.',
     contrastDa: 'Brazilian ≈ 50% bagdækning. Wearable milf ≠ string-tease ≠ Domme.',
     tags: ['milf', 'brazilian', 'sexy', 'date', 'hverdag', 'femme', 'peach'],
     intensity: ['soft', 'hard'],
@@ -117,19 +117,19 @@ export const ROLE_PACKS: RolePack[] = [
   },
   {
     id: 'bdsm-hard',
-    nameDa: 'BDSM KLASSIK',
-    rolle: 'BDSM klassik · harness/læder',
-    vibe: 'Klassisk harness/læder. Dårlig gør looket strammere og mere synligt; god gemmer soft BDSM under normalt tøj.',
+    nameDa: 'BDSM HARD',
+    rolle: 'Hard Domme',
+    vibe: 'Magt i materialer: læder/latex/PVC, struktur, støvler. Du leder. Looket er kommando — ikke peachy milf.',
     undertøj: 'Harness-trusse eller stram sort fetish-trusse + struktureret BH/bustier. Evt. cage under trusse ved straf-energi.',
     ydre_lag: 'Sort korset/bustier, læder-look mini eller stram buksedragt, fishnet, harness over eller under top.',
     sko_accessories: 'Knæ- eller lårstøvler, handsker valgfrit, choker eller collar med ring, harness-remme.',
     kalender: ['hard', 'straf', 'bdsm', 'aften', 'fetish', 'kontrol', 'session'],
     gaming_daarlig:
-      'Straf: strammere harness, mere synlig læder/PVC, åbn ydre lag og lad collar/støvler dominere.',
+      'Tone ned: jakke over korset, mindre synlig harness, mere dækket — stadig sort og streng, men mindre flash.',
     gaming_god:
-      'Belønning: soft BDSM under normalt tøj — collar/harness skjult under bluse eller jakke.',
+      'Fuld Domme: mere synlig harness, åbn ydre lag, støvler frem, collar synlig. Magt-belønning.',
     commandVoiceDa:
-      'Frida — ROLE: BDSM KLASSIK. Sort læder/latex/PVC, korset eller stram bodysuit, fishnet, knæstøvler og harness/collar. IKKE Brazilian-milf og IKKE g-string-tease.',
+      'Frida — ROLE: BDSM HARD. Sort læder/latex/PVC, korset eller stram bodysuit, fishnet, knæstøvler, harness/collar. Undertøj: harness — IKKE Brazilian-milf og IKKE g-string-tease. Du leder.',
     contrastDa: 'Læder/latex/korset/støvler/harness = magt. ≠ peachy Brazilian ≠ soft collar-lite.',
     tags: ['bdsm', 'domme', 'fetish', 'hard', 'kontrol', 'leather', 'latex', 'straf'],
     intensity: ['hard'],
@@ -151,16 +151,16 @@ export const ROLE_PACKS: RolePack[] = [
   {
     id: 'soft-everyday-femme',
     nameDa: 'BLØD HVERDAGS-FEMME',
-    rolle: 'Blød hverdags-femme · comfort',
-    vibe: 'Comfort-first Frida. Dårlig gør undertøjet mere afslørende under bløde lag; god lader dig blive i comfort.',
+    rolle: 'Blød hverdags-femme',
+    vibe: 'Cute, blød, belønning-energi. Pasteller, komfort, stadig tydeligt Frida — ikke straf.',
     undertøj: 'Blød bomuld eller cheeky i pastelfarve, komfortabel BH der støtter dine bryster uden at stramme.',
     ydre_lag: 'Strik/crop, blød plisseret nederdel eller soft bukser/joggers, hoodie valgfrit til gaming-hjemme.',
     sko_accessories: 'Sneakers eller hjemmesko, scrunchie, blødt smykke.',
     kalender: ['soft', 'reward', 'rest', 'gaming', 'weekend', 'hverdag', 'hjemme', 'morning'],
     gaming_daarlig:
-      'Straf: mere afslørende undertøj under bløde lag — cheeky synlig, crop kortere og hoodie åben.',
+      'Ekstra cover: hoodie op, længere bukser, ingen flash — stadig blødt lingeri under.',
     gaming_god:
-      'Belønning: bliv i comfort — hoodie op, længere bukser og blødt lingeri skjult. Ingen flash.',
+      'Lidt tease inden for soft: crop lidt kortere, cheeky synlig når du strækker dig, pastelfarve frem.',
     commandVoiceDa:
       'Frida — ROLE: BLØD HVERDAGS-FEMME. Cute pasteller, cheeky/bomuld, strik/crop, blød nederdel eller soft bukser. Belønning-energi — ikke straf, ikke Domme.',
     contrastDa: 'Blød cute hverdag ≠ Domme ≠ g-string milf.',
@@ -176,19 +176,19 @@ export const ROLE_PACKS: RolePack[] = [
   },
   {
     id: 'hentai-anime',
-    nameDa: 'HENTAI / ANIME · 18+',
-    rolle: 'Hentai / anime fan-service · 18+',
-    vibe: 'Voksen fan-service anime-silhuet. Dårlig gør lagene kortere og mere crop; god giver hoodie op og mindre eksponering.',
+    nameDa: 'HENTAI / ANIME',
+    rolle: 'Hentai / anime-femme',
+    vibe: 'Overdreven feminin anime-silhuet: cute + naughty, farverig lingeri, schoolgirl/maid/cosplay-agtige lag — voksen Frida, ikke barnlig.',
     undertøj: 'Lys/pink/sort anime-lingerisæt: cheeky eller micro-trusse + BH med sløjfer/frills. Bryster tydeligt løftet.',
     ydre_lag: 'Crop med prints, plisseret mini, thigh-highs, evt. oversized skjorte åben foran (hentai-trope, voksen).',
     sko_accessories: 'Mary Janes, platforme eller sneakers; hårsløjfe/scrunchie; choker med hjerte.',
     kalender: ['soft', 'reward', 'gaming', 'weekend', 'anime', 'hentai', 'aften', 'home'],
     gaming_daarlig:
-      'Straf: kortere plissé, mere crop og åben skjorte — mere hud og tydelig 18+ fan-service.',
+      'Cosplay dæmpes: luk skjorten, længere nederdel, thigh-highs under bukser — lingeri forbliver.',
     gaming_god:
-      'Belønning: hoodie op, længere nederdel og mindre eksponering; lingeri forbliver under soft anime-cover.',
+      'Fuld anime-tease: mere hud, kortere plissé, åben skjorte, synlige thigh-highs. Belønning-look.',
     commandVoiceDa:
-      'Frida — ROLE: HENTAI / ANIME 18+. Farverigt lingeri med frills, crop + plisseret mini, thigh-highs og cute accessories. Voksen fan-service; ingen barnlig framing.',
+      'Frida — ROLE: HENTAI / ANIME. Farverigt lingeri med frills, crop + plisseret mini, thigh-highs, cute accessories. Voksen anime-femme — dine bryster løftet. Ingen barnlig framing.',
     contrastDa: 'Anime/hentai-æstetik ≠ kontor-milf ≠ hard latex-Domme.',
     tags: ['anime', 'hentai', 'cute', 'sexy', 'weekend', 'gaming', 'femme', 'tease'],
     intensity: ['soft', 'hard'],
@@ -210,19 +210,19 @@ export const ROLE_PACKS: RolePack[] = [
   },
   {
     id: 'fantasy-femme',
-    nameDa: 'FANTASY · ELF / HEKS',
-    rolle: 'Fantasy elf / heks',
-    vibe: 'Elfe/heks fantasy-queen. Dårlig viser lingeri under robe; god holder robe lukket som queen.',
+    nameDa: 'FANTASY',
+    rolle: 'Fantasy-femme',
+    vibe: 'Magisk, dramatisk femme: korset-lignende snit, kapper, smykker, elver/heks/ridderinde-energi — voksen, elegant-sexet.',
     undertøj: 'Mørkt eller metallisk lingeri (satin/blonde) der støtter bryster under korset-look. Harness-light valgfrit.',
-    ydre_lag: 'Robe/kappe over korset-inspireret top, langt eller asymmetrisk skørt og dramatisk silhuet.',
+    ydre_lag: 'Korset/bustier-inspireret top, langt eller asymmetrisk skørt, lag med kappe/frakke, dramatisk silhuet.',
     sko_accessories: 'Støvler eller hæle, statement-smykke, choker, evt. handsker.',
     kalender: ['clothing', 'date', 'aften', 'fantasy', 'hard', 'soft', 'weekend'],
     gaming_daarlig:
-      'Straf: lingeri synligt under åben robe — mere hud, korset frem og fallen-heks energi.',
+      'Mere kappe/frakke, lukket snit, mindre hud — fantasy forbliver, drama dæmpes.',
     gaming_god:
-      'Belønning: robe lukket queen — elegant dækket fantasy, smykker frem og drama uden flash.',
+      'Åbn kappe, mere korset-synligt, smykker frem, dramatisk belønnings-silhouette.',
     commandVoiceDa:
-      'Frida — ROLE: FANTASY ELF/HEKS. Robe/kappe, korset-inspireret top, dramatisk skørt, støvler og statement-smykke. Magisk femme — bryster løftet under.',
+      'Frida — ROLE: FANTASY. Korset-inspireret top, dramatisk skørt/lag, støvler eller hæle, statement-smykke. Magisk femme — bryster løftet under. Ikke hverdagskontor.',
     contrastDa: 'Fantasy-drama ≠ office-milf ≠ pure latex-Domme (kan låne æstetik, men magisk).',
     tags: ['fantasy', 'femme', 'aften', 'sexy', 'drama', 'korset', 'date'],
     intensity: ['soft', 'hard'],
@@ -244,19 +244,19 @@ export const ROLE_PACKS: RolePack[] = [
   },
   {
     id: 'office-milf',
-    nameDa: 'MILF POWER',
-    rolle: 'CEO milf · power suit',
-    vibe: 'CEO milf i power suit — IKKE g-string. Dårlig tager blazeren af; god beholder fuld power suit.',
-    undertøj: 'Usynligt, fuldt dækkende lingeri under suitet. BH der støtter uden flash. IKKE g-string som look.',
-    ydre_lag: 'Blazer + bluse, bukser eller pencil-nederdel. Figurnært CEO power-snit.',
+    nameDa: 'OFFICE MILF',
+    rolle: 'Office milf',
+    vibe: 'Work-safe ydre, hemmelig milf under. Diskret men bevidst sexy — power femme på kontoret.',
+    undertøj: 'Usynligt / fuldt dækkende men smukt lingeri (seamless eller satin) under tøjet. BH der støtter uden synlig flash.',
+    ydre_lag: 'Bluse + blazer, bukser eller midi/pencil-nederdel. Pænt, figurnært, milf-kontur uden flash.',
     sko_accessories: 'Pæne flats eller lave hæle, diskrete øreringe, ur/armbånd.',
     kalender: ['work', 'hverdag', 'morning', 'day', 'diskret', 'clothing', 'soft'],
     gaming_daarlig:
-      'Straf: blazer af — strammere bluse/pencil og mere milf-kontur synlig, stadig kontor-OK.',
+      'Fuldt work-safe: ekstra knap i blusen, blazer lukket, ingen kontur-tease.',
     gaming_god:
-      'Belønning: fuld power suit — blazer lukket, sofistikeret CEO-silhuet og lingeri hemmeligt under.',
+      'Hemmelig opgradering: lidt strammere nederdel, blazer åben, lingeri du mærker — stadig kontor-OK.',
     commandVoiceDa:
-      'Frida — ROLE: MILF POWER. CEO milf i fuld power suit: blazer, bluse, bukser/pencil. Smukt usynligt undertøj — IKKE g-string-tease og IKKE Domme.',
+      'Frida — ROLE: OFFICE MILF. Usynligt smukt undertøj under bluse, blazer og bukser/midi. Ingen flash i det offentlige — milf-hemmeligheden er din. Bryster støttet.',
     contrastDa: 'Work-safe milf ≠ g-string tease ≠ hard Domme.',
     tags: ['work', 'diskret', 'hverdag', 'usynlig', 'milf', 'office'],
     intensity: ['soft'],
@@ -270,29 +270,29 @@ export const ROLE_PACKS: RolePack[] = [
   },
   {
     id: 'bdsm-soft',
-    nameDa: 'STRAPPY SHOW',
-    rolle: 'Club / strappy show',
-    vibe: 'Club-strappy med mesh og remme. Dårlig tager sheer af til kun lingeri; god beholder mesh på som tease.',
-    undertøj: 'Strappy lingeri/harness-light sæt med remme og cut-outs. Matching BH løfter brysterne.',
-    ydre_lag: 'Sheer/mesh top eller kjole over lingeri, strappy detaljer og mini.',
+    nameDa: 'SOFT BDSM / COLLAR LITE',
+    rolle: 'Soft BDSM · collar lite',
+    vibe: 'Symbolsk kontrol uden fuld latex-Domme: collar/choker, diskrete remme, blød magt. Intim, ikke scene-hard.',
+    undertøj: 'Blød sort lingeri + let harness eller remme over BH. Collar/choker er statement.',
+    ydre_lag: 'Sort kjole eller blød top + nederdel, evt. let cardigan. Harness kan skimtes — ikke fuld PVC.',
     sko_accessories: 'Choker/collar med ring, hæle eller boots-lite, diskret smykke.',
-    kalender: ['strappy', 'club', 'klub', 'mesh', 'sheer', 'fest', 'aften', 'tease'],
+    kalender: ['soft', 'bdsm', 'date', 'aften', 'reward', 'hard', 'collar'],
     gaming_daarlig:
-      'Straf: sheer af — kun lingeri/strappy synligt. Maksimal club-eksponering.',
+      'Collar under tøj / skjult, harness af, blødere lag — stadig sort lingeri.',
     gaming_god:
-      'Belønning: mesh på tease — sheer/mesh bliver på som sofistikeret club-cover.',
+      'Collar synlig, let harness frem, mere hud ved skulder/dekolletage. Soft-magt belønning.',
     commandVoiceDa:
-      'Frida — ROLE: STRAPPY SHOW. Strappy lingeri under sheer/mesh, mini, hæle og choker. Club-tease — IKKE CEO-suit, comfort-femme eller g-string-milf wrap.',
+      'Frida — ROLE: SOFT BDSM / COLLAR LITE. Collar eller choker, blød sort lingeri, let harness valgfrit, kjole/nederdel. Symbolsk magt — IKKE fuld latex-Domme, IKKE straf-hard.',
     contrastDa: 'Collar-lite / blød magt ≠ BDSM HARD latex ≠ uskyldig soft-girl uden signal.',
-    tags: ['strappy', 'club', 'mesh', 'sheer', 'choker', 'sexy', 'tease', 'aften'],
+    tags: ['bdsm', 'soft', 'collar', 'choker', 'kontrol', 'sexy', 'date', 'aften'],
     intensity: ['soft', 'hard'],
     themes: ['bdsm', 'clothing', 'sex'],
     weight: 11,
     irlBias: ['home', 'alone', 'out'],
     underwearIds: ['uw-01', 'uw-07', 'uw-06', 'uw-domme-01'],
-    underwearTags: ['strappy', 'sexy', 'fetish', 'tease', 'choker'],
+    underwearTags: ['bdsm', 'sexy', 'soft', 'kontrol', 'choker'],
     preferredPieceIds: ['top-08', 'bot-mini', 'shoes-heels-black', 'acc-choker', 'legs-sheer'],
-    outerTags: ['strappy', 'club', 'mesh', 'sheer', 'sexy', 'aften', 'tease'],
+    outerTags: ['bdsm', 'soft', 'sexy', 'aften', 'date', 'kontrol'],
   },
   // ——— Batch 2: situation packs (fest → anime-soft) ———
 
