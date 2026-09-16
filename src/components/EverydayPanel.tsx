@@ -1,4 +1,4 @@
-import type { ContextState, DayMode, IrlStatus, Profile } from '../types';
+import type { ContextState, DayMode, IrlStatus, PerformanceSnapshot, Profile } from '../types';
 import { UnderwearOrder } from './UnderwearOrder';
 import type { UnderwearPick } from '../types';
 
@@ -14,6 +14,7 @@ type Props = {
   profile: Profile;
   context: ContextState;
   underwear: UnderwearPick | null;
+  performance: PerformanceSnapshot;
   paused: boolean;
   onContext: (patch: Partial<ContextState>) => void;
   onProfile: (patch: Partial<Profile>) => void;
@@ -24,6 +25,7 @@ export function EverydayPanel({
   profile,
   context,
   underwear,
+  performance,
   paused,
   onContext,
   onProfile,
@@ -51,6 +53,13 @@ export function EverydayPanel({
           <strong>{timeLabel}</strong>
           <span className="pill">{weekend ? 'weekend' : 'hverdag'}</span>
         </p>
+
+        {performance.sessionCount > 0 && (
+          <p className="influence-note">
+            Gaming-præstation {performance.score}/100 ({performance.band}) påvirker dagens undertøj
+            {underwear?.performanceInfluenceDa ? ` — ${underwear.performanceInfluenceDa}` : '.'}
+          </p>
+        )}
 
         <label className="field">
           <span>IRL-status</span>
@@ -86,8 +95,8 @@ export function EverydayPanel({
         </div>
 
         <p className="muted tiny">
-          Klokkeslæt, weekend og IRL styrer auto-undertøj. Soft/hard-dag hører til hverdagen —
-          intensitet og themes sættes under Profil.
+          Klokkeslæt, weekend, IRL og gaming-session-log styrer auto-undertøj. Soft/hard-dag hører
+          til hverdagen — intensitet og themes sættes under Profil.
         </p>
       </section>
     </div>

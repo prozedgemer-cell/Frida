@@ -807,3 +807,146 @@ html.is-standalone body {
   font-size: 0.62rem;
   letter-spacing: 0.04em;
 }
+
+
+/* ——— Performance / gaming log / in-game ——— */
+.points-chip {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-width: 64px;
+  padding: 0.45rem 0.7rem;
+  border-radius: 12px;
+  border: 1px solid var(--red-dim);
+  background: rgba(196, 30, 58, 0.12);
+}
+.points-chip strong {
+  font-size: 1.15rem;
+  color: var(--red-hot);
+  line-height: 1.1;
+}
+.points-chip span {
+  font-size: 0.65rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.perf-banner {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  padding: 0.75rem 0.85rem;
+  margin: 0 0 0.85rem;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: #0d0d0d;
+}
+.perf-banner > div {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+}
+.perf-banner--compact {
+  margin-bottom: 0.5rem;
+}
+.perf-score {
+  font-size: 1.25rem;
+  color: var(--red-hot);
+}
+
+.influence-note {
+  font-size: 0.82rem;
+  color: #e8b4bc;
+  border-left: 2px solid var(--red);
+  padding: 0.35rem 0 0.35rem 0.7rem;
+  margin: 0.5rem 0 0.85rem;
+  background: rgba(196, 30, 58, 0.06);
+  border-radius: 0 8px 8px 0;
+}
+
+.pill--band-poor { background: rgba(196, 30, 58, 0.25); color: #ff8da1; }
+.pill--band-ok { background: rgba(212, 160, 23, 0.2); color: #f0d48a; }
+.pill--band-good { background: rgba(61, 154, 106, 0.22); color: #b6f0d0; }
+.pill--band-godlike { background: rgba(196, 30, 58, 0.35); color: #ffd0d8; }
+
+.tag--straf { background: rgba(196, 30, 58, 0.35); color: #ffb3c1; }
+.tag--reward { background: rgba(61, 154, 106, 0.28); color: #b6f0d0; }
+.tag--bonus { background: rgba(61, 154, 106, 0.22); color: #b6f0d0; }
+.tag--penalty { background: rgba(196, 30, 58, 0.22); color: #ffb3c1; }
+
+.challenge--straf {
+  border-color: var(--red-dim);
+  background: linear-gradient(180deg, rgba(196, 30, 58, 0.1), transparent 50%), var(--bg-elevated);
+}
+.challenge--reward {
+  border-color: rgba(61, 154, 106, 0.45);
+}
+
+.log--sessions li {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  align-items: stretch;
+}
+.session-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem 0.65rem;
+  align-items: baseline;
+}
+.session-actions {
+  display: flex;
+  gap: 0.35rem;
+  justify-content: flex-end;
+}
+.btn--tiny {
+  min-height: 36px;
+  padding: 0.35rem 0.75rem;
+  font-size: 0.8rem;
+}
+.pts-pos { color: #b6f0d0; font-variant-numeric: tabular-nums; }
+.pts-neg { color: #ff8da1; font-variant-numeric: tabular-nums; }
+
+.linkish {
+  background: none;
+  border: none;
+  color: var(--red-hot);
+  text-decoration: underline;
+  cursor: pointer;
+  padding: 0;
+  font: inherit;
+  min-height: auto;
+}
+
+.panel--ingame {
+  border-color: rgba(196, 30, 58, 0.35);
+}
+
+.bottom-nav--5 {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+}
+.bottom-nav--5 .bottom-nav__btn {
+  padding: 0.45rem 0.15rem;
+  font-size: 0.68rem;
+}
+.bottom-nav--5 .bottom-nav__icon {
+  font-size: 1rem;
+}
+
+@media (max-width: 420px) {
+  .topbar__stats--hide-sm { display: none; }
+  .bottom-nav--5 .bottom-nav__btn span:last-child {
+    font-size: 0.62rem;
+    letter-spacing: 0;
+  }
+}
+
+.mode-rail {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}

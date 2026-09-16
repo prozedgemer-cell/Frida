@@ -26,6 +26,15 @@ export type BreastSize =
   | 'F'
   | 'G';
 
+export type GameResult = 'win' | 'loss' | 'quit' | 'draw' | 'other';
+
+/** 1=dårlig · 2=ok · 3=god · 4=stærk · 5=godlike */
+export type PerformanceRating = 1 | 2 | 3 | 4 | 5;
+
+export type PerformanceBand = 'poor' | 'ok' | 'good' | 'godlike';
+
+export type ChallengeKind = 'normal' | 'straf' | 'reward' | 'tease' | 'ingame';
+
 export interface Profile {
   name: 'Frida';
   breastSize: BreastSize;
@@ -61,6 +70,7 @@ export interface UnderwearPick {
   orderTextDa: string;
   reasonDa: string;
   pickedAt: string;
+  performanceInfluenceDa?: string;
 }
 
 export interface ChallengeTemplate {
@@ -76,6 +86,12 @@ export interface ChallengeTemplate {
   vars?: string[];
   minDurationMin?: number;
   hardLimitKeys?: string[];
+  /** Straf / belønning / tease / in-game */
+  kind?: ChallengeKind;
+  /** Prefer when performance band matches */
+  performanceBias?: PerformanceBand | 'any';
+  bonusPoints?: number;
+  penaltyPoints?: number;
 }
 
 export interface ActiveChallenge {
@@ -87,6 +103,10 @@ export interface ActiveChallenge {
   intensity: Intensity;
   createdAt: string;
   status: 'active' | 'paused';
+  kind?: ChallengeKind;
+  performanceInfluenceDa?: string;
+  bonusPoints?: number;
+  penaltyPoints?: number;
 }
 
 export interface ChallengeLogEntry {
@@ -96,6 +116,29 @@ export interface ChallengeLogEntry {
   outcome: ChallengeOutcome;
   at: string;
   note?: string;
+  pointsDelta?: number;
+  kind?: ChallengeKind;
+}
+
+export interface GameSessionLog {
+  id: string;
+  gameName: string;
+  at: string;
+  result: GameResult;
+  /** Score, K/D, rank eller fri note */
+  performanceNote: string;
+  rating: PerformanceRating;
+  durationMin?: number;
+  mood: string;
+}
+
+export interface PerformanceSnapshot {
+  score: number;
+  streak: number;
+  band: PerformanceBand;
+  summaryDa: string;
+  lastSession?: GameSessionLog | null;
+  sessionCount: number;
 }
 
 export interface AppState {
@@ -105,6 +148,12 @@ export interface AppState {
   underwearToday: UnderwearPick | null;
   activeChallenges: ActiveChallenge[];
   challengeLog: ChallengeLogEntry[];
+  /** Gaming session log (localStorage) */
+  gameSessions: GameSessionLog[];
+  /** Bonus/straf point balance */
+  pointsBalance: number;
+  /** Active while-playing challenge */
+  activeInGameChallenge: ActiveChallenge | null;
 }
 
 export const DEFAULT_HARD_LIMITS = [
@@ -126,3 +175,19 @@ export const ALL_THEMES: ThemePack[] = [
   'hentai',
   'fantasy',
 ];
+
+export const RATING_LABELS_DA: Record<PerformanceRating, string> = {
+  1: 'Dårlig',
+  2: 'Ok',
+  3: 'God',
+  4: 'Stærk',
+  5: 'Godlike',
+};
+
+export const RESULT_LABELS_DA: Record<GameResult, string> = {
+  win: 'Sejr',
+  loss: 'Nederlag',
+  quit: 'Quit',
+  draw: 'Uafgjort',
+  other: 'Andet',
+};

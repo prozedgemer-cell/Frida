@@ -1,15 +1,30 @@
-import type { ActiveChallenge, ChallengeLogEntry, ChallengeOutcome } from '../types';
+import type {
+  ActiveChallenge,
+  ChallengeLogEntry,
+  ChallengeOutcome,
+  PerformanceSnapshot,
+} from '../types';
 import { ChallengeCard } from './ChallengeCard';
 
 type Props = {
   active: ActiveChallenge[];
   log: ChallengeLogEntry[];
+  performance: PerformanceSnapshot;
   paused: boolean;
   onRefresh: () => void;
   onResolve: (id: string, outcome: ChallengeOutcome) => void;
+  onGoInGame?: () => void;
 };
 
-export function ChallengesPanel({ active, log, paused, onRefresh, onResolve }: Props) {
+export function ChallengesPanel({
+  active,
+  log,
+  performance,
+  paused,
+  onRefresh,
+  onResolve,
+  onGoInGame,
+}: Props) {
   return (
     <div className="mode-stack">
       <section className="panel panel--mode panel--challenges">
@@ -28,8 +43,18 @@ export function ChallengesPanel({ active, log, paused, onRefresh, onResolve }: P
           </button>
         </div>
         <p className="muted tiny">
-          Aktive ordrer til Frida. Nødstop pauser alle handlinger. Historik gemmes lokalt.
+          Aktive ordrer til Frida. Vægtet efter gaming-præstation ({performance.score}/100 ·{' '}
+          {performance.band}). Nødstop pauser alle handlinger.
         </p>
+        {performance.sessionCount > 0 && (
+          <p className="influence-note">
+            {performance.band === 'poor'
+              ? 'Fordi din sidste session var svag: flere straf-/ydmygelses-udfordringer.'
+              : performance.band === 'good' || performance.band === 'godlike'
+                ? 'Fordi din sidste session gik godt: flere belønnings-/tease-udfordringer.'
+                : 'Middel præstation: blandet pool.'}
+          </p>
+        )}
         <div className="challenge-list">
           {active.map((c) => (
             <ChallengeCard
@@ -45,6 +70,14 @@ export function ChallengesPanel({ active, log, paused, onRefresh, onResolve }: P
             </p>
           )}
         </div>
+        {onGoInGame && (
+          <p className="tiny muted" style={{ marginTop: '0.75rem' }}>
+            Vil du have noget <strong>mens du spiller</strong>?{' '}
+            <button type="button" className="linkish" onClick={onGoInGame}>
+              Åbn In-game
+            </button>
+          </p>
+        )}
       </section>
 
       {log.length > 0 && (
@@ -55,7 +88,15 @@ export function ChallengesPanel({ active, log, paused, onRefresh, onResolve }: P
             {log.slice(0, 12).map((e) => (
               <li key={e.id}>
                 <span className={`pill pill--${e.outcome}`}>{e.outcome}</span>
+                {e.kind === 'straf' && <span className="tag tag--straf">straf</span>}
+                {e.kind === 'ingame' && <span className="tag">ingame</span>}
                 <span>{e.titleDa}</span>
+                {e.pointsDelta != null && e.pointsDelta !== 0 && (
+                  <span className={e.pointsDelta > 0 ? 'pts-pos' : 'pts-neg'}>
+                    {e.pointsDelta > 0 ? '+' : ''}
+                    {e.pointsDelta}
+                  </span>
+                )}
                 <time dateTime={e.at}>
                   {new Date(e.at).toLocaleString('da-DK', {
                     hour: '2-digit',

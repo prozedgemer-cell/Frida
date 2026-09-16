@@ -7,8 +7,13 @@ type Props = {
 };
 
 export function ChallengeCard({ challenge, paused, onResolve }: Props) {
+  const isStraf = challenge.kind === 'straf';
+  const isReward = challenge.kind === 'reward';
+
   return (
-    <article className={`challenge ${challenge.status === 'paused' || paused ? 'challenge--paused' : ''}`}>
+    <article
+      className={`challenge ${challenge.status === 'paused' || paused ? 'challenge--paused' : ''} ${isStraf ? 'challenge--straf' : ''} ${isReward ? 'challenge--reward' : ''}`}
+    >
       <div className="challenge__tags">
         {challenge.themes.map((t) => (
           <span key={t} className="tag">
@@ -16,9 +21,15 @@ export function ChallengeCard({ challenge, paused, onResolve }: Props) {
           </span>
         ))}
         <span className={`tag tag--${challenge.intensity}`}>{challenge.intensity}</span>
+        {isStraf && <span className="tag tag--straf">straf</span>}
+        {isReward && <span className="tag tag--reward">belønning</span>}
+        {challenge.kind === 'tease' && <span className="tag">tease</span>}
       </div>
       <h3>{challenge.titleDa}</h3>
       <p>{challenge.bodyDa}</p>
+      {challenge.performanceInfluenceDa && (
+        <p className="influence-note">{challenge.performanceInfluenceDa}</p>
+      )}
       <div className="challenge__actions">
         <button
           type="button"

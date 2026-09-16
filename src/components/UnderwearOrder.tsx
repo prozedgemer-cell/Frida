@@ -37,6 +37,9 @@ export function UnderwearOrder({ pick, paused, onReroll }: Props) {
               <dd>{pick.reasonDa}</dd>
             </div>
           </dl>
+          {pick.performanceInfluenceDa && (
+            <p className="influence-note">{pick.performanceInfluenceDa}</p>
+          )}
           <button
             type="button"
             className="btn btn--secondary"

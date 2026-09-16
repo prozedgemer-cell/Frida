@@ -5,12 +5,13 @@ Local-first MVP: React + TypeScript + Vite. Data i `localStorage`. Ingen auth.
 
 ## Modes (bundnavigation)
 
-1. **Gaming** — spil-kontekst, gaming-favoriseret undertøjssignal
-2. **Hverdag** — IRL-status, soft/hard-dag, auto undertøj (dagens hovedordre)
-3. **Udfordringer** — træk / fuldfør / skip / fail + historik
-4. **Profil** — themes, limits, cup, intensitet, app-tips
+1. **Gaming** — session-log (resultat, rating, note, humør), præstationsscore/streak, point
+2. **In-game** — udfordringer *mens du spiller* med bonus-/strafpoint
+3. **Hverdag** — IRL-status, soft/hard-dag, auto undertøj (påvirket af præstation)
+4. **Udfordringer** — træk / fuldfør / skip / fail + straf/belønning vægtet efter præstation
+5. **Profil** — themes, limits, cup, intensitet, app-tips
 
-Nødstop er altid synligt (topbar + sikkerhedspanel).
+Nødstop er altid synligt (topbar + sikkerhedspanel). Gaming-præstation styrer undertøj, challenges og straf.
 
 **Telefon-app:** det er en Progressive Web App (PWA). Ingen App Store / Play-betaling — åbn URL’en på telefonen og vælg **Føj til hjemmeskærm**.
 

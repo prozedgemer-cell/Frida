@@ -9,20 +9,29 @@ import { ChallengesPanel } from './ChallengesPanel';
 import { EmergencyStop } from './EmergencyStop';
 import { EverydayPanel } from './EverydayPanel';
 import { GamingPanel } from './GamingPanel';
+import { InGamePanel } from './InGamePanel';
 import { InstallBanner, InstallHint } from './InstallBanner';
 import { ProfilePanel } from './ProfilePanel';
 
 type Hook = ReturnType<typeof useFridaState>;
 
 const TAB_TITLES: Record<AppTab, { eyebrow: string; title: string }> = {
-  gaming: { eyebrow: 'Gaming-mode', title: 'Session' },
+  gaming: { eyebrow: 'Gaming-mode', title: 'Session-log' },
+  ingame: { eyebrow: 'In-game', title: 'Mens du spiller' },
   hverdag: { eyebrow: 'Hverdag-mode', title: 'Daglig kontrol' },
   udfordringer: { eyebrow: 'Udfordringer', title: 'Ordrer' },
   profil: { eyebrow: 'Profil', title: 'Frida' },
 };
 
 export function Dashboard({ api }: { api: Hook }) {
-  const { state, ensureChallenges, refreshChallenges, resolveChallenge } = api;
+  const {
+    state,
+    performance,
+    ensureChallenges,
+    ensureInGameChallenge,
+    refreshChallenges,
+    resolveChallenge,
+  } = api;
   const [tab, setTab] = useState<AppTab>(() => loadUiTab());
   const variation = estimateVariationSpace();
   const now = new Date();
@@ -36,6 +45,10 @@ export function Dashboard({ api }: { api: Hook }) {
   useEffect(() => {
     ensureChallenges();
   }, [ensureChallenges]);
+
+  useEffect(() => {
+    if (tab === 'ingame') ensureInGameChallenge();
+  }, [tab, ensureInGameChallenge]);
 
   useEffect(() => {
     saveUiTab(tab);
@@ -56,6 +69,7 @@ export function Dashboard({ api }: { api: Hook }) {
             {state.context.playingGame.trim()
               ? ` · spiller ${state.context.playingGame.trim()}`
               : ''}
+            {performance.sessionCount > 0 ? ` · præst. ${performance.score}` : ''}
           </p>
           <p className="mode-label">
             <span className="eyebrow" style={{ display: 'inline' }}>
@@ -76,12 +90,16 @@ export function Dashboard({ api }: { api: Hook }) {
           </button>
           <div className="topbar__stats">
             <div>
-              <strong>{UNDERWEAR_CATALOG.length}</strong>
-              <span>undertøj</span>
+              <strong>{state.pointsBalance}</strong>
+              <span>point</span>
             </div>
             <div>
               <strong>{TEMPLATE_COUNT}</strong>
               <span>skabeloner</span>
+            </div>
+            <div className="topbar__stats--hide-sm">
+              <strong>{UNDERWEAR_CATALOG.length}</strong>
+              <span>undertøj</span>
             </div>
           </div>
         </div>
@@ -95,6 +113,7 @@ export function Dashboard({ api }: { api: Hook }) {
         {(
           [
             ['gaming', 'Gaming'],
+            ['ingame', 'In-game'],
             ['hverdag', 'Hverdag'],
             ['udfordringer', 'Udfordringer'],
             ['profil', 'Profil'],
@@ -117,9 +136,30 @@ export function Dashboard({ api }: { api: Hook }) {
           <GamingPanel
             context={state.context}
             underwear={state.underwearToday}
+            sessions={state.gameSessions}
+            performance={performance}
+            pointsBalance={state.pointsBalance}
             paused={state.emergencyStop}
             onChange={api.updateContext}
             onReroll={api.rerollUnderwear}
+            onAddSession={api.addGameSession}
+            onUpdateSession={api.updateGameSession}
+            onDeleteSession={api.deleteGameSession}
+            onGoInGame={() => setTab('ingame')}
+          />
+        </div>
+
+        <div className={`tab-panel ${tab === 'ingame' ? 'is-active' : ''}`} data-tab="ingame">
+          <InGamePanel
+            challenge={state.activeInGameChallenge}
+            log={state.challengeLog}
+            performance={performance}
+            pointsBalance={state.pointsBalance}
+            playingGame={state.context.playingGame}
+            paused={state.emergencyStop}
+            onDraw={api.drawNewInGameChallenge}
+            onResolve={api.resolveInGameChallenge}
+            onGoGaming={() => setTab('gaming')}
           />
         </div>
 
@@ -128,6 +168,7 @@ export function Dashboard({ api }: { api: Hook }) {
             profile={state.profile}
             context={state.context}
             underwear={state.underwearToday}
+            performance={performance}
             paused={state.emergencyStop}
             onContext={api.updateContext}
             onProfile={api.updateProfile}
@@ -142,9 +183,11 @@ export function Dashboard({ api }: { api: Hook }) {
           <ChallengesPanel
             active={state.activeChallenges}
             log={state.challengeLog}
+            performance={performance}
             paused={state.emergencyStop}
             onRefresh={() => refreshChallenges(3)}
             onResolve={resolveChallenge}
+            onGoInGame={() => setTab('ingame')}
           />
         </div>
 

@@ -1,4 +1,4 @@
-export type AppTab = 'gaming' | 'hverdag' | 'udfordringer' | 'profil';
+export type AppTab = 'gaming' | 'ingame' | 'hverdag' | 'udfordringer' | 'profil';
 
 type Props = {
   tab: AppTab;
@@ -7,14 +7,15 @@ type Props = {
 
 const TABS: { id: AppTab; label: string; icon: string }[] = [
   { id: 'gaming', label: 'Gaming', icon: '▶' },
+  { id: 'ingame', label: 'In-game', icon: '◈' },
   { id: 'hverdag', label: 'Hverdag', icon: '⌂' },
-  { id: 'udfordringer', label: 'Udfordringer', icon: '✦' },
+  { id: 'udfordringer', label: 'Udfordr.', icon: '✦' },
   { id: 'profil', label: 'Profil', icon: '●' },
 ];
 
 export function BottomNav({ tab, onChange }: Props) {
   return (
-    <nav className="bottom-nav" aria-label="Hovedmenu">
+    <nav className="bottom-nav bottom-nav--5" aria-label="Hovedmenu">
       {TABS.map((t) => (
         <button
           key={t.id}
