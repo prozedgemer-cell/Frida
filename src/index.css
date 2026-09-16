@@ -2063,3 +2063,19 @@ html.is-standalone body {
   color: #f3e8ff;
   box-shadow: 0 0 0 1px rgba(168, 85, 247, 0.35);
 }
+
+.app-shell.is-hoved .dash-bar {
+  display: none;
+}
+@media (min-width: 860px) {
+  .app-shell.is-hoved .dash-bar {
+    display: flex;
+  }
+}
+.cal-tag-grid {
+  margin-top: 0.35rem;
+}
+.status-chip--sex {
+  border-color: rgba(255, 77, 154, 0.5);
+  background: rgba(255, 77, 154, 0.16);
+}

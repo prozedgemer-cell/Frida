@@ -9,14 +9,14 @@ Mobil: **Hoved · Gaming · Kalender · Udfordringer · Sex**. **Profil** er et 
 
 1. **Hoved** — kun tøj-ordre (fuldt outfit / role-pack), status-chips, «hvad sker der nu», lille badge hvis sex-straf afventer. Egne outfit-fotos.
 2. **Gaming** — ét sted: vælg spil, log KDA + sejr/nederlag (WARDOGS: netto cash), sessions, stats/præstation. In-game-udfordring er en sektion her.
-3. **Kalender** — noter/events for dagen; appen læser dem som signaler (milf, bdsm, date, work, home …) til outfit, challenges og sex-straf.
+3. **Kalender** — noter/events (titel, note, tid, tags som milf/bdsm/g-string/date/outing). Appen læser **i dag + kommende dage** til tøj, challenges og sex-straf.
 4. **Udfordringer** — **morgen-trio** hver dag (let / hård / grænsebrydende — kun DO/WEAR, aldrig sige/skrive) + ekstra aktive ordrer.
 5. **Sex** — sex-straf RP (pending + historik) og RP-billeder.
 6. **Profil** — themes, limits, cup, intensitet, IRL-status, **Tilføj billede**.
 
 Nødstop er et lille ikon **øverst til højre** (header-hjørne). Pauset = ingen ny sex-straf-fremdrift. **Vægt:** kalender/rolle/dag ≈ **70%**, gaming-præstation ≈ **30%** — styrer outfit-role, challenges og sex-straf-due. Kalender-noter/signaler matcher packs via `kalender`-tags; dårlig gaming → `gaming_daarlig` (mere afslørende/straf), god → `gaming_god` (mere dækket/sofistikeret belønning).
 
-**Billeder:** seed-fotos i `public/media/{outfits,scenes}/` (listes i `src/data/seedImages.ts` og `src/data/looks.ts`). Bruger-uploads via **Tilføj billede** gemmes i IndexedDB på enheden (max 16 pr. slot, komprimeret).
+**Billeder:** seed-fotos i `public/media/{outfits,scenes}/`. Uploads via **Tilføj billede** → IndexedDB. Kalender-noter kan gemme valgfri `imageUrl` (http(s) eller lille `data:`/base64) i localStorage — vises med `<img>` hvis feltet findes. Send gerne billeder til **Chief of Staff** for seed-galleriet.
 
 **Sex-straf due** når (og cooldown er ovre, ikke nødstop, ikke hvile-dag, ingen aktiv scene): dårligt præstationsbånd, pointgæld, nederlagsstime, ≥2 loss/quit i sidste 5, nylig failed udfordring, eller kalender-signal straf/hård. Cooldown: fuldført 12 t · skip 6 t · fail 2 t.
 

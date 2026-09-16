@@ -67,6 +67,24 @@ assert(cal.hasDate && cal.hasStraf, 'summarize flags date+straf');
 assert(cal.eveningBias, '19:30 note → eveningBias');
 assert(cal.timedLabels.some((x) => x.startsWith('19:30')), 'timedLabels includes 19:30');
 assert(cal.roleHints.includes('brazilian-cut') || cal.roleHints.includes('bdsm-hard'), 'role hints from plan');
+
+const tagged: CalendarEntry[] = [
+  {
+    id: 'c3',
+    dateKey: today,
+    titleDa: 'Bytur',
+    noteDa: '',
+    signal: 'none',
+    tags: ['milf', 'g-string', 'outing'],
+    createdAt: '2026-09-16T10:00:00.000Z',
+    updatedAt: '2026-09-16T10:00:00.000Z',
+  },
+];
+const taggedCal = summarizeCalendar(tagged, today);
+assert(taggedCal.freeTags.includes('milf') && taggedCal.freeTags.includes('g-string'), 'freeTags from calendar tags');
+assert(taggedCal.roleHints.includes('g-string-milf') || taggedCal.roleHints.includes('brazilian-cut'), 'milf/g-string tags → milf role');
+assert(taggedCal.roleHints.includes('bytur-gaatur'), 'outing tag → bytur role');
+
 const inf = describeCalendarInfluence(cal);
 assert(/date|straf|kalender/i.test(inf.summaryDa), 'influence summary mentions calendar');
 assert(/sex-straf/i.test(inf.strafDa), 'influence mentions sex-straf');

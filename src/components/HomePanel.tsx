@@ -3,6 +3,7 @@ import { WEIGHT_FORMULA_DA } from '../engines/weightBlend';
 import { OutfitHero } from './OutfitHero';
 import { OutfitLayers } from './OutfitLayers';
 import { CalendarInfluenceNote } from './CalendarInfluenceNote';
+import { ImageGallery } from './ImageGallery';
 import type { CalendarSummary } from '../engines/calendarEngine';
 import type { SexStrafDue } from '../engines/sexStrafEngine';
 import type {
@@ -208,6 +209,12 @@ export function HomePanel({
             <p className="tiny muted">{WEIGHT_FORMULA_DA}</p>
           </>
         )}
+
+        <ImageGallery
+          slot="outfit"
+          titleDa="Egne outfit-fotos"
+          hintDa="Upload looks fra telefonen — gemmes kun lokalt. Send gerne til Chief of Staff for seed-galleri."
+        />
       </section>
 
       <section className="panel panel--home-status">
@@ -293,6 +300,9 @@ export function HomePanel({
           </button>
           <button type="button" className="linkish" onClick={onGoGaming}>
             Gaming →
+          </button>
+          <button type="button" className="linkish" onClick={onGoProfil}>
+            Profil →
           </button>
         </div>
       </section>

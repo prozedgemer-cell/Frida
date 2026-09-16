@@ -226,7 +226,9 @@ export function Dashboard({ api }: { api: Hook }) {
         <div className={`tab-panel ${tab === 'profil' ? 'is-active' : ''}`} data-tab="profil">
           <ProfilePanel
             profile={state.profile}
+            context={state.context}
             onChange={api.updateProfile}
+            onContext={api.updateContext}
             disabled={state.emergencyStop}
           />
           <section className="panel panel--muted">

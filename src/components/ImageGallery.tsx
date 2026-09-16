@@ -52,7 +52,10 @@ export function ImageGallery({
           />
         </label>
       </div>
-      {hintDa && <p className="tiny muted">{hintDa}</p>}
+      <p className="tiny muted">
+        {hintDa ??
+          'Lokale billeder på enheden. Send gerne fotos til Chief of Staff for at få dem lagt i seed-galleriet.'}
+      </p>
       {onSelect && (
         <p className="tiny muted">
           Tryk «{selectLabelDa}» på et upload for at hænge det på den aktuelle note.
