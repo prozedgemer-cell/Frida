@@ -104,7 +104,7 @@ export function parsePlanText(entries: CalendarEntry[]): {
   for (const s of scored.slice(0, 4)) push(s.id);
 
   // High-priority regex overrides (core aesthetic packs)
-  if (/bdsm\s*hard|dominatrix|latex|læder|leather|harness|domme\b|pvc/.test(blob)) {
+  if (/bdsm\s*(?:hard|klassik)|dominatrix|latex|læder|leather|harness|domme\b|pvc/.test(blob)) {
     push('bdsm-hard');
   }
   if (/strappy|mesh|sheer|club|klub|collar|choker|soft\s*bdsm|bdsm\s*lite|blød\s*bdsm/.test(blob)) {
