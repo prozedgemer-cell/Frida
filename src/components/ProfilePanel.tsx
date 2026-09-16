@@ -45,8 +45,8 @@ export function ProfilePanel({ profile, onChange, disabled }: Props) {
   };
 
   return (
-    <section className="panel">
-      <p className="eyebrow">Profil</p>
+    <section className="panel panel--mode panel--profil">
+      <p className="eyebrow">Mode · Profil</p>
       <h2>Frida</h2>
       <label className="field">
         <span>Navn (låst)</span>
@@ -90,6 +90,10 @@ export function ProfilePanel({ profile, onChange, disabled }: Props) {
           </select>
         </label>
       </div>
+      <p className="muted tiny">
+        Soft/hard-dag styres også under <strong>Hverdag</strong>. Themes og hard limits hører til
+        profilen.
+      </p>
       <fieldset className="fieldset" disabled={disabled}>
         <legend>Theme packs</legend>
         <div className="chip-grid">

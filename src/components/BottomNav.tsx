@@ -1,4 +1,4 @@
-export type AppTab = 'hjem' | 'udfordring' | 'profil';
+export type AppTab = 'gaming' | 'hverdag' | 'udfordringer' | 'profil';
 
 type Props = {
   tab: AppTab;
@@ -6,8 +6,9 @@ type Props = {
 };
 
 const TABS: { id: AppTab; label: string; icon: string }[] = [
-  { id: 'hjem', label: 'Hjem', icon: '⌂' },
-  { id: 'udfordring', label: 'Udfordring', icon: '✦' },
+  { id: 'gaming', label: 'Gaming', icon: '▶' },
+  { id: 'hverdag', label: 'Hverdag', icon: '⌂' },
+  { id: 'udfordringer', label: 'Udfordringer', icon: '✦' },
   { id: 'profil', label: 'Profil', icon: '●' },
 ];
 

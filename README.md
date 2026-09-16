@@ -3,6 +3,15 @@
 Dansk-first personligt BDSM-flavored kontrolpanel til **Frida** (biologisk mand, tiltalt som kvinde).  
 Local-first MVP: React + TypeScript + Vite. Data i `localStorage`. Ingen auth.
 
+## Modes (bundnavigation)
+
+1. **Gaming** — spil-kontekst, gaming-favoriseret undertøjssignal
+2. **Hverdag** — IRL-status, soft/hard-dag, auto undertøj (dagens hovedordre)
+3. **Udfordringer** — træk / fuldfør / skip / fail + historik
+4. **Profil** — themes, limits, cup, intensitet, app-tips
+
+Nødstop er altid synligt (topbar + sikkerhedspanel).
+
 **Telefon-app:** det er en Progressive Web App (PWA). Ingen App Store / Play-betaling — åbn URL’en på telefonen og vælg **Føj til hjemmeskærm**.
 
 > **18+ only.** Indeholder seksuelt / BDSM-indhold. Nødstop og hard limits er indbygget.
