@@ -1,12 +1,16 @@
 import { getUnderwearById } from '../engines/underwearEngine';
+import { WEIGHT_FORMULA_DA } from '../engines/weightBlend';
 import { OutfitHero } from './OutfitHero';
 import { OutfitLayers } from './OutfitLayers';
+import { ChallengeCard } from './ChallengeCard';
 import type { CalendarSummary } from '../engines/calendarEngine';
 import type { SexStrafDue } from '../engines/sexStrafEngine';
 import type {
   ActiveChallenge,
+  ChallengeOutcome,
   DayMode,
   Intensity,
+  MorningTrioState,
   PerformanceBand,
   PerformanceSnapshot,
   SexStrafInstance,
@@ -19,6 +23,12 @@ const BAND_DA: Record<PerformanceBand, string> = {
   good: 'God',
   godlike: 'Godlike',
 };
+
+const TIER_DA = {
+  easy: 'Let',
+  hard: 'Hård',
+  boundary: 'Grænse',
+} as const;
 
 type Props = {
   underwear: UnderwearPick | null;
@@ -38,6 +48,8 @@ type Props = {
   sexActive: SexStrafInstance | null;
   sexDue: SexStrafDue;
   calendarToday: CalendarSummary;
+  morningTrio: MorningTrioState | null;
+  onResolveMorning: (id: string, outcome: ChallengeOutcome) => void;
 };
 
 function buildNextLines(opts: {
@@ -48,11 +60,15 @@ function buildNextLines(opts: {
   sexActive: SexStrafInstance | null;
   sexDue: SexStrafDue;
   calendarToday: CalendarSummary;
+  morningCount: number;
 }): string[] {
   const lines: string[] = [];
   if (opts.paused) {
     lines.push('Nødstop er ON — alt er pauset. Slå fra når du er klar.');
     return lines.slice(0, 4);
+  }
+  if (opts.morningCount) {
+    lines.push(`Morgen-trio: ${opts.morningCount} DO/WEAR-udfordringer i dag`);
   }
   const sexPending =
     opts.sexActive &&
@@ -69,8 +85,6 @@ function buildNextLines(opts: {
   }
   if (opts.activeChallenge) {
     lines.push(`Udfordring: ${opts.activeChallenge.titleDa}`);
-  } else {
-    lines.push('Ingen aktiv udfordring — træk under Udfordringer.');
   }
   if (opts.inGameChallenge) {
     const game = opts.playingGame.trim();
@@ -82,7 +96,7 @@ function buildNextLines(opts: {
   } else if (opts.playingGame.trim()) {
     lines.push(`Spiller ${opts.playingGame.trim()} — åbn In-game når du er i match.`);
   }
-  return lines.slice(0, 4);
+  return lines.slice(0, 5);
 }
 
 export function HomePanel({
@@ -103,8 +117,12 @@ export function HomePanel({
   sexActive,
   sexDue,
   calendarToday,
+  morningTrio,
+  onResolveMorning,
 }: Props) {
   const item = underwear ? getUnderwearById(underwear.itemId) : undefined;
+  const morningActive =
+    morningTrio?.challenges.filter((c) => c.status === 'active') ?? [];
   const nextLines = buildNextLines({
     paused: emergencyStop,
     activeChallenge,
@@ -113,6 +131,7 @@ export function HomePanel({
     sexActive,
     sexDue,
     calendarToday,
+    morningCount: morningTrio?.challenges.length ?? 0,
   });
   const softHard =
     intensity === dayMode
@@ -154,8 +173,10 @@ export function HomePanel({
       <section className="panel panel--command panel--home-order">
         <div className="panel__head">
           <div>
-            <p className="eyebrow">Fuld outfit</p>
-            <h2>På dig lige nu</h2>
+            <p className="eyebrow">Fuldt outfit · role</p>
+            <h2>
+              {underwear?.roleNameDa ? underwear.roleNameDa : 'På dig lige nu'}
+            </h2>
           </div>
         </div>
 
@@ -169,8 +190,8 @@ export function HomePanel({
           <>
             <OutfitHero
               imageFile={underwear.imageFile}
-              captionDa={underwear.lookNameDa}
-              altDa={underwear.lookNameDa ?? 'Dagens outfit'}
+              captionDa={underwear.lookNameDa ?? underwear.roleNameDa}
+              altDa={underwear.lookNameDa ?? underwear.roleNameDa ?? 'Dagens outfit'}
             />
             <p className="command-line command-line--xl">{underwear.orderTextDa}</p>
             <OutfitLayers layers={underwear.layers} />
@@ -183,9 +204,40 @@ export function HomePanel({
                 )}
               </p>
             )}
+            <p className="tiny muted">{WEIGHT_FORMULA_DA}</p>
           </>
         )}
       </section>
+
+      {morningTrio && morningTrio.challenges.length > 0 && (
+        <section className="panel panel--morning-trio">
+          <div className="panel__head">
+            <div>
+              <p className="eyebrow">Hver morgen · præcis 3</p>
+              <h2>Morgen-trio (DO / WEAR)</h2>
+            </div>
+          </div>
+          <p className="muted tiny">
+            Let · hård · grænsebrydende. Kun gøre/bære — ingen sige/skrive. Gælder hele dagen.
+          </p>
+          <div className="morning-trio-list">
+            {morningTrio.challenges.map((c) => (
+              <div key={c.id} className="morning-trio-item">
+                {c.morningTier && (
+                  <span className={`tag tag--tier-${c.morningTier}`}>
+                    {TIER_DA[c.morningTier]}
+                  </span>
+                )}
+                <ChallengeCard
+                  challenge={c}
+                  paused={emergencyStop || c.status === 'paused'}
+                  onResolve={onResolveMorning}
+                />
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
 
       <section className="panel panel--home-status">
         <p className="eyebrow">Status</p>
@@ -208,6 +260,12 @@ export function HomePanel({
             <span className="status-chip__k">Mode</span>
             <strong>{softHard}</strong>
           </span>
+          {underwear?.roleNameDa && (
+            <span className="status-chip" role="listitem">
+              <span className="status-chip__k">Role</span>
+              <strong>{underwear.roleNameDa}</strong>
+            </span>
+          )}
           {playingGame.trim() ? (
             <span className="status-chip status-chip--game" role="listitem">
               <span className="status-chip__k">Spil</span>
@@ -229,6 +287,12 @@ export function HomePanel({
             <span className="status-chip status-chip--sex" role="listitem">
               <span className="status-chip__k">Sex-straf</span>
               <strong>Aktiv</strong>
+            </span>
+          )}
+          {morningActive.length > 0 && (
+            <span className="status-chip" role="listitem">
+              <span className="status-chip__k">Morgen</span>
+              <strong>{morningActive.length}/3</strong>
             </span>
           )}
         </div>
@@ -253,7 +317,7 @@ export function HomePanel({
               Åbn kalender →
             </button>
           )}
-          {activeChallenge && (
+          {(activeChallenge || morningTrio) && (
             <button type="button" className="linkish" onClick={onGoChallenges}>
               Åbn udfordring →
             </button>

@@ -58,6 +58,7 @@ export function defaultState(): AppState {
     sexStrafLog: [],
     lastSexStrafAt: null,
     calendarEntries: [],
+    morningTrio: null,
   };
 }
 
@@ -166,6 +167,22 @@ function migrateCalendarEntry(row: unknown): CalendarEntry | null {
     signal,
     createdAt: String(r.createdAt ?? new Date().toISOString()),
     updatedAt: String(r.updatedAt ?? r.createdAt ?? new Date().toISOString()),
+    imageId: typeof r.imageId === 'string' && r.imageId ? r.imageId : undefined,
+  };
+}
+
+
+function migrateMorningTrio(raw: unknown): AppState['morningTrio'] {
+  if (!raw || typeof raw !== 'object') return null;
+  const r = raw as Record<string, unknown>;
+  const dateKey = String(r.dateKey ?? '');
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(dateKey)) return null;
+  const challenges = Array.isArray(r.challenges) ? r.challenges : [];
+  if (!challenges.length) return null;
+  return {
+    dateKey,
+    issuedAt: String(r.issuedAt ?? new Date().toISOString()),
+    challenges: challenges as NonNullable<AppState['morningTrio']>['challenges'],
   };
 }
 
@@ -234,6 +251,7 @@ export function loadState(): AppState {
       lastSexStrafAt:
         typeof parsed.lastSexStrafAt === 'string' ? parsed.lastSexStrafAt : null,
       calendarEntries: calendarEntries.slice(0, 400),
+      morningTrio: migrateMorningTrio(parsed.morningTrio),
     };
   } catch {
     return defaultState();

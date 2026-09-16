@@ -2,8 +2,10 @@ import type {
   ActiveChallenge,
   ChallengeLogEntry,
   ChallengeOutcome,
+  MorningTrioState,
   PerformanceSnapshot,
 } from '../types';
+import { WEIGHT_FORMULA_DA } from '../engines/weightBlend';
 import { ChallengeCard } from './ChallengeCard';
 
 type Props = {
@@ -14,6 +16,7 @@ type Props = {
   onRefresh: () => void;
   onResolve: (id: string, outcome: ChallengeOutcome) => void;
   onGoInGame?: () => void;
+  morningTrio?: MorningTrioState | null;
 };
 
 export function ChallengesPanel({
@@ -24,6 +27,7 @@ export function ChallengesPanel({
   onRefresh,
   onResolve,
   onGoInGame,
+  morningTrio,
 }: Props) {
   return (
     <div className="mode-stack">
@@ -43,8 +47,12 @@ export function ChallengesPanel({
           </button>
         </div>
         <p className="muted tiny">
-          Aktive ordrer til Frida. Vægtet efter gaming-præstation ({performance.score}/100 ·{' '}
-          {performance.band}). Nødstop pauser alle handlinger.
+          Aktive ordrer til Frida. {WEIGHT_FORMULA_DA} Gaming nu {performance.score}/100 ·{' '}
+          {performance.band}. Morgen-trio er DO/WEAR only.
+          {morningTrio?.challenges.length
+            ? ` I dag: ${morningTrio.challenges.length} morgen-udfordringer.`
+            : ''}{' '}
+          Nødstop pauser alle handlinger.
         </p>
         {performance.sessionCount > 0 && (
           <p className="influence-note">

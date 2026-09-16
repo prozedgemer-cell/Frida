@@ -54,12 +54,14 @@ export function EverydayPanel({
           <span className="pill">{weekend ? 'weekend' : 'hverdag'}</span>
         </p>
 
-        {performance.sessionCount > 0 && (
-          <p className="influence-note">
-            Gaming-præstation {performance.score}/100 ({performance.band}) påvirker dagens outfit
-            {underwear?.performanceInfluenceDa ? ` — ${underwear.performanceInfluenceDa}` : '.'}
-          </p>
-        )}
+        <p className="influence-note">
+          Vægt: kalender/rolle/dag ≈ 70% · gaming ≈ 30%.
+          {performance.sessionCount > 0
+            ? ` Gaming nu ${performance.score}/100 (${performance.band}).`
+            : ' Ingen session endnu — gaming-delen er neutral.'}
+          {underwear?.roleNameDa ? ` Role: ${underwear.roleNameDa}.` : ''}
+          {underwear?.performanceInfluenceDa ? ` ${underwear.performanceInfluenceDa}` : ''}
+        </p>
 
         <label className="field">
           <span>IRL-status</span>

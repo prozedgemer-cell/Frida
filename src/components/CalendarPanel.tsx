@@ -1,12 +1,14 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
   addDaysKey,
   formatDateKeyDa,
   localDateKey,
   monthGrid,
 } from '../engines/calendarEngine';
+import { addImage, getImageBlob } from '../storage/imageStore';
 import type { CalendarEntry, CalendarSignal } from '../types';
 import { CALENDAR_SIGNAL_LABELS_DA } from '../types';
+import { ImageGallery } from './ImageGallery';
 
 const SIGNALS: CalendarSignal[] = [
   'none',
@@ -31,6 +33,7 @@ type Props = {
     titleDa: string;
     noteDa: string;
     signal: CalendarSignal;
+    imageId?: string;
   }) => void;
   onDelete: (id: string) => void;
 };
@@ -46,6 +49,10 @@ export function CalendarPanel({ entries, paused, onUpsert, onDelete }: Props) {
   const [noteDa, setNoteDa] = useState('');
   const [signal, setSignal] = useState<CalendarSignal>('none');
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [imageId, setImageId] = useState<string | undefined>();
+  const [thumbUrls, setThumbUrls] = useState<Record<string, string>>({});
+  const [uploadErr, setUploadErr] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
 
   const cells = useMemo(() => monthGrid(cursor.y, cursor.m), [cursor.y, cursor.m]);
   const byDay = useMemo(() => {
@@ -67,11 +74,43 @@ export function CalendarPanel({ entries, paused, onUpsert, onDelete }: Props) {
     year: 'numeric',
   });
 
+  useEffect(() => {
+    let cancelled = false;
+    const ids = [
+      ...dayEntries.map((e) => e.imageId).filter(Boolean),
+      imageId,
+    ].filter((x): x is string => !!x);
+    const unique = [...new Set(ids)];
+    void (async () => {
+      const next: Record<string, string> = {};
+      for (const id of unique) {
+        if (thumbUrls[id]) {
+          next[id] = thumbUrls[id];
+          continue;
+        }
+        const blob = await getImageBlob(id);
+        if (blob) next[id] = URL.createObjectURL(blob);
+      }
+      if (!cancelled) {
+        setThumbUrls((prev) => {
+          const merged = { ...prev, ...next };
+          return merged;
+        });
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [dayEntries, imageId]);
+
   const resetForm = () => {
     setTitleDa('');
     setNoteDa('');
     setSignal('none');
     setEditingId(null);
+    setImageId(undefined);
+    setUploadErr(null);
   };
 
   const submit = () => {
@@ -83,6 +122,7 @@ export function CalendarPanel({ entries, paused, onUpsert, onDelete }: Props) {
       titleDa: title || 'Note',
       noteDa: noteDa.trim(),
       signal,
+      imageId,
     });
     resetForm();
   };
@@ -93,6 +133,21 @@ export function CalendarPanel({ entries, paused, onUpsert, onDelete }: Props) {
     setNoteDa(e.noteDa);
     setSignal(e.signal);
     setEditingId(e.id);
+    setImageId(e.imageId);
+  };
+
+  const onPickImage = async (file: File | undefined) => {
+    if (!file) return;
+    setBusy(true);
+    setUploadErr(null);
+    try {
+      const meta = await addImage('calendar', file);
+      setImageId(meta.id);
+    } catch (err) {
+      setUploadErr(err instanceof Error ? err.message : 'Upload fejlede');
+    } finally {
+      setBusy(false);
+    }
   };
 
   const upcoming = useMemo(() => {
@@ -135,8 +190,8 @@ export function CalendarPanel({ entries, paused, onUpsert, onDelete }: Props) {
           </div>
         </div>
         <p className="muted tiny">
-          Skriv aftaler og noter. Signal-tags påvirker undertøj, udfordringer og om sex-straf er due
-          (straf/hård øger, hvile blokerer ny sex-straf).
+          Skriv dagens planer — teksten + signal påvirker outfit-role og challenges (~70%).
+          Straf/hård øger, hvile blødgør. Vedhæft billede til noter (lokalt).
         </p>
 
         <div className="cal-grid" role="grid" aria-label="Måned">
@@ -180,17 +235,17 @@ export function CalendarPanel({ entries, paused, onUpsert, onDelete }: Props) {
           <input
             value={titleDa}
             onChange={(e) => setTitleDa(e.target.value)}
-            placeholder="fx Date, ranked-aften, hviledag"
+            placeholder="fx Date, ranked-aften, milf-look, domme-session"
             disabled={paused}
           />
         </label>
         <label className="field">
-          <span>Note</span>
+          <span>Note / plan</span>
           <textarea
             rows={3}
             value={noteDa}
             onChange={(e) => setNoteDa(e.target.value)}
-            placeholder="Hvad skal panelet vide?"
+            placeholder="Skriv planen — milf, brazilian, domme, date, ranked…"
             disabled={paused}
           />
         </label>
@@ -208,6 +263,39 @@ export function CalendarPanel({ entries, paused, onUpsert, onDelete }: Props) {
             ))}
           </select>
         </label>
+        <div className="field">
+          <span>Billede til note</span>
+          <div className="cal-attach-row">
+            <label className={`btn btn--secondary ${busy || paused ? 'is-disabled' : ''}`}>
+              Vælg fil
+              <input
+                type="file"
+                accept="image/*"
+                hidden
+                disabled={busy || paused}
+                onChange={(e) => {
+                  const f = e.target.files?.[0];
+                  e.target.value = '';
+                  void onPickImage(f);
+                }}
+              />
+            </label>
+            {imageId && (
+              <button
+                type="button"
+                className="linkish"
+                disabled={paused}
+                onClick={() => setImageId(undefined)}
+              >
+                Fjern billede
+              </button>
+            )}
+          </div>
+          {imageId && thumbUrls[imageId] && (
+            <img src={thumbUrls[imageId]} alt="Note" className="cal-note-thumb" />
+          )}
+          {uploadErr && <p className="banner banner--warn">{uploadErr}</p>}
+        </div>
         <div className="challenge__actions">
           <button type="button" className="btn" disabled={paused} onClick={submit}>
             {editingId ? 'Gem' : 'Tilføj'}
@@ -235,6 +323,9 @@ export function CalendarPanel({ entries, paused, onUpsert, onDelete }: Props) {
                   </span>
                 )}
                 {e.noteDa && <p className="tiny">{e.noteDa}</p>}
+                {e.imageId && thumbUrls[e.imageId] && (
+                  <img src={thumbUrls[e.imageId]} alt="" className="cal-note-thumb" />
+                )}
               </div>
               <div className="cal-notes__act">
                 <button type="button" className="linkish" disabled={paused} onClick={() => startEdit(e)}>
@@ -248,6 +339,12 @@ export function CalendarPanel({ entries, paused, onUpsert, onDelete }: Props) {
           ))}
         </ul>
       </section>
+
+      <ImageGallery
+        slot="calendar"
+        titleDa="Kalender-billeder"
+        hintDa="Upload referencefotos til noter/planer. Kun lokalt på enheden. Outfit- og sex-straf-galleri findes under Hverdag / Sex."
+      />
 
       {upcoming.length > 0 && (
         <section className="panel panel--muted">

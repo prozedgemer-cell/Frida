@@ -1,5 +1,9 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { drawChallenges, drawInGameChallenge } from '../engines/challengeEngine';
+import {
+  drawChallenges,
+  drawInGameChallenge,
+  drawMorningTrio,
+} from '../engines/challengeEngine';
 import {
   localDateKey,
   summarizeCalendar,
@@ -182,6 +186,14 @@ export function useFridaState() {
   const ensureChallenges = useCallback(() => {
     setState((s) => {
       if (s.emergencyStop) return s;
+      const key = localDateKey();
+      if (
+        s.morningTrio?.dateKey === key &&
+        s.morningTrio.challenges.length === 3 &&
+        s.activeChallenges.length === 0
+      ) {
+        return { ...s, activeChallenges: s.morningTrio.challenges.filter((c) => c.status === 'active') };
+      }
       if (s.activeChallenges.length > 0) return s;
       const perf = computePerformance(s.gameSessions);
       return {
@@ -193,11 +205,86 @@ export function useFridaState() {
           3,
           [],
           perf,
-          summarizeCalendar(s.calendarEntries, localDateKey()),
+          summarizeCalendar(s.calendarEntries, key),
         ),
       };
     });
   }, []);
+
+
+  const ensureMorningTrio = useCallback(() => {
+    setState((s) => {
+      if (s.emergencyStop) return s;
+      if (!s.profile.ageVerified) return s;
+      const key = localDateKey();
+      if (s.morningTrio?.dateKey === key && s.morningTrio.challenges.length === 3) {
+        return s;
+      }
+      const perf = computePerformance(s.gameSessions);
+      const cal = summarizeCalendar(s.calendarEntries, key);
+      const challenges = drawMorningTrio(
+        s.profile,
+        s.context,
+        s.underwearToday,
+        perf,
+        cal,
+      );
+      // Keep exactly 3; if pool thin, pad from drawChallenges do/wear via drawMorningTrio already
+      const trio = challenges.slice(0, 3);
+      if (trio.length < 3) return s; // wait until templates filter allows
+      return {
+        ...s,
+        morningTrio: {
+          dateKey: key,
+          issuedAt: new Date().toISOString(),
+          challenges: trio,
+        },
+        // Mirror onto activeChallenges for the day when empty or stale day
+        activeChallenges:
+          s.activeChallenges.length === 0 ||
+          !s.activeChallenges.some((c) => c.morningTier)
+            ? trio
+            : s.activeChallenges,
+      };
+    });
+  }, []);
+
+  const resolveMorningChallenge = useCallback(
+    (id: string, outcome: ChallengeOutcome, note?: string) => {
+      setState((s) => {
+        if (!s.morningTrio) return s;
+        const ch = s.morningTrio.challenges.find((c) => c.id === id);
+        if (!ch) return s;
+        const delta = challengePointsDelta(
+          outcome,
+          ch.bonusPoints ?? 5,
+          ch.penaltyPoints ?? 3,
+        );
+        const logEntry = {
+          id: `mlog-${Date.now()}`,
+          templateId: ch.templateId,
+          titleDa: ch.titleDa,
+          outcome,
+          at: new Date().toISOString(),
+          note,
+          pointsDelta: delta,
+          kind: ch.kind,
+        };
+        const challenges = s.morningTrio.challenges.map((c) =>
+          c.id === id ? { ...c, status: 'paused' as const } : c,
+        );
+        // Mark resolved by removing from active list presentation — keep in trio with paused
+        return {
+          ...s,
+          morningTrio: { ...s.morningTrio, challenges },
+          activeChallenges: s.activeChallenges.filter((c) => c.id !== id),
+          challengeLog: [logEntry, ...s.challengeLog].slice(0, 100),
+          pointsBalance: s.pointsBalance + delta,
+        };
+      });
+    },
+    [],
+  );
 
   const resolveChallenge = useCallback(
     (id: string, outcome: ChallengeOutcome, note?: string) => {
@@ -467,6 +554,7 @@ export function useFridaState() {
       titleDa: string;
       noteDa: string;
       signal: CalendarSignal;
+      imageId?: string;
     }) => {
       setState((s) => {
         const now = new Date().toISOString();
@@ -479,6 +567,7 @@ export function useFridaState() {
                   titleDa: entry.titleDa,
                   noteDa: entry.noteDa,
                   signal: entry.signal,
+                  imageId: entry.imageId,
                   updatedAt: now,
                 }
               : e,
@@ -491,6 +580,7 @@ export function useFridaState() {
           titleDa: entry.titleDa,
           noteDa: entry.noteDa,
           signal: entry.signal,
+          imageId: entry.imageId,
           createdAt: now,
           updatedAt: now,
         };
@@ -519,6 +609,8 @@ export function useFridaState() {
     rerollUnderwear,
     refreshChallenges,
     ensureChallenges,
+    ensureMorningTrio,
+    resolveMorningChallenge,
     resolveChallenge,
     addGameSession,
     updateGameSession,

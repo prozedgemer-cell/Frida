@@ -1646,3 +1646,50 @@ html.is-standalone body {
   opacity: 0.55;
   pointer-events: none;
 }
+
+
+/* Morning trio + calendar attach */
+.panel--morning-trio {
+  border-color: rgba(255, 45, 85, 0.35);
+  box-shadow: 0 0 24px rgba(196, 30, 58, 0.12);
+}
+.morning-trio-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+}
+.morning-trio-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+.tag--tier-easy {
+  align-self: flex-start;
+  background: rgba(80, 200, 120, 0.2);
+  color: #7dffa0;
+}
+.tag--tier-hard {
+  align-self: flex-start;
+  background: rgba(255, 160, 40, 0.22);
+  color: #ffc978;
+}
+.tag--tier-boundary {
+  align-self: flex-start;
+  background: rgba(255, 45, 85, 0.25);
+  color: #ff7a9a;
+}
+.cal-attach-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+.cal-note-thumb {
+  display: block;
+  margin-top: 0.5rem;
+  max-width: 160px;
+  max-height: 120px;
+  object-fit: cover;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+}

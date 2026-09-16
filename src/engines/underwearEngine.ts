@@ -17,6 +17,7 @@ import {
   type CalendarSummary,
 } from './calendarEngine';
 import { attachOutfitToPick } from './outfitEngine';
+import { WEIGHT_FORMULA_DA } from './weightBlend';
 
 function dateKey(d = new Date()): string {
   return localDateKey(d);
@@ -220,7 +221,7 @@ function buildReason(
   }
   const themes = item.themes.filter((t) => profile.enabledThemes.includes(t));
   if (themes.length) parts.push(`themes: ${themes.join(', ')}`);
-  return `Valgt ud fra ${parts.join(' · ')}.`;
+  return `Valgt ud fra ${parts.join(' · ')}. ${WEIGHT_FORMULA_DA}`;
 }
 
 export function pickUnderwear(

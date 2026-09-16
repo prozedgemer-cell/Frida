@@ -1,8 +1,13 @@
 import { OUTFIT_LOOKS } from '../data/looks';
 import { OUTFIT_CATALOG } from '../data/outfits';
+import {
+  ROLE_FALLBACK_LAYERS,
+  ROLE_PACKS,
+  getRolePack,
+  type RolePack,
+} from '../data/rolePacks';
 import { UNDERWEAR_CATALOG } from '../data/underwear';
-import type { CalendarSummary } from './calendarEngine';
-import { calendarUnderwearMultiplier } from './calendarEngine';
+import { calendarUnderwearMultiplier, type CalendarSummary } from './calendarEngine';
 import type {
   ContextState,
   Intensity,
@@ -11,6 +16,7 @@ import type {
   OutfitPiece,
   PerformanceSnapshot,
   Profile,
+  RoleId,
   ThemePack,
   UnderwearItem,
   UnderwearPick,
@@ -18,6 +24,7 @@ import type {
 } from '../types';
 import { OUTFIT_LAYER_LABELS_DA } from '../types';
 import { influenceTextDa } from './performanceEngine';
+import { blendContextGaming, WEIGHT_FORMULA_DA } from './weightBlend';
 
 function hourBucket(d = new Date()): 'morning' | 'day' | 'evening' | 'night' {
   const h = d.getHours();
@@ -117,6 +124,27 @@ function performanceFit(tags: string[], intensity: Intensity[], perf?: Performan
   }
 }
 
+function calendarRoleBoost(tags: string[], cal?: CalendarSummary | null): number {
+  if (!cal) return 1;
+  let m = 1;
+  for (const role of cal.roleHints ?? []) {
+    if (role === 'milf-brazilian' && (tags.includes('milf') || tags.includes('brazilian') || tags.includes('date')))
+      m *= 1.8;
+    if (role === 'bdsm-domme' && (tags.includes('bdsm') || tags.includes('domme') || tags.includes('fetish') || tags.includes('leather')))
+      m *= 1.9;
+    if (role === 'gstring-tease' && (tags.includes('g-string') || tags.includes('tease') || tags.includes('synlig')))
+      m *= 1.75;
+    if (role === 'office-diskret' && (tags.includes('work') || tags.includes('diskret'))) m *= 1.7;
+    if (role === 'gaming-comfort' && (tags.includes('gaming') || tags.includes('komfort'))) m *= 1.65;
+    if (role === 'date-night' && (tags.includes('date') || tags.includes('aften'))) m *= 1.6;
+    if (role === 'soft-girl' && (tags.includes('soft') || tags.includes('cute'))) m *= 1.55;
+    if (role === 'straf-hard' && (tags.includes('hard') || tags.includes('straf') || tags.includes('kontrol')))
+      m *= 1.7;
+  }
+  if (cal.noteBoost) m *= 1 + cal.noteBoost;
+  return m;
+}
+
 function scorePiece(
   piece: OutfitPiece,
   profile: Profile,
@@ -127,15 +155,20 @@ function scorePiece(
 ): number {
   const hardish = piece.intensity.includes('hard') && (piece.tags.includes('hard') || piece.tags.includes('fetish'));
   const softish = piece.intensity.includes('soft') && !hardish;
-  let score = piece.weight;
-  score *= themeScore(piece.themes, profile.enabledThemes);
-  score *= intensityFit(piece.intensity, profile.intensity, profile.dayMode);
-  score *= irlFit(piece.tags, context.irlStatus, piece.layer);
-  score *= timeFit(piece.tags, now, piece.layer);
-  score *= gamingFit(piece.tags, context.playingGame);
-  score *= performanceFit(piece.tags, piece.intensity, perf);
-  score *= calendarUnderwearMultiplier(piece.tags, hardish, softish, cal);
-  return Math.max(score, 0.01);
+
+  const contextMul =
+    themeScore(piece.themes, profile.enabledThemes) *
+    intensityFit(piece.intensity, profile.intensity, profile.dayMode) *
+    irlFit(piece.tags, context.irlStatus, piece.layer) *
+    timeFit(piece.tags, now, piece.layer) *
+    calendarUnderwearMultiplier(piece.tags, hardish, softish, cal) *
+    calendarRoleBoost(piece.tags, cal);
+
+  const gamingMul =
+    gamingFit(piece.tags, context.playingGame) *
+    performanceFit(piece.tags, piece.intensity, perf);
+
+  return Math.max(piece.weight * blendContextGaming(contextMul, gamingMul), 0.01);
 }
 
 function weightedPick<T>(rows: { item: T; score: number }[]): T {
@@ -156,13 +189,18 @@ function pickLayer(
   perf?: PerformanceSnapshot | null,
   cal?: CalendarSummary | null,
   excludeId?: string,
+  tagBoost?: string[],
 ): OutfitPiece | null {
   const pool = OUTFIT_CATALOG.filter((p) => p.layer === layer && p.id !== excludeId);
   if (!pool.length) return null;
-  const scored = pool.map((item) => ({
-    item,
-    score: scorePiece(item, profile, context, now, perf, cal),
-  }));
+  const scored = pool.map((item) => {
+    let score = scorePiece(item, profile, context, now, perf, cal);
+    if (tagBoost?.length) {
+      const hit = item.tags.filter((t) => tagBoost.includes(t)).length;
+      if (hit) score *= 1 + hit * 0.45;
+    }
+    return { item, score };
+  });
   return weightedPick(scored);
 }
 
@@ -190,9 +228,141 @@ function chance(p: number): boolean {
   return Math.random() < p;
 }
 
+function resolvePieceId(id: string): OutfitLayerPick | null {
+  const fromCat = OUTFIT_CATALOG.find((p) => p.id === id);
+  if (fromCat) return toLayerPick(fromCat);
+  const fb = ROLE_FALLBACK_LAYERS[id];
+  return fb ? { ...fb } : null;
+}
+
+/** Score and pick a coherent ROLE pack (drives full outfit, not underwear-only). */
+export function pickRolePack(
+  profile: Profile,
+  context: ContextState,
+  opts?: {
+    now?: Date;
+    performance?: PerformanceSnapshot | null;
+    calendar?: CalendarSummary | null;
+    excludeRoleId?: RoleId;
+  },
+): RolePack {
+  const now = opts?.now ?? new Date();
+  const perf = opts?.performance ?? null;
+  const cal = opts?.calendar ?? null;
+  const pool = ROLE_PACKS.filter((r) => r.id !== opts?.excludeRoleId);
+
+  const scored = pool.map((role) => {
+    let contextMul =
+      themeScore(role.themes, profile.enabledThemes) *
+      intensityFit(role.intensity, profile.intensity, profile.dayMode) *
+      irlFit(role.tags, context.irlStatus, 'top') *
+      timeFit(role.tags, now, 'top') *
+      calendarRoleBoost(role.tags, cal);
+
+    if (role.irlBias?.length) {
+      if (role.irlBias.includes(context.irlStatus)) contextMul *= 1.85;
+      else if (context.irlStatus === 'work' || context.irlStatus === 'public') {
+        contextMul *= role.id === 'office-diskret' ? 2.2 : 0.12;
+      } else contextMul *= 0.55;
+    }
+
+    // Calendar written plans strongly prefer hinted roles
+    if (cal?.roleHints?.includes(role.id)) contextMul *= 2.4;
+
+    const gamingMul =
+      gamingFit(role.tags, context.playingGame) *
+      performanceFit(role.tags, role.intensity, perf);
+
+    // Domme ≠ g-string milf coherence: if calendar wants domme, crush gstring; vice versa
+    if (cal?.roleHints?.includes('bdsm-domme') && role.id === 'gstring-tease') contextMul *= 0.15;
+    if (cal?.roleHints?.includes('milf-brazilian') && role.id === 'bdsm-domme') contextMul *= 0.35;
+    if (cal?.roleHints?.includes('gstring-tease') && role.id === 'bdsm-domme') contextMul *= 0.25;
+
+    const score = Math.max(role.weight * blendContextGaming(contextMul, gamingMul), 0.01);
+    return { item: role, score };
+  });
+
+  return weightedPick(scored);
+}
+
+export function pickUnderwearForRole(role: RolePack): UnderwearItem {
+  for (const id of role.underwearIds) {
+    const hit = UNDERWEAR_CATALOG.find((u) => u.id === id);
+    if (hit) return hit;
+  }
+  const tagged = UNDERWEAR_CATALOG.filter((u) =>
+    role.underwearTags.some((t) => u.tags.includes(t) || u.styles.includes(t)),
+  );
+  if (tagged.length) return tagged[Math.floor(Math.random() * tagged.length)]!;
+  return UNDERWEAR_CATALOG[0]!;
+}
+
 /**
- * Full layered outfit around an underwear pick.
- * Top + (bottom unless kjole) + shoes; legs/outer/accessory probabilistic.
+ * Full layered outfit for a ROLE pack (underwear + outer layers matching role).
+ */
+export function pickOutfitLayersForRole(
+  role: RolePack,
+  underwear: UnderwearItem,
+  profile: Profile,
+  context: ContextState,
+  opts?: {
+    now?: Date;
+    performance?: PerformanceSnapshot | null;
+    calendar?: CalendarSummary | null;
+  },
+): OutfitLayerPick[] {
+  const now = opts?.now ?? new Date();
+  const perf = opts?.performance ?? null;
+  const cal = opts?.calendar ?? null;
+  const layers: OutfitLayerPick[] = [underwearLayer(underwear)];
+  const usedLayers = new Set<OutfitLayer>(['underwear']);
+
+  // Prefer role's prescribed pieces first
+  for (const pid of role.preferredPieceIds) {
+    const pick = resolvePieceId(pid);
+    if (!pick) continue;
+    if (usedLayers.has(pick.layer) && pick.layer !== 'accessory') continue;
+    // Skip bottom if dress already covers
+    if (pick.layer === 'bottom' && layers.some((l) => l.layer === 'top' && OUTFIT_CATALOG.find((p) => p.id === l.pieceId)?.coversBottom)) {
+      continue;
+    }
+    layers.push(pick);
+    usedLayers.add(pick.layer);
+  }
+
+  // Fill mandatory gaps from catalog with role tag boost
+  const need: OutfitPiece['layer'][] = ['top', 'shoes'];
+  if (!layers.some((l) => l.layer === 'top' && OUTFIT_CATALOG.find((p) => p.id === l.pieceId)?.coversBottom)) {
+    if (!usedLayers.has('bottom')) need.push('bottom');
+  }
+  for (const layer of need) {
+    if (usedLayers.has(layer)) continue;
+    const piece = pickLayer(layer, profile, context, now, perf, cal, undefined, role.outerTags);
+    if (piece) {
+      layers.push(toLayerPick(piece));
+      usedLayers.add(layer);
+      if (piece.coversBottom) usedLayers.add('bottom');
+    }
+  }
+
+  if (!usedLayers.has('legs') && chance(role.id === 'bdsm-domme' || role.id === 'date-night' ? 0.85 : 0.45)) {
+    const legs = pickLayer('legs', profile, context, now, perf, cal, undefined, role.outerTags);
+    if (legs) layers.push(toLayerPick(legs));
+  }
+  if (!usedLayers.has('outerwear') && chance(context.irlStatus === 'work' || context.irlStatus === 'out' || role.id === 'bdsm-domme' ? 0.75 : 0.3)) {
+    const outer = pickLayer('outerwear', profile, context, now, perf, cal, undefined, role.outerTags);
+    if (outer) layers.push(toLayerPick(outer));
+  }
+  if (!usedLayers.has('accessory') && chance(0.8)) {
+    const acc = pickLayer('accessory', profile, context, now, perf, cal, undefined, role.outerTags);
+    if (acc) layers.push(toLayerPick(acc));
+  }
+
+  return layers;
+}
+
+/**
+ * Full layered outfit around an underwear pick (legacy path / fill).
  */
 export function pickOutfitLayers(
   underwear: UnderwearItem,
@@ -248,6 +418,7 @@ export function buildOutfitOrderText(
   layers: OutfitLayerPick[],
   profile: Profile,
   perf?: PerformanceSnapshot | null,
+  role?: RolePack | null,
 ): string {
   const uw = layers.find((l) => l.layer === 'underwear');
   const rest = layers.filter((l) => l.layer !== 'underwear');
@@ -261,11 +432,14 @@ export function buildOutfitOrderText(
       extra = ' Din seneste gaming-præstation fortjener et blødere / mere komfortabelt look. ';
     }
   }
+  const roleBlock = role
+    ? `${role.commandVoiceDa} (${role.contrastDa}) `
+    : 'FULD BEORDING — undertøj + ydre lag. ';
   return (
-    `Frida — FULD BEORDING: Tag "${uw?.nameDa ?? 'beordret undertøj'}" på, ` +
-    `plus hele outfittet (${list || 'ydre lag vælges'}). ` +
+    `Frida — FULDT OUTFIT / ROLE: ${role?.nameDa ?? 'Uniform'}. ${roleBlock}` +
+    `Tag "${uw?.nameDa ?? 'beordret undertøj'}" på, plus hele outfittet (${list || 'ydre lag vælges'}). ` +
     `Dine ${profile.breastSize}-bryster skal sidde støttet. ${extra}` +
-    `Ingen improvisation — det er dagens uniform.`
+    `${WEIGHT_FORMULA_DA} Ingen improvisation — det er dagens uniform.`
   );
 }
 
@@ -277,16 +451,19 @@ function scoreLook(
   perf?: PerformanceSnapshot | null,
   cal?: CalendarSummary | null,
 ): number {
-  let score = look.weight;
-  score *= themeScore(look.themes, profile.enabledThemes);
-  score *= intensityFit(look.intensity, profile.intensity, profile.dayMode);
-  score *= irlFit(look.tags, context.irlStatus, 'top');
-  score *= timeFit(look.tags, now, 'top');
-  score *= gamingFit(look.tags, context.playingGame);
-  score *= performanceFit(look.tags, look.intensity, perf);
   const hardish = look.intensity.includes('hard') && look.tags.includes('hard');
   const softish = look.intensity.includes('soft') && !hardish;
-  score *= calendarUnderwearMultiplier(look.tags, hardish, softish, cal);
+  const contextMul =
+    themeScore(look.themes, profile.enabledThemes) *
+    intensityFit(look.intensity, profile.intensity, profile.dayMode) *
+    irlFit(look.tags, context.irlStatus, 'top') *
+    timeFit(look.tags, now, 'top') *
+    calendarUnderwearMultiplier(look.tags, hardish, softish, cal) *
+    calendarRoleBoost(look.tags, cal);
+  const gamingMul =
+    gamingFit(look.tags, context.playingGame) *
+    performanceFit(look.tags, look.intensity, perf);
+  let score = look.weight * blendContextGaming(contextMul, gamingMul);
   if (look.irlBias?.length) {
     if (look.irlBias.includes(context.irlStatus)) score *= 1.8;
     else if (context.irlStatus === 'work' || context.irlStatus === 'public') score *= 0.08;
@@ -296,9 +473,9 @@ function scoreLook(
 }
 
 function lookChance(irl: ContextState['irlStatus']): number {
-  if (irl === 'home' || irl === 'alone') return 0.88;
-  if (irl === 'out') return 0.45;
-  return 0.22;
+  if (irl === 'home' || irl === 'alone') return 0.35; // prefer role packs more often
+  if (irl === 'out') return 0.25;
+  return 0.12;
 }
 
 export function pickPhotographedLook(
@@ -343,9 +520,9 @@ export function buildLookOrderText(
     }
   }
   return (
-    `Frida — FULD BEORDING: Looket "${look.nameDa}". ${look.orderBlurbDa} ` +
+    `Frida — FULDT OUTFIT: Looket "${look.nameDa}". ${look.orderBlurbDa} ` +
     `Lag: ${list}. Dine ${profile.breastSize}-bryster skal sidde støttet. ${extra}` +
-    `Ingen improvisation — det er dagens uniform.`
+    `${WEIGHT_FORMULA_DA} Ingen improvisation — det er dagens uniform.`
   );
 }
 
@@ -359,42 +536,64 @@ export function attachOutfitToPick(
     calendar?: CalendarSummary | null;
     force?: boolean;
     excludeLookId?: string;
+    excludeRoleId?: RoleId;
   },
 ): UnderwearPick {
-  if (!opts?.force && pick.layers && pick.layers.length > 1) return pick;
+  if (!opts?.force && pick.layers && pick.layers.length > 1 && pick.roleId) return pick;
   const perf = opts?.performance ?? null;
   const influence =
     perf && perf.sessionCount > 0 ? influenceTextDa(perf, 'outfittet') : pick.performanceInfluenceDa;
 
-  const look = pickPhotographedLook(profile, context, {
+  // Role-first full outfit (life control via FULL OUTFIT)
+  const role = pickRolePack(profile, context, {
     now: opts?.now,
     performance: perf,
     calendar: opts?.calendar,
-    excludeLookId: opts?.excludeLookId ?? pick.lookId,
+    excludeRoleId: opts?.excludeRoleId ?? pick.roleId,
   });
+  const uw =
+    UNDERWEAR_CATALOG.find((i) => i.id === pick.itemId) ?? pickUnderwearForRole(role);
+  // Prefer role underwear when forcing new day / role change
+  const uwForRole = opts?.force ? pickUnderwearForRole(role) : uw;
+  const layers = pickOutfitLayersForRole(role, uwForRole, profile, context, opts);
+
+  // Occasional photographed look override only if it doesn't fight hard roles
+  const look =
+    role.id === 'bdsm-domme' || role.id === 'milf-brazilian'
+      ? null
+      : pickPhotographedLook(profile, context, {
+          now: opts?.now,
+          performance: perf,
+          calendar: opts?.calendar,
+          excludeLookId: opts?.excludeLookId ?? pick.lookId,
+        });
+
   if (look) {
     return {
       ...pick,
+      itemId: look.layers.find((l) => l.layer === 'underwear')?.pieceId ?? uwForRole.id,
       lookId: look.id,
       lookNameDa: look.nameDa,
       imageFile: look.imageFile,
       layers: look.layers,
       orderTextDa: buildLookOrderText(look, profile, perf),
       performanceInfluenceDa: influence,
+      roleId: role.id,
+      roleNameDa: role.nameDa,
     };
   }
 
-  const uw = UNDERWEAR_CATALOG.find((i) => i.id === pick.itemId);
-  if (!uw) return pick;
-  const layers = pickOutfitLayers(uw, profile, context, opts);
   return {
     ...pick,
+    itemId: uwForRole.id,
     lookId: undefined,
     lookNameDa: undefined,
     imageFile: undefined,
     layers,
-    orderTextDa: buildOutfitOrderText(layers, profile, perf),
+    orderTextDa: buildOutfitOrderText(layers, profile, perf, role),
     performanceInfluenceDa: influence,
+    roleId: role.id,
+    roleNameDa: role.nameDa,
   };
 }
 
@@ -406,3 +605,5 @@ export function formatLayersDa(layers: OutfitLayerPick[] | undefined): string {
   if (!layers?.length) return '';
   return layers.map((l) => `${OUTFIT_LAYER_LABELS_DA[l.layer]}: ${l.nameDa}`).join(' · ');
 }
+
+export { getRolePack, WEIGHT_FORMULA_DA };

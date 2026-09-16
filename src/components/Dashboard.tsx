@@ -47,6 +47,7 @@ export function Dashboard({ api }: { api: Hook }) {
     calendarToday,
     sexStrafDue,
     ensureChallenges,
+    ensureMorningTrio,
     ensureInGameChallenge,
     refreshChallenges,
     resolveChallenge,
@@ -69,8 +70,9 @@ export function Dashboard({ api }: { api: Hook }) {
     (state.activeSexStraf.status === 'pending' || state.activeSexStraf.status === 'active');
 
   useEffect(() => {
+    ensureMorningTrio();
     ensureChallenges();
-  }, [ensureChallenges]);
+  }, [ensureMorningTrio, ensureChallenges]);
 
   useEffect(() => {
     if (tab === 'ingame') ensureInGameChallenge();
@@ -160,6 +162,8 @@ export function Dashboard({ api }: { api: Hook }) {
             sexActive={state.activeSexStraf}
             sexDue={sexStrafDue}
             calendarToday={calendarToday}
+            morningTrio={state.morningTrio}
+            onResolveMorning={api.resolveMorningChallenge}
           />
         </div>
 
@@ -220,6 +224,7 @@ export function Dashboard({ api }: { api: Hook }) {
             paused={state.emergencyStop}
             onRefresh={() => refreshChallenges(3)}
             onResolve={resolveChallenge}
+            morningTrio={state.morningTrio}
             onGoInGame={() => setTab('ingame')}
           />
         </div>

@@ -12,6 +12,7 @@ const SLOT_TO_SEED: Record<ImageSlot, SeedImageSlot> = {
   profile: 'profile',
   outfit: 'outfit',
   'sex-straf': 'sex-straf',
+  calendar: 'calendar',
 };
 
 export function ImageGallery({ slot, titleDa, hintDa }: Props) {

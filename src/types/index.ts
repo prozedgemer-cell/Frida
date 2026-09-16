@@ -37,6 +37,21 @@ export type PerformanceBand = 'poor' | 'ok' | 'good' | 'godlike';
 
 export type ChallengeKind = 'normal' | 'straf' | 'reward' | 'tease' | 'ingame';
 
+/** Morning trio only allows do/wear — say/write excluded */
+export type ChallengeActionClass = 'do' | 'wear' | 'say' | 'write';
+
+export type MorningTier = 'easy' | 'hard' | 'boundary';
+
+export type RoleId =
+  | 'milf-brazilian'
+  | 'gstring-tease'
+  | 'bdsm-domme'
+  | 'office-diskret'
+  | 'gaming-comfort'
+  | 'date-night'
+  | 'soft-girl'
+  | 'straf-hard';
+
 export interface Profile {
   name: 'Frida';
   breastSize: BreastSize;
@@ -139,6 +154,9 @@ export interface UnderwearPick {
   lookNameDa?: string;
   /** Relative public/ path for the look photo. */
   imageFile?: string;
+  /** Coherent full-outfit role pack */
+  roleId?: RoleId;
+  roleNameDa?: string;
 }
 
 export interface ChallengeTemplate {
@@ -160,6 +178,10 @@ export interface ChallengeTemplate {
   performanceBias?: PerformanceBand | 'any';
   bonusPoints?: number;
   penaltyPoints?: number;
+  /** do/wear/say/write — morning trio uses do|wear only */
+  actionClass?: ChallengeActionClass;
+  /** Prefer for morning easy/hard/boundary slot */
+  morningTier?: MorningTier;
 }
 
 export interface ActiveChallenge {
@@ -175,6 +197,8 @@ export interface ActiveChallenge {
   performanceInfluenceDa?: string;
   bonusPoints?: number;
   penaltyPoints?: number;
+  actionClass?: ChallengeActionClass;
+  morningTier?: MorningTier;
 }
 
 export interface ChallengeLogEntry {
@@ -236,6 +260,14 @@ export interface AppState {
   lastSexStrafAt: string | null;
   /** Calendar notes/events; used as signals for tøj/challenges/straf */
   calendarEntries: CalendarEntry[];
+  /** Exactly 3 DO/WEAR morning challenges for the local day */
+  morningTrio: MorningTrioState | null;
+}
+
+export interface MorningTrioState {
+  dateKey: string;
+  challenges: ActiveChallenge[];
+  issuedAt: string;
 }
 
 export const DEFAULT_HARD_LIMITS = [
@@ -338,6 +370,8 @@ export interface CalendarEntry {
   signal: CalendarSignal;
   createdAt: string;
   updatedAt: string;
+  /** Optional local IndexedDB image id (slot calendar) */
+  imageId?: string;
 }
 
 export const CALENDAR_SIGNAL_LABELS_DA: Record<CalendarSignal, string> = {

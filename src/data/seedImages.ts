@@ -2,7 +2,7 @@ import { publicUrl } from '../utils/publicUrl';
 /**
  * Bundled user media. URL via publicUrl() / BASE_PATH.
  */
-export type SeedImageSlot = 'outfit' | 'sex-straf' | 'profile';
+export type SeedImageSlot = 'outfit' | 'sex-straf' | 'profile' | 'calendar';
 
 export interface SeedImage {
   id: string;

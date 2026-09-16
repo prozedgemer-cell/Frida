@@ -1,6 +1,6 @@
 /** IndexedDB blob store for user-supplied photos (PWA, no backend). */
 
-export type ImageSlot = 'profile' | 'outfit' | 'sex-straf';
+export type ImageSlot = 'profile' | 'outfit' | 'sex-straf' | 'calendar';
 
 export interface StoredImageMeta {
   id: string;
