@@ -1,20 +1,23 @@
 :root {
   color-scheme: dark;
-  --bg: #050505;
-  --bg-panel: #121212;
-  --bg-elevated: #1a1a1a;
-  --border: #2a2a2a;
+  --bg: #0e1018;
+  --bg-panel: #171a24;
+  --bg-elevated: #1e2230;
+  --border: #2c3144;
   --red: #c41e3a;
-  --red-hot: #ff2d55;
-  --red-dim: #7a1424;
-  --text: #f2f2f2;
-  --muted: #9a9a9a;
+  --red-hot: #ff4d9a;
+  --red-dim: #7a1448;
+  --blue: #5aa8ff;
+  --purple: #a855f7;
+  --pink: #ff4d9a;
+  --text: #f4f5fb;
+  --muted: #9aa3b8;
   --ok: #3d9a6a;
   --warn: #d4a017;
   --font: "Segoe UI", system-ui, -apple-system, sans-serif;
   --mono: ui-monospace, "Cascadia Code", "SF Mono", Menlo, monospace;
-  --radius: 14px;
-  --shadow: 0 12px 40px rgba(0, 0, 0, 0.55);
+  --radius: 22px;
+  --shadow: 0 16px 40px rgba(8, 6, 20, 0.55);
   --sat: env(safe-area-inset-top, 0px);
   --sab: env(safe-area-inset-bottom, 0px);
   --sal: env(safe-area-inset-left, 0px);
@@ -45,8 +48,9 @@ body {
   margin: 0;
   font-family: var(--font);
   background:
-    radial-gradient(1200px 600px at 10% -10%, rgba(196, 30, 58, 0.18), transparent 55%),
-    radial-gradient(900px 500px at 100% 0%, rgba(196, 30, 58, 0.08), transparent 50%),
+    radial-gradient(900px 520px at 8% -8%, rgba(168, 85, 247, 0.22), transparent 55%),
+    radial-gradient(800px 480px at 100% 0%, rgba(90, 168, 255, 0.14), transparent 50%),
+    radial-gradient(700px 400px at 80% 110%, rgba(255, 77, 154, 0.12), transparent 50%),
     var(--bg);
   color: var(--text);
   line-height: 1.45;
@@ -149,18 +153,18 @@ textarea {
 }
 
 .panel {
-  background: var(--bg-panel);
+  background: linear-gradient(180deg, rgba(255,255,255,0.03), transparent 40%), var(--bg-panel);
   border: 1px solid var(--border);
   border-radius: var(--radius);
-  padding: 1rem 1.1rem;
+  padding: 1.05rem 1.15rem;
   margin-bottom: 1rem;
-  box-shadow: var(--shadow);
+  box-shadow: var(--shadow), 0 0 0 1px rgba(168, 85, 247, 0.06);
 }
 
 .panel--command {
   border-color: var(--red-dim);
   background:
-    linear-gradient(180deg, rgba(196, 30, 58, 0.12), transparent 40%),
+    linear-gradient(180deg, rgba(255, 77, 154, 0.16), transparent 42%),
     var(--bg-panel);
 }
 
@@ -1278,5 +1282,255 @@ html.is-standalone body {
   .bottom-nav--6 .bottom-nav__btn span:last-child {
     font-size: 0.52rem;
     letter-spacing: 0;
+  }
+}
+
+
+/* ——— Neon card UI / FAB nav / calendar / sex-straf ——— */
+.nav-svg {
+  width: 1.25rem;
+  height: 1.25rem;
+  display: block;
+}
+.bottom-nav--fab {
+  display: grid;
+  grid-template-columns: 1fr 1fr 64px 1fr 1fr;
+  align-items: end;
+  gap: 0.1rem;
+  padding: 0.35rem 0.45rem calc(0.35rem + var(--sab));
+  background: rgba(14, 16, 24, 0.92);
+  border-top: 1px solid rgba(168, 85, 247, 0.22);
+}
+.bottom-nav--fab .bottom-nav__btn {
+  min-height: 54px;
+  font-size: 0.62rem;
+  position: relative;
+}
+.bottom-nav__icon {
+  position: relative;
+  display: inline-flex;
+}
+.bottom-nav__fab {
+  width: 56px;
+  height: 56px;
+  margin: 0 auto 0.35rem;
+  border: 0;
+  border-radius: 50%;
+  background: linear-gradient(145deg, var(--blue), var(--purple) 45%, var(--pink));
+  color: #fff;
+  font-size: 1.8rem;
+  line-height: 1;
+  font-weight: 600;
+  box-shadow: 0 10px 28px rgba(168, 85, 247, 0.45);
+  transform: translateY(-14px);
+  touch-action: manipulation;
+}
+.bottom-nav__fab.is-active {
+  filter: brightness(1.08);
+}
+.nav-badge {
+  position: absolute;
+  top: -3px;
+  right: -6px;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--pink);
+  box-shadow: 0 0 0 2px var(--bg), 0 0 10px var(--pink);
+}
+.nav-badge--inline {
+  position: static;
+  display: inline-block;
+  margin-left: 0.35rem;
+  vertical-align: middle;
+}
+.nav-sheet-wrap {
+  position: fixed;
+  inset: 0;
+  z-index: 45;
+}
+.nav-sheet-backdrop {
+  position: absolute;
+  inset: 0;
+  border: 0;
+  background: rgba(6, 8, 14, 0.55);
+}
+.nav-sheet {
+  position: absolute;
+  left: 0.75rem;
+  right: 0.75rem;
+  bottom: calc(4.6rem + var(--sab));
+  background: var(--bg-elevated);
+  border: 1px solid rgba(168, 85, 247, 0.35);
+  border-radius: 20px;
+  padding: 0.85rem;
+  box-shadow: 0 18px 50px rgba(0, 0, 0, 0.5);
+  display: grid;
+  gap: 0.4rem;
+}
+.nav-sheet__btn {
+  text-align: left;
+  border: 1px solid var(--border);
+  background: var(--bg-panel);
+  color: var(--text);
+  border-radius: 14px;
+  padding: 0.7rem 0.85rem;
+}
+.nav-sheet__btn strong {
+  display: block;
+}
+.nav-sheet__btn span {
+  color: var(--muted);
+  font-size: 0.78rem;
+}
+.nav-sheet__btn.is-active {
+  border-color: var(--purple);
+  background: rgba(168, 85, 247, 0.14);
+}
+.greet-title {
+  font-size: clamp(1.6rem, 5vw, 2.1rem);
+  text-transform: none;
+  letter-spacing: -0.02em;
+}
+.greet-date {
+  text-transform: capitalize;
+  margin-bottom: 0.4rem;
+}
+.panel--greet {
+  background:
+    linear-gradient(135deg, rgba(90, 168, 255, 0.16), rgba(168, 85, 247, 0.12) 50%, rgba(255, 77, 154, 0.1)),
+    var(--bg-panel);
+}
+.sex-pill-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  border: 1px solid rgba(255, 77, 154, 0.45);
+  background: rgba(255, 77, 154, 0.12);
+  color: var(--text);
+  border-radius: 999px;
+  padding: 0.35rem 0.75rem;
+  font-size: 0.82rem;
+  font-weight: 700;
+  position: relative;
+}
+.sex-pill-badge .nav-badge {
+  position: static;
+  box-shadow: 0 0 8px var(--pink);
+}
+.status-chip--sex {
+  border-color: var(--pink);
+  background: rgba(255, 77, 154, 0.12);
+}
+.sex-card {
+  border: 1px solid rgba(255, 77, 154, 0.35);
+  border-radius: 18px;
+  padding: 0.85rem;
+  background: rgba(255, 77, 154, 0.08);
+}
+.sex-card__top {
+  display: flex;
+  gap: 0.4rem;
+  margin-bottom: 0.4rem;
+}
+.sex-due.is-due {
+  border: 1px dashed rgba(255, 77, 154, 0.4);
+  border-radius: 16px;
+  padding: 0.75rem;
+}
+.cal-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 0.28rem;
+  margin: 0.6rem 0 0.5rem;
+}
+.cal-grid__wd {
+  text-align: center;
+  font-size: 0.68rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.cal-cell {
+  aspect-ratio: 1;
+  border: 1px solid transparent;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.03);
+  color: var(--text);
+  position: relative;
+  font-weight: 650;
+}
+.cal-cell--empty {
+  background: transparent;
+}
+.cal-cell.is-today {
+  box-shadow: inset 0 0 0 1px var(--blue);
+}
+.cal-cell.is-selected {
+  background: linear-gradient(145deg, rgba(90, 168, 255, 0.3), rgba(168, 85, 247, 0.28));
+  border-color: var(--purple);
+}
+.cal-cell.has-note .cal-dot {
+  position: absolute;
+  bottom: 5px;
+  left: 50%;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--blue);
+  transform: translateX(-50%);
+}
+.cal-dot.is-hot {
+  background: var(--pink);
+}
+.cal-month-nav {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+.cal-selected {
+  margin: 0;
+  text-transform: capitalize;
+  color: var(--muted);
+  font-size: 0.88rem;
+}
+.cal-notes {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.65rem;
+}
+.cal-notes li {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.65rem 0.2rem;
+  border-bottom: 1px solid var(--border);
+}
+.cal-notes__act {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  align-items: flex-end;
+}
+.mode-rail__btn.is-active {
+  color: #fff;
+  border-color: var(--purple);
+  background: linear-gradient(135deg, rgba(90, 168, 255, 0.2), rgba(168, 85, 247, 0.22));
+}
+.bottom-nav__btn.is-active {
+  color: var(--pink);
+  background: rgba(168, 85, 247, 0.12);
+}
+.accent {
+  background: linear-gradient(90deg, var(--blue), var(--purple), var(--pink));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+@media (min-width: 860px) {
+  .bottom-nav--fab {
+    display: none;
   }
 }

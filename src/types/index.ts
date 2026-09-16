@@ -164,6 +164,14 @@ export interface AppState {
   pointsBalance: number;
   /** Active while-playing challenge */
   activeInGameChallenge: ActiveChallenge | null;
+  /** Pending/active fictional sex punishment (redeem stats) */
+  activeSexStraf: SexStrafInstance | null;
+  /** History of past sex-straffe */
+  sexStrafLog: SexStrafInstance[];
+  /** ISO time of last resolved sex-straf (cooldown for due) */
+  lastSexStrafAt: string | null;
+  /** Calendar notes/events; used as signals for tøj/challenges/straf */
+  calendarEntries: CalendarEntry[];
 }
 
 export const DEFAULT_HARD_LIMITS = [
@@ -200,4 +208,93 @@ export const RESULT_LABELS_DA: Record<GameResult, string> = {
   quit: 'Quit',
   draw: 'Uafgjort',
   other: 'Andet',
+};
+
+/** Sex-straf hardness scale (blød → hård) */
+export type SexStrafHardness = 'blød' | 'medium' | 'hård';
+
+export type SexStrafStatus = 'pending' | 'active' | 'done' | 'skipped' | 'failed';
+
+export interface SexStrafTemplate {
+  id: string;
+  titleDa: string;
+  /** Scene with slots: {partner}, {place}, {why}, {duration}, {hardness}, {breastSize}, {game} */
+  sceneDa: string;
+  partnerPool: string[];
+  placePool: string[];
+  whyPool: string[];
+  durationMinRange: [number, number];
+  hardnessPool: SexStrafHardness[];
+  themes: ThemePack[];
+  intensity: Intensity[];
+  allowsSemenCollection?: boolean;
+  bonusPoints?: number;
+  penaltyPoints?: number;
+}
+
+export interface SexStrafInstance {
+  id: string;
+  templateId: string;
+  titleDa: string;
+  sceneDa: string;
+  partnerDa: string;
+  placeDa: string;
+  whyDa: string;
+  durationMin: number;
+  hardness: SexStrafHardness;
+  status: SexStrafStatus;
+  createdAt: string;
+  resolvedAt?: string;
+  pointsDelta?: number;
+  /** Points credited toward clearing performance/points debt on complete */
+  redeemBoost?: number;
+}
+
+
+export type CalendarSignal =
+  | 'none'
+  | 'straf'
+  | 'reward'
+  | 'soft'
+  | 'hard'
+  | 'clothing'
+  | 'gaming'
+  | 'rest'
+  | 'date';
+
+export interface CalendarEntry {
+  id: string;
+  /** Local YYYY-MM-DD */
+  dateKey: string;
+  titleDa: string;
+  noteDa: string;
+  signal: CalendarSignal;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export const CALENDAR_SIGNAL_LABELS_DA: Record<CalendarSignal, string> = {
+  none: 'Ingen',
+  straf: 'Straf',
+  reward: 'Belønning',
+  soft: 'Blød dag',
+  hard: 'Hård dag',
+  clothing: 'Tøj-fokus',
+  gaming: 'Gaming',
+  rest: 'Hvile',
+  date: 'Date/aftale',
+};
+
+export const SEX_STRAF_HARDNESS_DA: Record<SexStrafHardness, string> = {
+  blød: 'Blød',
+  medium: 'Medium',
+  hård: 'Hård',
+};
+
+export const SEX_STRAF_STATUS_DA: Record<SexStrafStatus, string> = {
+  pending: 'Afventer',
+  active: 'Aktiv',
+  done: 'Fuldført',
+  skipped: 'Sprunget over',
+  failed: 'Fejlet',
 };

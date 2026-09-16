@@ -1,11 +1,20 @@
 import type { GamePresetId } from '../data/gameProfiles';
-import type { AppState, GameSessionLog, Profile } from '../types';
+import type {
+  AppState,
+  CalendarEntry,
+  CalendarSignal,
+  GameSessionLog,
+  Profile,
+  SexStrafHardness,
+  SexStrafInstance,
+  SexStrafStatus,
+} from '../types';
 import { ALL_THEMES, DEFAULT_HARD_LIMITS } from '../types';
 
 const KEY = 'frida-kontrolpanel-v1';
 const UI_TAB_KEY = 'frida-ui-tab-v1';
 
-const VALID_TABS = ['hoved', 'gaming', 'ingame', 'hverdag', 'udfordringer', 'profil'] as const;
+const VALID_TABS = ['hoved', 'gaming', 'ingame', 'hverdag', 'udfordringer', 'sex', 'kalender', 'profil'] as const;
 export type StoredUiTab = (typeof VALID_TABS)[number];
 
 const VALID_GAME_IDS: GamePresetId[] = [
@@ -45,6 +54,10 @@ export function defaultState(): AppState {
     gameSessions: [],
     pointsBalance: 0,
     activeInGameChallenge: null,
+    activeSexStraf: null,
+    sexStrafLog: [],
+    lastSexStrafAt: null,
+    calendarEntries: [],
   };
 }
 
@@ -90,6 +103,71 @@ function migrateSession(row: Record<string, unknown>, fallbackGame: string): Gam
   };
 }
 
+
+const VALID_HARDNESS: SexStrafHardness[] = ['blød', 'medium', 'hård'];
+const VALID_SS_STATUS: SexStrafStatus[] = ['pending', 'active', 'done', 'skipped', 'failed'];
+const VALID_SIGNALS: CalendarSignal[] = [
+  'none',
+  'straf',
+  'reward',
+  'soft',
+  'hard',
+  'clothing',
+  'gaming',
+  'rest',
+  'date',
+];
+
+function migrateSexStraf(row: unknown): SexStrafInstance | null {
+  if (!row || typeof row !== 'object') return null;
+  const r = row as Record<string, unknown>;
+  if (typeof r.id !== 'string' || typeof r.templateId !== 'string') return null;
+  const hardness = VALID_HARDNESS.includes(r.hardness as SexStrafHardness)
+    ? (r.hardness as SexStrafHardness)
+    : 'medium';
+  const status = VALID_SS_STATUS.includes(r.status as SexStrafStatus)
+    ? (r.status as SexStrafStatus)
+    : 'pending';
+  const durationMin =
+    typeof r.durationMin === 'number' && Number.isFinite(r.durationMin) ? r.durationMin : 10;
+  return {
+    id: r.id,
+    templateId: String(r.templateId),
+    titleDa: String(r.titleDa ?? 'Sex-straf'),
+    sceneDa: String(r.sceneDa ?? ''),
+    partnerDa: String(r.partnerDa ?? ''),
+    placeDa: String(r.placeDa ?? ''),
+    whyDa: String(r.whyDa ?? ''),
+    durationMin,
+    hardness,
+    status,
+    createdAt: String(r.createdAt ?? new Date().toISOString()),
+    resolvedAt: typeof r.resolvedAt === 'string' ? r.resolvedAt : undefined,
+    pointsDelta: typeof r.pointsDelta === 'number' ? r.pointsDelta : undefined,
+    redeemBoost: typeof r.redeemBoost === 'number' ? r.redeemBoost : undefined,
+  };
+}
+
+function migrateCalendarEntry(row: unknown): CalendarEntry | null {
+  if (!row || typeof row !== 'object') return null;
+  const r = row as Record<string, unknown>;
+  if (typeof r.id !== 'string') return null;
+  const dateKey = String(r.dateKey ?? '');
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(dateKey)) return null;
+  const signal = VALID_SIGNALS.includes(r.signal as CalendarSignal)
+    ? (r.signal as CalendarSignal)
+    : 'none';
+  return {
+    id: r.id,
+    dateKey,
+    titleDa: String(r.titleDa ?? ''),
+    noteDa: String(r.noteDa ?? ''),
+    signal,
+    createdAt: String(r.createdAt ?? new Date().toISOString()),
+    updatedAt: String(r.updatedAt ?? r.createdAt ?? new Date().toISOString()),
+  };
+}
+
 export function loadState(): AppState {
   try {
     const raw = localStorage.getItem(KEY);
@@ -126,6 +204,14 @@ export function loadState(): AppState {
       .filter((s) => s && typeof s === 'object' && typeof (s as { id?: string }).id === 'string')
       .map((s) => migrateSession(s as unknown as Record<string, unknown>, context.playingGame));
 
+    const sexStrafLog = Array.isArray(parsed.sexStrafLog)
+      ? parsed.sexStrafLog.map(migrateSexStraf).filter((x): x is SexStrafInstance => !!x)
+      : [];
+    const activeSexStraf = migrateSexStraf(parsed.activeSexStraf);
+    const calendarEntries = Array.isArray(parsed.calendarEntries)
+      ? parsed.calendarEntries.map(migrateCalendarEntry).filter((x): x is CalendarEntry => !!x)
+      : [];
+
     return {
       profile: parsed.profile as Profile,
       context,
@@ -139,6 +225,14 @@ export function loadState(): AppState {
           ? parsed.pointsBalance
           : 0,
       activeInGameChallenge: parsed.activeInGameChallenge ?? null,
+      activeSexStraf:
+        activeSexStraf && (activeSexStraf.status === 'pending' || activeSexStraf.status === 'active')
+          ? activeSexStraf
+          : null,
+      sexStrafLog: sexStrafLog.slice(0, 80),
+      lastSexStrafAt:
+        typeof parsed.lastSexStrafAt === 'string' ? parsed.lastSexStrafAt : null,
+      calendarEntries: calendarEntries.slice(0, 400),
     };
   } catch {
     return defaultState();
@@ -166,6 +260,8 @@ export function loadUiTab(): StoredUiTab {
     }
     if (raw === 'hjem') return 'hoved';
     if (raw === 'udfordring') return 'udfordringer';
+    if (raw === 'sex-straf' || raw === 'sexstraf') return 'sex';
+    if (raw === 'kalender-tab') return 'kalender';
   } catch {
     /* ignore */
   }

@@ -1,10 +1,13 @@
 import { getUnderwearById } from '../engines/underwearEngine';
+import type { CalendarSummary } from '../engines/calendarEngine';
+import type { SexStrafDue } from '../engines/sexStrafEngine';
 import type {
   ActiveChallenge,
   DayMode,
   Intensity,
   PerformanceBand,
   PerformanceSnapshot,
+  SexStrafInstance,
   UnderwearPick,
 } from '../types';
 
@@ -28,6 +31,12 @@ type Props = {
   onEmergencyStop: (on: boolean) => void;
   onGoChallenges: () => void;
   onGoInGame: () => void;
+  onGoSex: () => void;
+  onGoCalendar: () => void;
+  onGoGaming: () => void;
+  sexActive: SexStrafInstance | null;
+  sexDue: SexStrafDue;
+  calendarToday: CalendarSummary;
 };
 
 function buildNextLines(opts: {
@@ -35,11 +44,27 @@ function buildNextLines(opts: {
   activeChallenge: ActiveChallenge | null;
   inGameChallenge: ActiveChallenge | null;
   playingGame: string;
+  sexActive: SexStrafInstance | null;
+  sexDue: SexStrafDue;
+  calendarToday: CalendarSummary;
 }): string[] {
   const lines: string[] = [];
   if (opts.paused) {
     lines.push('Nødstop er ON — alt er pauset. Slå fra når du er klar.');
     return lines.slice(0, 4);
+  }
+  const sexPending =
+    opts.sexActive &&
+    (opts.sexActive.status === 'pending' || opts.sexActive.status === 'active');
+  if (sexPending && opts.sexActive) {
+    lines.push(
+      `Sex-straf ${opts.sexActive.status === 'active' ? 'aktiv' : 'afventer'}: ${opts.sexActive.titleDa}`,
+    );
+  } else if (opts.sexDue.due) {
+    lines.push('Sex-straf er due — kræv den under Sex.');
+  }
+  if (opts.calendarToday.entries.length) {
+    lines.push(`Kalender: ${opts.calendarToday.headlineDa}`);
   }
   if (opts.activeChallenge) {
     lines.push(`Udfordring: ${opts.activeChallenge.titleDa}`);
@@ -55,13 +80,6 @@ function buildNextLines(opts: {
     );
   } else if (opts.playingGame.trim()) {
     lines.push(`Spiller ${opts.playingGame.trim()} — åbn In-game når du er i match.`);
-  } else {
-    lines.push('Intet aktivt spil — sæt spil under Gaming hvis du starter en session.');
-  }
-  if (opts.activeChallenge?.kind === 'straf') {
-    lines.push('Straf-ordre aktiv — klar den eller tag fail.');
-  } else if (opts.activeChallenge?.kind === 'reward') {
-    lines.push('Belønning klar — tag den mens den gælder.');
   }
   return lines.slice(0, 4);
 }
@@ -79,6 +97,12 @@ export function HomePanel({
   onEmergencyStop,
   onGoChallenges,
   onGoInGame,
+  onGoSex,
+  onGoCalendar,
+  onGoGaming,
+  sexActive,
+  sexDue,
+  calendarToday,
 }: Props) {
   const item = underwear ? getUnderwearById(underwear.itemId) : undefined;
   const nextLines = buildNextLines({
@@ -86,6 +110,9 @@ export function HomePanel({
     activeChallenge,
     inGameChallenge,
     playingGame,
+    sexActive,
+    sexDue,
+    calendarToday,
   });
   const softHard =
     intensity === dayMode
@@ -93,13 +120,41 @@ export function HomePanel({
         ? 'Hard'
         : 'Soft'
       : `${intensity}/${dayMode}-dag`;
+  const now = new Date();
+  const greetDate = now.toLocaleDateString('da-DK', {
+    weekday: 'long',
+    day: 'numeric',
+    month: 'long',
+  });
+  const sexPending =
+    !!sexActive && (sexActive.status === 'pending' || sexActive.status === 'active');
 
   return (
     <div className="mode-stack home-stack">
+      <section className="panel panel--greet">
+        <p className="eyebrow">Hoved</p>
+        <h2 className="greet-title">
+          Hej, <span className="accent">Frida</span>
+        </h2>
+        <p className="muted greet-date">{greetDate}</p>
+        {sexPending && (
+          <button type="button" className="sex-pill-badge" onClick={onGoSex}>
+            <i className="nav-badge" aria-hidden />
+            Sex-straf {sexActive?.status === 'active' ? 'aktiv' : 'afventer'}
+          </button>
+        )}
+        {!sexPending && sexDue.due && (
+          <button type="button" className="sex-pill-badge" onClick={onGoSex}>
+            <i className="nav-badge" aria-hidden />
+            Sex-straf due
+          </button>
+        )}
+      </section>
+
       <section className="panel panel--command panel--home-order">
         <div className="panel__head">
           <div>
-            <p className="eyebrow">Hoved · beording</p>
+            <p className="eyebrow">Beording</p>
             <h2>På dig lige nu</h2>
           </div>
           <button
@@ -173,6 +228,12 @@ export function HomePanel({
               <strong>NØDSTOP</strong>
             </span>
           )}
+          {sexPending && (
+            <span className="status-chip status-chip--sex" role="listitem">
+              <span className="status-chip__k">Sex-straf</span>
+              <strong>Aktiv</strong>
+            </span>
+          )}
         </div>
       </section>
 
@@ -185,6 +246,16 @@ export function HomePanel({
           ))}
         </ol>
         <div className="home-next-links">
+          {(sexPending || sexDue.due) && (
+            <button type="button" className="linkish" onClick={onGoSex}>
+              Åbn sex-straf →
+            </button>
+          )}
+          {calendarToday.entries.length > 0 && (
+            <button type="button" className="linkish" onClick={onGoCalendar}>
+              Åbn kalender →
+            </button>
+          )}
           {activeChallenge && (
             <button type="button" className="linkish" onClick={onGoChallenges}>
               Åbn udfordring →
@@ -195,6 +266,9 @@ export function HomePanel({
               Åbn in-game →
             </button>
           )}
+          <button type="button" className="linkish" onClick={onGoGaming}>
+            Gaming-log →
+          </button>
         </div>
       </section>
     </div>

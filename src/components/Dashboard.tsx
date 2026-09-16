@@ -9,10 +9,12 @@ import { ChallengesPanel } from './ChallengesPanel';
 import { EmergencyStop } from './EmergencyStop';
 import { EverydayPanel } from './EverydayPanel';
 import { GamingPanel } from './GamingPanel';
+import { CalendarPanel } from './CalendarPanel';
 import { HomePanel } from './HomePanel';
 import { InGamePanel } from './InGamePanel';
 import { InstallBanner, InstallHint } from './InstallBanner';
 import { ProfilePanel } from './ProfilePanel';
+import { SexStrafPanel } from './SexStrafPanel';
 
 type Hook = ReturnType<typeof useFridaState>;
 
@@ -22,6 +24,8 @@ const TAB_TITLES: Record<AppTab, { eyebrow: string; title: string }> = {
   ingame: { eyebrow: 'In-game', title: 'Mens du spiller' },
   hverdag: { eyebrow: 'Hverdag-mode', title: 'Daglig kontrol' },
   udfordringer: { eyebrow: 'Udfordringer', title: 'Ordrer' },
+  sex: { eyebrow: 'Sex-straf', title: 'Indløs stats' },
+  kalender: { eyebrow: 'Kalender', title: 'Noter & signaler' },
   profil: { eyebrow: 'Profil', title: 'Frida' },
 };
 
@@ -31,6 +35,8 @@ const MODE_RAIL: { id: AppTab; label: string }[] = [
   { id: 'ingame', label: 'In-game' },
   { id: 'hverdag', label: 'Hverdag' },
   { id: 'udfordringer', label: 'Udfordringer' },
+  { id: 'sex', label: 'Sex' },
+  { id: 'kalender', label: 'Kalender' },
   { id: 'profil', label: 'Profil' },
 ];
 
@@ -38,6 +44,8 @@ export function Dashboard({ api }: { api: Hook }) {
   const {
     state,
     performance,
+    calendarToday,
+    sexStrafDue,
     ensureChallenges,
     ensureInGameChallenge,
     refreshChallenges,
@@ -56,6 +64,9 @@ export function Dashboard({ api }: { api: Hook }) {
     state.activeChallenges.find((c) => c.status === 'active') ??
     state.activeChallenges[0] ??
     null;
+  const sexPending =
+    !!state.activeSexStraf &&
+    (state.activeSexStraf.status === 'pending' || state.activeSexStraf.status === 'active');
 
   useEffect(() => {
     ensureChallenges();
@@ -134,6 +145,7 @@ export function Dashboard({ api }: { api: Hook }) {
             onClick={() => setTab(id)}
           >
             {label}
+            {id === 'sex' && sexPending && <i className="nav-badge nav-badge--inline" />}
           </button>
         ))}
       </nav>
@@ -153,6 +165,12 @@ export function Dashboard({ api }: { api: Hook }) {
             onEmergencyStop={api.setEmergencyStop}
             onGoChallenges={() => setTab('udfordringer')}
             onGoInGame={() => setTab('ingame')}
+            onGoSex={() => setTab('sex')}
+            onGoCalendar={() => setTab('kalender')}
+            onGoGaming={() => setTab('gaming')}
+            sexActive={state.activeSexStraf}
+            sexDue={sexStrafDue}
+            calendarToday={calendarToday}
           />
         </div>
 
@@ -217,6 +235,28 @@ export function Dashboard({ api }: { api: Hook }) {
           />
         </div>
 
+        <div className={`tab-panel ${tab === 'sex' ? 'is-active' : ''}`} data-tab="sex">
+          <SexStrafPanel
+            active={state.activeSexStraf}
+            log={state.sexStrafLog}
+            due={sexStrafDue}
+            paused={state.emergencyStop}
+            pointsBalance={state.pointsBalance}
+            onClaim={api.claimSexStraf}
+            onStart={api.startSexStraf}
+            onResolve={api.resolveSexStraf}
+          />
+        </div>
+
+        <div className={`tab-panel ${tab === 'kalender' ? 'is-active' : ''}`} data-tab="kalender">
+          <CalendarPanel
+            entries={state.calendarEntries}
+            paused={state.emergencyStop}
+            onUpsert={api.upsertCalendarEntry}
+            onDelete={api.deleteCalendarEntry}
+          />
+        </div>
+
         <div className={`tab-panel ${tab === 'profil' ? 'is-active' : ''}`} data-tab="profil">
           <ProfilePanel
             profile={state.profile}
@@ -234,7 +274,7 @@ export function Dashboard({ api }: { api: Hook }) {
         </div>
       </div>
 
-      <BottomNav tab={tab} onChange={setTab} />
+      <BottomNav tab={tab} onChange={setTab} sexBadge={sexPending || sexStrafDue.due} />
     </div>
   );
 }

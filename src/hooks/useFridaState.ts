@@ -1,13 +1,24 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { drawChallenges, drawInGameChallenge } from '../engines/challengeEngine';
 import {
+  localDateKey,
+  summarizeCalendar,
+} from '../engines/calendarEngine';
+import {
   challengePointsDelta,
   computePerformance,
 } from '../engines/performanceEngine';
+import {
+  evaluateSexStrafDueWithSessions,
+  generateSexStraf,
+  sexStrafPointsDelta,
+} from '../engines/sexStrafEngine';
 import { pickUnderwear, todayKey } from '../engines/underwearEngine';
 import { loadState, saveState } from '../storage/localStore';
 import type {
   AppState,
+  CalendarEntry,
+  CalendarSignal,
   ChallengeOutcome,
   ContextState,
   GameSessionLog,
@@ -26,6 +37,37 @@ export function useFridaState() {
     [state.gameSessions],
   );
 
+  const calendarToday = useMemo(
+    () => summarizeCalendar(state.calendarEntries, localDateKey()),
+    [state.calendarEntries],
+  );
+
+  const sexStrafDue = useMemo(
+    () =>
+      evaluateSexStrafDueWithSessions({
+        paused: state.emergencyStop,
+        active: state.activeSexStraf,
+        log: state.sexStrafLog,
+        lastSexStrafAt: state.lastSexStrafAt,
+        performance,
+        pointsBalance: state.pointsBalance,
+        challengeLog: state.challengeLog,
+        calendar: calendarToday,
+        sessions: state.gameSessions,
+      }),
+    [
+      state.emergencyStop,
+      state.activeSexStraf,
+      state.sexStrafLog,
+      state.lastSexStrafAt,
+      state.pointsBalance,
+      state.challengeLog,
+      state.gameSessions,
+      performance,
+      calendarToday,
+    ],
+  );
+
   // Ensure today's underwear exists when age-verified and not emergency-stopped
   useEffect(() => {
     if (!state.profile.ageVerified) return;
@@ -35,6 +77,7 @@ export function useFridaState() {
       ...s,
       underwearToday: pickUnderwear(s.profile, s.context, {
         performance: computePerformance(s.gameSessions),
+        calendar: summarizeCalendar(s.calendarEntries, localDateKey()),
       }),
     }));
   }, [state.profile.ageVerified, state.emergencyStop, state.underwearToday?.dateKey]);
@@ -93,6 +136,7 @@ export function useFridaState() {
         underwearToday: pickUnderwear(s.profile, s.context, {
           excludeId: s.underwearToday?.itemId,
           performance: perf,
+          calendar: summarizeCalendar(s.calendarEntries, localDateKey()),
         }),
       };
     });
@@ -103,6 +147,7 @@ export function useFridaState() {
       if (s.emergencyStop) return s;
       const exclude = s.activeChallenges.map((c) => c.templateId);
       const perf = computePerformance(s.gameSessions);
+      const cal = summarizeCalendar(s.calendarEntries, localDateKey());
       const next = drawChallenges(
         s.profile,
         s.context,
@@ -110,6 +155,7 @@ export function useFridaState() {
         count,
         exclude,
         perf,
+        cal,
       );
       return { ...s, activeChallenges: next };
     });
@@ -129,6 +175,7 @@ export function useFridaState() {
           3,
           [],
           perf,
+          summarizeCalendar(s.calendarEntries, localDateKey()),
         ),
       };
     });
@@ -165,6 +212,7 @@ export function useFridaState() {
             1,
             [...remaining.map((c) => c.templateId), ch.templateId],
             perf,
+            summarizeCalendar(s.calendarEntries, localDateKey()),
           );
           active = [...remaining, ...extra];
         }
@@ -206,6 +254,7 @@ export function useFridaState() {
               }, {
                 excludeId: undefined,
                 performance: perf,
+                calendar: summarizeCalendar(s.calendarEntries, localDateKey()),
               })
             : s.underwearToday;
         return {
@@ -261,6 +310,7 @@ export function useFridaState() {
         s.underwearToday,
         exclude,
         perf,
+        summarizeCalendar(s.calendarEntries, localDateKey()),
       );
       return { ...s, activeInGameChallenge: next };
     });
@@ -277,6 +327,7 @@ export function useFridaState() {
         s.underwearToday,
         [],
         perf,
+        summarizeCalendar(s.calendarEntries, localDateKey()),
       );
       return { ...s, activeInGameChallenge: next };
     });
@@ -308,6 +359,7 @@ export function useFridaState() {
             s.underwearToday,
             [ch.templateId],
             computePerformance(s.gameSessions),
+            summarizeCalendar(s.calendarEntries, localDateKey()),
           );
         }
         return {
@@ -321,9 +373,127 @@ export function useFridaState() {
     [],
   );
 
+
+  const claimSexStraf = useCallback(() => {
+    setState((s) => {
+      if (s.emergencyStop) return s;
+      if (s.activeSexStraf && (s.activeSexStraf.status === 'pending' || s.activeSexStraf.status === 'active')) {
+        return s;
+      }
+      const perf = computePerformance(s.gameSessions);
+      const cal = summarizeCalendar(s.calendarEntries, localDateKey());
+      const due = evaluateSexStrafDueWithSessions({
+        paused: s.emergencyStop,
+        active: s.activeSexStraf,
+        log: s.sexStrafLog,
+        lastSexStrafAt: s.lastSexStrafAt,
+        performance: perf,
+        pointsBalance: s.pointsBalance,
+        challengeLog: s.challengeLog,
+        calendar: cal,
+        sessions: s.gameSessions,
+      });
+      if (!due.due) return s;
+      const inst = generateSexStraf({
+        profile: s.profile,
+        performance: perf,
+        pointsBalance: s.pointsBalance,
+        playingGame: s.context.playingGame,
+        excludeTemplateIds: s.sexStrafLog.slice(0, 6).map((x) => x.templateId),
+        dueReasonsDa: due.reasonsDa,
+      });
+      if (!inst) return s;
+      return { ...s, activeSexStraf: inst };
+    });
+  }, []);
+
+  const startSexStraf = useCallback(() => {
+    setState((s) => {
+      if (s.emergencyStop) return s;
+      if (!s.activeSexStraf || s.activeSexStraf.status !== 'pending') return s;
+      return { ...s, activeSexStraf: { ...s.activeSexStraf, status: 'active' } };
+    });
+  }, []);
+
+  const resolveSexStraf = useCallback(
+    (outcome: ChallengeOutcome) => {
+      setState((s) => {
+        if (s.emergencyStop) return s;
+        const inst = s.activeSexStraf;
+        if (!inst) return s;
+        const status =
+          outcome === 'complete' ? 'done' : outcome === 'skip' ? 'skipped' : 'failed';
+        const delta = sexStrafPointsDelta(outcome, inst);
+        const resolved: typeof inst = {
+          ...inst,
+          status,
+          resolvedAt: new Date().toISOString(),
+          pointsDelta: delta,
+        };
+        return {
+          ...s,
+          activeSexStraf: null,
+          lastSexStrafAt: resolved.resolvedAt ?? new Date().toISOString(),
+          sexStrafLog: [resolved, ...s.sexStrafLog].slice(0, 80),
+          pointsBalance: s.pointsBalance + delta,
+        };
+      });
+    },
+    [],
+  );
+
+  const upsertCalendarEntry = useCallback(
+    (entry: {
+      id?: string;
+      dateKey: string;
+      titleDa: string;
+      noteDa: string;
+      signal: CalendarSignal;
+    }) => {
+      setState((s) => {
+        const now = new Date().toISOString();
+        if (entry.id) {
+          const calendarEntries = s.calendarEntries.map((e) =>
+            e.id === entry.id
+              ? {
+                  ...e,
+                  dateKey: entry.dateKey,
+                  titleDa: entry.titleDa,
+                  noteDa: entry.noteDa,
+                  signal: entry.signal,
+                  updatedAt: now,
+                }
+              : e,
+          );
+          return { ...s, calendarEntries };
+        }
+        const row: CalendarEntry = {
+          id: `cal-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+          dateKey: entry.dateKey,
+          titleDa: entry.titleDa,
+          noteDa: entry.noteDa,
+          signal: entry.signal,
+          createdAt: now,
+          updatedAt: now,
+        };
+        return { ...s, calendarEntries: [row, ...s.calendarEntries].slice(0, 400) };
+      });
+    },
+    [],
+  );
+
+  const deleteCalendarEntry = useCallback((id: string) => {
+    setState((s) => ({
+      ...s,
+      calendarEntries: s.calendarEntries.filter((e) => e.id !== id),
+    }));
+  }, []);
+
   return {
     state,
     performance,
+    calendarToday,
+    sexStrafDue,
     updateProfile,
     updateContext,
     setEmergencyStop,
@@ -338,5 +508,10 @@ export function useFridaState() {
     drawNewInGameChallenge,
     ensureInGameChallenge,
     resolveInGameChallenge,
+    claimSexStraf,
+    startSexStraf,
+    resolveSexStraf,
+    upsertCalendarEntry,
+    deleteCalendarEntry,
   };
 }

@@ -11,6 +11,10 @@ import type {
   UnderwearPick,
 } from '../types';
 import { influenceTextDa } from './performanceEngine';
+import {
+  calendarUnderwearMultiplier,
+  type CalendarSummary,
+} from './calendarEngine';
 
 function dateKey(d = new Date()): string {
   return d.toISOString().slice(0, 10);
@@ -145,6 +149,7 @@ export function scoreUnderwear(
   context: ContextState,
   now = new Date(),
   perf?: PerformanceSnapshot | null,
+  cal?: CalendarSummary | null,
 ): number {
   const bucket = hourBucket(now);
   const weekend = isWeekend(now);
@@ -155,6 +160,11 @@ export function scoreUnderwear(
   score *= timeScore(item, bucket, weekend);
   score *= gamingScore(item, context.playingGame);
   score *= performanceScore(item, perf);
+  const hardish =
+    item.intensity.includes('hard') &&
+    (item.category === 'special' || item.tags.includes('hard'));
+  const softish = item.intensity.includes('soft') && !hardish;
+  score *= calendarUnderwearMultiplier(item.tags, hardish, softish, cal);
   return Math.max(score, 0.01);
 }
 
@@ -192,6 +202,7 @@ function buildReason(
   context: ContextState,
   now: Date,
   perf?: PerformanceSnapshot | null,
+  cal?: CalendarSummary | null,
 ): string {
   const parts: string[] = [];
   parts.push(isWeekend(now) ? 'weekend' : 'hverdag');
@@ -202,6 +213,9 @@ function buildReason(
   if (perf && perf.sessionCount > 0) {
     parts.push(`præstation: ${perf.band} (${perf.score})`);
   }
+  if (cal && cal.entries.length) {
+    parts.push(`kalender: ${cal.signals.join(', ') || 'noter'}`);
+  }
   const themes = item.themes.filter((t) => profile.enabledThemes.includes(t));
   if (themes.length) parts.push(`themes: ${themes.join(', ')}`);
   return `Valgt ud fra ${parts.join(' · ')}.`;
@@ -210,13 +224,19 @@ function buildReason(
 export function pickUnderwear(
   profile: Profile,
   context: ContextState,
-  opts?: { excludeId?: string; now?: Date; performance?: PerformanceSnapshot | null },
+  opts?: {
+    excludeId?: string;
+    now?: Date;
+    performance?: PerformanceSnapshot | null;
+    calendar?: CalendarSummary | null;
+  },
 ): UnderwearPick {
   const now = opts?.now ?? new Date();
   const perf = opts?.performance ?? null;
+  const cal = opts?.calendar ?? null;
   const scored = UNDERWEAR_CATALOG.filter((i) => i.id !== opts?.excludeId).map((item) => ({
     item,
-    score: scoreUnderwear(item, profile, context, now, perf),
+    score: scoreUnderwear(item, profile, context, now, perf, cal),
   }));
   const item = weightedPick(scored);
   const influence = influenceTextDa(perf ?? { score: 50, streak: 0, band: 'ok', summaryDa: '', lastSession: null, sessionCount: 0 }, 'undertøjet');
@@ -224,7 +244,7 @@ export function pickUnderwear(
     dateKey: dateKey(now),
     itemId: item.id,
     orderTextDa: buildOrderText(item, profile, perf),
-    reasonDa: buildReason(item, profile, context, now, perf),
+    reasonDa: buildReason(item, profile, context, now, perf, cal),
     pickedAt: now.toISOString(),
     performanceInfluenceDa: perf && perf.sessionCount > 0 ? influence : undefined,
   };

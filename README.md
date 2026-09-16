@@ -5,14 +5,20 @@ Local-first MVP: React + TypeScript + Vite. Data i `localStorage`. Ingen auth.
 
 ## Modes (bundnavigation)
 
-1. **Hoved** — kort overblik: undertøjsordre nu, status-chips (point, præstation, soft/hard, spil, nødstop), 2–4 linjers «Nu»-liste
-2. **Gaming** — spil-presets (CS2, WARDOGS, LoL, Diablo IV, Fortnite) med rigtige KPI-felter, normaliseret 0–100 score, paste-import, point
-3. **In-game** — udfordringer *mens du spiller* + hurtiglink til post-match KPI-log
-4. **Hverdag** — IRL-status, soft/hard-dag, auto undertøj (påvirket af præstation)
-5. **Udfordringer** — træk / fuldfør / skip / fail + straf/belønning vægtet efter præstation
-6. **Profil** — themes, limits, cup, intensitet, app-tips
+Mobil: **Hoved · Kalender · + · Sex · Profil**. Plus-knappen åbner Gaming, In-game, Hverdag og Udfordringer. Desktop viser alle modes i toppen.
 
-Nødstop er altid synligt (topbar + sikkerhedspanel). Gaming-præstation styrer undertøj, challenges og straf.
+1. **Hoved** — greeting-overblik, undertøjsordre, status-chips, «Nu»-liste, badge hvis sex-straf afventer
+2. **Kalender** — noter/aftaler med signal-tags (straf, belønning, blød/hård, tøj, gaming, hvile, date). Signaler påvirker tøj, challenges og om sex-straf er due
+3. **Sex-straf** — fiktiv RP som indløsning af stats (partner, sted, hvorfor, varighed, hårdhed). Badge på nav når pending/due
+4. **Gaming** — spil-presets (CS2, WARDOGS, LoL, Diablo IV, Fortnite) med KPI, 0–100 score, paste-import
+5. **In-game** — udfordringer *mens du spiller*
+6. **Hverdag** — IRL-status, soft/hard-dag, auto undertøj (præstation + kalender)
+7. **Udfordringer** — træk / fuldfør / skip / fail
+8. **Profil** — themes, limits, cup, intensitet
+
+Nødstop er altid synligt. Pauset = ingen ny sex-straf-fremdrift. Gaming-præstation + kalender styrer undertøj, challenges og sex-straf-due.
+
+**Sex-straf due** når (og cooldown er ovre, ikke nødstop, ikke hvile-dag, ingen aktiv scene): dårligt præstationsbånd, pointgæld, nederlagsstime, ≥2 loss/quit i sidste 5, nylig failed udfordring, eller kalender-signal straf/hård. Cooldown: fuldført 12 t · skip 6 t · fail 2 t.
 
 **Telefon-app:** det er en Progressive Web App (PWA). Ingen App Store / Play-betaling — åbn URL’en på telefonen og vælg **Føj til hjemmeskærm**.
 

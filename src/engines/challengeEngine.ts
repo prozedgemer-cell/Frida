@@ -1,6 +1,10 @@
 import { CHALLENGE_TEMPLATES } from '../data/challenges';
 import { getUnderwearById } from './underwearEngine';
 import { influenceTextDa } from './performanceEngine';
+import {
+  calendarChallengeMultiplier,
+  type CalendarSummary,
+} from './calendarEngine';
 import type {
   ActiveChallenge,
   ChallengeKind,
@@ -89,7 +93,11 @@ function pickIntensity(t: ChallengeTemplate, profile: Profile): Intensity {
   return t.intensity[0];
 }
 
-function performanceWeight(t: ChallengeTemplate, perf?: PerformanceSnapshot | null): number {
+function performanceWeight(
+  t: ChallengeTemplate,
+  perf?: PerformanceSnapshot | null,
+  cal?: CalendarSummary | null,
+): number {
   if (!perf || perf.sessionCount === 0) return 1;
   const kind = t.kind ?? 'normal';
   const tags = t.tags.map((x) => x.toLowerCase());
@@ -118,6 +126,7 @@ function performanceWeight(t: ChallengeTemplate, perf?: PerformanceSnapshot | nu
     if (isStraf) w *= 0.9;
     if (isReward) w *= 1.1;
   }
+  w *= calendarChallengeMultiplier(isStraf, isReward, cal);
   return Math.max(w, 0.05);
 }
 
@@ -179,13 +188,14 @@ export function drawChallenges(
   count = 3,
   excludeTemplateIds: string[] = [],
   perf?: PerformanceSnapshot | null,
+  cal?: CalendarSummary | null,
 ): ActiveChallenge[] {
   const pool = filterTemplates(profile, context).filter(
     (t) => !excludeTemplateIds.includes(t.id),
   );
   if (!pool.length) return [];
 
-  const weighted = pool.map((t) => ({ t, w: performanceWeight(t, perf) }));
+  const weighted = pool.map((t) => ({ t, w: performanceWeight(t, perf, cal) }));
   const picked = weightedSample(weighted, Math.min(count, weighted.length));
   return picked.map((t) => toActive(t, profile, context, underwear, perf));
 }
@@ -197,12 +207,13 @@ export function drawInGameChallenge(
   underwear: UnderwearPick | null,
   excludeTemplateIds: string[] = [],
   perf?: PerformanceSnapshot | null,
+  cal?: CalendarSummary | null,
 ): ActiveChallenge | null {
   const pool = filterTemplates(profile, context, { kind: 'ingame' }).filter(
     (t) => !excludeTemplateIds.includes(t.id),
   );
   if (!pool.length) return null;
-  const weighted = pool.map((t) => ({ t, w: performanceWeight(t, perf) * (t.bonusPoints ?? 10) }));
+  const weighted = pool.map((t) => ({ t, w: performanceWeight(t, perf, cal) * (t.bonusPoints ?? 10) }));
   const [picked] = weightedSample(weighted, 1);
   if (!picked) return null;
   const active = toActive(picked, profile, context, underwear, perf);
