@@ -5,7 +5,7 @@ import { ALL_THEMES, DEFAULT_HARD_LIMITS } from '../types';
 const KEY = 'frida-kontrolpanel-v1';
 const UI_TAB_KEY = 'frida-ui-tab-v1';
 
-const VALID_TABS = ['gaming', 'ingame', 'hverdag', 'udfordringer', 'profil'] as const;
+const VALID_TABS = ['hoved', 'gaming', 'ingame', 'hverdag', 'udfordringer', 'profil'] as const;
 export type StoredUiTab = (typeof VALID_TABS)[number];
 
 const VALID_GAME_IDS: GamePresetId[] = [
@@ -164,12 +164,12 @@ export function loadUiTab(): StoredUiTab {
     if (raw && (VALID_TABS as readonly string[]).includes(raw)) {
       return raw as StoredUiTab;
     }
-    if (raw === 'hjem') return 'hverdag';
+    if (raw === 'hjem') return 'hoved';
     if (raw === 'udfordring') return 'udfordringer';
   } catch {
     /* ignore */
   }
-  return 'hverdag';
+  return 'hoved';
 }
 
 export function saveUiTab(tab: StoredUiTab): void {

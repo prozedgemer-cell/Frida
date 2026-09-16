@@ -1159,3 +1159,124 @@ html.is-standalone body {
   color: #f5a3b0;
   font-weight: 650;
 }
+
+/* Hoved overview */
+.command-line--xl {
+  font-size: clamp(1.15rem, 4.2vw, 1.55rem);
+  font-weight: 700;
+  line-height: 1.35;
+  margin: 0.5rem 0 0.65rem;
+}
+.home-item-meta {
+  margin: 0 0 0.25rem;
+  font-size: 0.92rem;
+}
+.panel--home-status {
+  padding-top: 0.85rem;
+  padding-bottom: 0.95rem;
+}
+.status-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+  margin-top: 0.45rem;
+}
+.status-chip {
+  display: inline-flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  min-width: 4.6rem;
+  padding: 0.45rem 0.7rem;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: #0d0d0d;
+  line-height: 1.15;
+}
+.status-chip__k {
+  font-size: 0.62rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--muted);
+  font-weight: 700;
+}
+.status-chip strong {
+  font-size: 0.95rem;
+  font-weight: 750;
+  letter-spacing: 0.01em;
+}
+.status-chip--band-poor {
+  border-color: rgba(196, 30, 58, 0.45);
+  background: rgba(196, 30, 58, 0.16);
+}
+.status-chip--band-ok {
+  border-color: rgba(212, 160, 23, 0.4);
+  background: rgba(212, 160, 23, 0.12);
+}
+.status-chip--band-good {
+  border-color: rgba(61, 154, 106, 0.4);
+  background: rgba(61, 154, 106, 0.14);
+}
+.status-chip--band-godlike {
+  border-color: rgba(196, 30, 58, 0.55);
+  background: rgba(196, 30, 58, 0.28);
+}
+.status-chip--game strong {
+  max-width: 9rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.status-chip--muted {
+  opacity: 0.72;
+}
+.status-chip--estop {
+  border-color: var(--red);
+  background: rgba(196, 30, 58, 0.35);
+  color: #ffd0d8;
+}
+.home-next-title {
+  margin: 0.15rem 0 0.55rem;
+  font-size: 1.15rem;
+}
+.home-next-list {
+  margin: 0;
+  padding-left: 1.15rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  font-size: 0.95rem;
+  line-height: 1.35;
+}
+.home-next-list li::marker {
+  color: var(--red-hot);
+  font-weight: 700;
+}
+.home-next-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem 1rem;
+  margin-top: 0.75rem;
+}
+.home-stack .panel {
+  margin-bottom: 0.85rem;
+}
+
+.bottom-nav--6 {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+}
+.bottom-nav--6 .bottom-nav__btn {
+  padding: 0.4rem 0.05rem;
+  font-size: 0.58rem;
+  letter-spacing: 0.02em;
+  min-height: 52px;
+}
+.bottom-nav--6 .bottom-nav__icon {
+  font-size: 0.95rem;
+}
+@media (max-width: 420px) {
+  .bottom-nav--6 .bottom-nav__btn span:last-child {
+    font-size: 0.52rem;
+    letter-spacing: 0;
+  }
+}

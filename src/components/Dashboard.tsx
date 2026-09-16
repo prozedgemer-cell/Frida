@@ -9,6 +9,7 @@ import { ChallengesPanel } from './ChallengesPanel';
 import { EmergencyStop } from './EmergencyStop';
 import { EverydayPanel } from './EverydayPanel';
 import { GamingPanel } from './GamingPanel';
+import { HomePanel } from './HomePanel';
 import { InGamePanel } from './InGamePanel';
 import { InstallBanner, InstallHint } from './InstallBanner';
 import { ProfilePanel } from './ProfilePanel';
@@ -16,12 +17,22 @@ import { ProfilePanel } from './ProfilePanel';
 type Hook = ReturnType<typeof useFridaState>;
 
 const TAB_TITLES: Record<AppTab, { eyebrow: string; title: string }> = {
+  hoved: { eyebrow: 'Hoved', title: 'Overblik' },
   gaming: { eyebrow: 'Gaming-mode', title: 'Session-log' },
   ingame: { eyebrow: 'In-game', title: 'Mens du spiller' },
   hverdag: { eyebrow: 'Hverdag-mode', title: 'Daglig kontrol' },
   udfordringer: { eyebrow: 'Udfordringer', title: 'Ordrer' },
   profil: { eyebrow: 'Profil', title: 'Frida' },
 };
+
+const MODE_RAIL: { id: AppTab; label: string }[] = [
+  { id: 'hoved', label: 'Hoved' },
+  { id: 'gaming', label: 'Gaming' },
+  { id: 'ingame', label: 'In-game' },
+  { id: 'hverdag', label: 'Hverdag' },
+  { id: 'udfordringer', label: 'Udfordringer' },
+  { id: 'profil', label: 'Profil' },
+];
 
 export function Dashboard({ api }: { api: Hook }) {
   const {
@@ -41,6 +52,10 @@ export function Dashboard({ api }: { api: Hook }) {
     minute: '2-digit',
   });
   const mode = TAB_TITLES[tab];
+  const primaryChallenge =
+    state.activeChallenges.find((c) => c.status === 'active') ??
+    state.activeChallenges[0] ??
+    null;
 
   useEffect(() => {
     ensureChallenges();
@@ -110,15 +125,7 @@ export function Dashboard({ api }: { api: Hook }) {
       <EmergencyStop active={state.emergencyStop} onToggle={api.setEmergencyStop} />
 
       <nav className="mode-rail" aria-label="Mode-skifter (desktop)">
-        {(
-          [
-            ['gaming', 'Gaming'],
-            ['ingame', 'In-game'],
-            ['hverdag', 'Hverdag'],
-            ['udfordringer', 'Udfordringer'],
-            ['profil', 'Profil'],
-          ] as const
-        ).map(([id, label]) => (
+        {MODE_RAIL.map(({ id, label }) => (
           <button
             key={id}
             type="button"
@@ -132,6 +139,23 @@ export function Dashboard({ api }: { api: Hook }) {
       </nav>
 
       <div className="layout layout--modes">
+        <div className={`tab-panel ${tab === 'hoved' ? 'is-active' : ''}`} data-tab="hoved">
+          <HomePanel
+            underwear={state.underwearToday}
+            pointsBalance={state.pointsBalance}
+            performance={performance}
+            intensity={state.profile.intensity}
+            dayMode={state.profile.dayMode}
+            playingGame={state.context.playingGame}
+            activeChallenge={primaryChallenge}
+            inGameChallenge={state.activeInGameChallenge}
+            emergencyStop={state.emergencyStop}
+            onEmergencyStop={api.setEmergencyStop}
+            onGoChallenges={() => setTab('udfordringer')}
+            onGoInGame={() => setTab('ingame')}
+          />
+        </div>
+
         <div className={`tab-panel ${tab === 'gaming' ? 'is-active' : ''}`} data-tab="gaming">
           <GamingPanel
             context={state.context}

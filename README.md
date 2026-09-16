@@ -5,11 +5,12 @@ Local-first MVP: React + TypeScript + Vite. Data i `localStorage`. Ingen auth.
 
 ## Modes (bundnavigation)
 
-1. **Gaming** — spil-presets (CS2, WARDOGS, LoL, Diablo IV, Fortnite) med rigtige KPI-felter, normaliseret 0–100 score, paste-import, point
-2. **In-game** — udfordringer *mens du spiller* + hurtiglink til post-match KPI-log
-3. **Hverdag** — IRL-status, soft/hard-dag, auto undertøj (påvirket af præstation)
-4. **Udfordringer** — træk / fuldfør / skip / fail + straf/belønning vægtet efter præstation
-5. **Profil** — themes, limits, cup, intensitet, app-tips
+1. **Hoved** — kort overblik: undertøjsordre nu, status-chips (point, præstation, soft/hard, spil, nødstop), 2–4 linjers «Nu»-liste
+2. **Gaming** — spil-presets (CS2, WARDOGS, LoL, Diablo IV, Fortnite) med rigtige KPI-felter, normaliseret 0–100 score, paste-import, point
+3. **In-game** — udfordringer *mens du spiller* + hurtiglink til post-match KPI-log
+4. **Hverdag** — IRL-status, soft/hard-dag, auto undertøj (påvirket af præstation)
+5. **Udfordringer** — træk / fuldfør / skip / fail + straf/belønning vægtet efter præstation
+6. **Profil** — themes, limits, cup, intensitet, app-tips
 
 Nødstop er altid synligt (topbar + sikkerhedspanel). Gaming-præstation styrer undertøj, challenges og straf.
 
