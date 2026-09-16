@@ -147,7 +147,6 @@ export function Dashboard({ api }: { api: Hook }) {
             intensity={state.profile.intensity}
             dayMode={state.profile.dayMode}
             playingGame={state.context.playingGame}
-            irlStatus={state.context.irlStatus}
             activeChallenge={primaryChallenge}
             inGameChallenge={state.activeInGameChallenge}
             emergencyStop={state.emergencyStop}
@@ -155,8 +154,6 @@ export function Dashboard({ api }: { api: Hook }) {
             onGoSex={() => setTab('sex')}
             onGoCalendar={() => setTab('kalender')}
             onGoGaming={() => setTab('gaming')}
-            onGoProfil={() => setTab('profil')}
-            onIrl={(irlStatus) => api.updateContext({ irlStatus })}
             sexActive={state.activeSexStraf}
             sexDue={sexStrafDue}
             calendarToday={calendarToday}
