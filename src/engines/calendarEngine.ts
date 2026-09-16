@@ -107,7 +107,7 @@ export function parsePlanText(entries: CalendarEntry[]): {
   if (/bdsm\s*hard|dominatrix|latex|læder|leather|harness|domme\b|pvc/.test(blob)) {
     push('bdsm-hard');
   }
-  if (/collar|choker|soft\s*bdsm|bdsm\s*lite|blød\s*bdsm/.test(blob)) {
+  if (/strappy|mesh|sheer|club|klub|collar|choker|soft\s*bdsm|bdsm\s*lite|blød\s*bdsm/.test(blob)) {
     push('bdsm-soft');
   }
   if (/g-?\s*string|gstring|string.?tease|g-string.?milf/.test(blob)) {

@@ -7,7 +7,7 @@ Local-first MVP: React + TypeScript + Vite. Data i `localStorage`. Ingen auth.
 
 Mobil: **Hoved · Kalender · + · Sex · Profil**. Plus-knappen åbner Gaming, In-game, Hverdag og Udfordringer. Desktop viser alle modes i toppen.
 
-1. **Hoved** — greeting-overblik, **fuldt outfit via Frida Mode ROLE-pack** (g-string-milf · brazilian-cut · bdsm-hard · soft-everyday-femme · hentai-anime · fantasy-femme · office-milf · bdsm-soft), **morgen-trio** (let/hård/grænse · kun DO/WEAR), status-chips, «Nu»-liste, badge hvis sex-straf afventer
+1. **Hoved** — greeting-overblik, **fuldt outfit via Frida Mode ROLE-pack** (g-string-milf · brazilian-cut · bdsm-hard · soft-everyday-femme · hentai-anime · fantasy-elf-heks (alias) · milf-power (alias) · strappy-show (alias)), **morgen-trio** (let/hård/grænse · kun DO/WEAR), status-chips, «Nu»-liste, badge hvis sex-straf afventer
 2. **Kalender** — noter/aftaler med signal-tags (straf, belønning, blød/hård, tøj, gaming, hvile, date). Signaler påvirker tøj, challenges og om sex-straf er due
 3. **Sex-straf** — fiktiv RP som indløsning af stats (partner, sted, hvorfor, varighed, hårdhed). Badge på nav når pending/due
 4. **Gaming** — spil-presets (CS2, WARDOGS, LoL, Diablo IV, Fortnite) med KPI, 0–100 score, paste-import
@@ -16,7 +16,7 @@ Mobil: **Hoved · Kalender · + · Sex · Profil**. Plus-knappen åbner Gaming, 
 7. **Udfordringer** — træk / fuldfør / skip / fail
 8. **Profil** — themes, limits, cup, intensitet, **Tilføj billede**
 
-Nødstop er et lille ikon **øverst til højre** (header-hjørne). Pauset = ingen ny sex-straf-fremdrift. **Vægt:** kalender/rolle/dag ≈ **70%**, gaming-præstation ≈ **30%** — styrer outfit-role, challenges og sex-straf-due. Kalender-noter/signaler matcher packs via `kalender`-tags; dårlig gaming → `gaming_daarlig` (dæk/blød), god → `gaming_god` (reveal/belønning).
+Nødstop er et lille ikon **øverst til højre** (header-hjørne). Pauset = ingen ny sex-straf-fremdrift. **Vægt:** kalender/rolle/dag ≈ **70%**, gaming-præstation ≈ **30%** — styrer outfit-role, challenges og sex-straf-due. Kalender-noter/signaler matcher packs via `kalender`-tags; dårlig gaming → `gaming_daarlig` (mere afslørende/straf), god → `gaming_god` (mere dækket/sofistikeret belønning).
 
 **Billeder:** seed-fotos i `public/media/{outfits,scenes}/` (listes i `src/data/seedImages.ts` og `src/data/looks.ts`). Bruger-uploads via **Tilføj billede** gemmes i IndexedDB på enheden (max 16 pr. slot, komprimeret).
 
