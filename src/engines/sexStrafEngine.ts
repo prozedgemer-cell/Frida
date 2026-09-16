@@ -238,6 +238,7 @@ export function generateSexStraf(opts: {
     let w = 1;
     if (poor && t.hardnessPool.includes('hård')) w *= 1.8;
     if (!poor && t.hardnessPool.includes('blød')) w *= 1.3;
+    if (t.imageFile) w *= 1.25;
     return { t, w };
   });
   const total = weighted.reduce((a, b) => a + b.w, 0);
@@ -288,6 +289,7 @@ export function generateSexStraf(opts: {
     status: 'pending',
     createdAt: new Date().toISOString(),
     redeemBoost: picked.bonusPoints ?? 18,
+    imageFile: picked.imageFile,
   };
 }
 

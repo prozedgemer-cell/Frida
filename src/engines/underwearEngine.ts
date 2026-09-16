@@ -16,6 +16,7 @@ import {
   localDateKey,
   type CalendarSummary,
 } from './calendarEngine';
+import { attachOutfitToPick } from './outfitEngine';
 
 function dateKey(d = new Date()): string {
   return localDateKey(d);
@@ -227,6 +228,7 @@ export function pickUnderwear(
   context: ContextState,
   opts?: {
     excludeId?: string;
+    excludeLookId?: string;
     now?: Date;
     performance?: PerformanceSnapshot | null;
     calendar?: CalendarSummary | null;
@@ -240,8 +242,8 @@ export function pickUnderwear(
     score: scoreUnderwear(item, profile, context, now, perf, cal),
   }));
   const item = weightedPick(scored);
-  const influence = influenceTextDa(perf ?? { score: 50, streak: 0, band: 'ok', summaryDa: '', lastSession: null, sessionCount: 0 }, 'undertøjet');
-  return {
+  const influence = influenceTextDa(perf ?? { score: 50, streak: 0, band: 'ok', summaryDa: '', lastSession: null, sessionCount: 0 }, 'outfittet');
+  const pick: UnderwearPick = {
     dateKey: dateKey(now),
     itemId: item.id,
     orderTextDa: buildOrderText(item, profile, perf),
@@ -249,6 +251,13 @@ export function pickUnderwear(
     pickedAt: now.toISOString(),
     performanceInfluenceDa: perf && perf.sessionCount > 0 ? influence : undefined,
   };
+  return attachOutfitToPick(pick, profile, context, {
+    now,
+    performance: perf,
+    calendar: cal,
+    force: true,
+    excludeLookId: opts?.excludeLookId,
+  });
 }
 
 export function getUnderwearById(id: string): UnderwearItem | undefined {

@@ -68,6 +68,63 @@ export interface UnderwearItem {
   descriptionDa: string;
 }
 
+export type OutfitLayer =
+  | 'underwear'
+  | 'top'
+  | 'bottom'
+  | 'legs'
+  | 'shoes'
+  | 'outerwear'
+  | 'accessory';
+
+export const OUTFIT_LAYER_LABELS_DA: Record<OutfitLayer, string> = {
+  underwear: 'Undertøj',
+  top: 'Overdel',
+  bottom: 'Underdel',
+  legs: 'Strømper',
+  shoes: 'Sko',
+  outerwear: 'Ydertøj',
+  accessory: 'Accessories',
+};
+
+export interface OutfitPiece {
+  id: string;
+  layer: Exclude<OutfitLayer, 'underwear'>;
+  nameDa: string;
+  colors: string[];
+  tags: string[];
+  intensity: Intensity[];
+  themes: ThemePack[];
+  weight: number;
+  descriptionDa: string;
+  /** Kjole / jumpsuit dækker underdel */
+  coversBottom?: boolean;
+}
+
+export interface OutfitLayerPick {
+  layer: OutfitLayer;
+  pieceId: string;
+  nameDa: string;
+  descriptionDa: string;
+  colors: string[];
+}
+
+/** Photographed full look the engine can pick as today's uniform. */
+export interface OutfitLook {
+  id: string;
+  nameDa: string;
+  /** Path under public/, e.g. media/outfits/foo.jpg */
+  imageFile: string;
+  captionDa: string;
+  tags: string[];
+  intensity: Intensity[];
+  themes: ThemePack[];
+  weight: number;
+  irlBias?: IrlStatus[];
+  orderBlurbDa: string;
+  layers: OutfitLayerPick[];
+}
+
 export interface UnderwearPick {
   dateKey: string;
   itemId: string;
@@ -75,6 +132,13 @@ export interface UnderwearPick {
   reasonDa: string;
   pickedAt: string;
   performanceInfluenceDa?: string;
+  /** Full outfit layers (undertøj + tøj). Older saves may omit this. */
+  layers?: OutfitLayerPick[];
+  /** Photographed look id when engine picked a media outfit. */
+  lookId?: string;
+  lookNameDa?: string;
+  /** Relative public/ path for the look photo. */
+  imageFile?: string;
 }
 
 export interface ChallengeTemplate {
@@ -230,6 +294,8 @@ export interface SexStrafTemplate {
   allowsSemenCollection?: boolean;
   bonusPoints?: number;
   penaltyPoints?: number;
+  /** Optional RP illustration under public/ */
+  imageFile?: string;
 }
 
 export interface SexStrafInstance {
@@ -248,6 +314,7 @@ export interface SexStrafInstance {
   pointsDelta?: number;
   /** Points credited toward clearing performance/points debt on complete */
   redeemBoost?: number;
+  imageFile?: string;
 }
 
 

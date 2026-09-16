@@ -112,7 +112,7 @@ textarea {
 .app-shell {
   max-width: 1100px;
   margin: 0 auto;
-  padding: calc(0.75rem + var(--sat)) max(1rem, var(--sar)) calc(5.5rem + var(--sab))
+  padding: calc(0.75rem + var(--sat)) max(3.1rem, var(--sar)) calc(5.5rem + var(--sab))
     max(1rem, var(--sal));
 }
 
@@ -1538,4 +1538,111 @@ html.is-standalone body {
   .app-shell.is-hoved .topbar {
     display: none;
   }
+}
+
+.panic-btn {
+  position: fixed;
+  top: calc(0.55rem + var(--sat));
+  right: max(0.7rem, var(--sar));
+  z-index: 60;
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 45, 85, 0.45);
+  background: rgba(18, 12, 20, 0.88);
+  color: var(--red-hot);
+  display: grid;
+  place-items: center;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+  backdrop-filter: blur(10px);
+}
+.panic-btn__icon {
+  width: 18px;
+  height: 18px;
+  display: block;
+}
+.panic-btn.is-on {
+  background: var(--red);
+  color: #fff;
+  border-color: var(--red-hot);
+  animation: pulse 1.4s ease-in-out infinite;
+}
+.estop-slim {
+  margin: 0 0 0.85rem;
+  padding: 0.4rem 0.85rem;
+  border-radius: 999px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #fff;
+  background: var(--red);
+  display: inline-block;
+}
+.outfit-layers {
+  list-style: none;
+  margin: 0.75rem 0 1rem;
+  padding: 0;
+  display: grid;
+  gap: 0.4rem;
+}
+.outfit-layers li {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem 0.55rem;
+  align-items: baseline;
+  padding: 0.45rem 0.65rem;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--border);
+}
+.outfit-layers__k {
+  font-size: 0.68rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--blue);
+  min-width: 6.2rem;
+  font-weight: 700;
+}
+.img-gallery {
+  margin-top: 1rem;
+}
+.img-gallery__title {
+  font-size: 0.95rem;
+  text-transform: none;
+  margin: 0;
+}
+.img-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(104px, 1fr));
+  gap: 0.55rem;
+  margin-top: 0.65rem;
+}
+.img-tile {
+  margin: 0;
+  border-radius: 14px;
+  overflow: hidden;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+}
+.img-tile img,
+.img-tile__ph {
+  width: 100%;
+  aspect-ratio: 1;
+  object-fit: cover;
+  display: block;
+  background: #0a0c14;
+}
+.img-tile figcaption {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.3rem;
+  padding: 0.3rem 0.4rem 0.45rem;
+  font-size: 0.68rem;
+  color: var(--muted);
+}
+.btn.is-disabled {
+  opacity: 0.55;
+  pointer-events: none;
 }

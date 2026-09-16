@@ -1,5 +1,6 @@
 import type { BreastSize, DayMode, Intensity, Profile, ThemePack } from '../types';
 import { ALL_THEMES } from '../types';
+import { ImageGallery } from './ImageGallery';
 
 const BREASTS: BreastSize[] = ['A', 'B', 'C', 'D', 'DD', 'E', 'F', 'G'];
 
@@ -134,6 +135,11 @@ export function ProfilePanel({ profile, onChange, disabled }: Props) {
           </button>
         </form>
       </fieldset>
+      <ImageGallery
+        slot="profile"
+        titleDa="Profil-fotos"
+        hintDa="Egne billeder af Frida. Kun på denne enhed (IndexedDB)."
+      />
     </section>
   );
 }

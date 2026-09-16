@@ -7,16 +7,18 @@ Local-first MVP: React + TypeScript + Vite. Data i `localStorage`. Ingen auth.
 
 Mobil: **Hoved · Kalender · + · Sex · Profil**. Plus-knappen åbner Gaming, In-game, Hverdag og Udfordringer. Desktop viser alle modes i toppen.
 
-1. **Hoved** — greeting-overblik, undertøjsordre, status-chips, «Nu»-liste, badge hvis sex-straf afventer
+1. **Hoved** — greeting-overblik, **fuld outfit-ordre** (tøj + undertøj + accessories), status-chips, «Nu»-liste, badge hvis sex-straf afventer
 2. **Kalender** — noter/aftaler med signal-tags (straf, belønning, blød/hård, tøj, gaming, hvile, date). Signaler påvirker tøj, challenges og om sex-straf er due
 3. **Sex-straf** — fiktiv RP som indløsning af stats (partner, sted, hvorfor, varighed, hårdhed). Badge på nav når pending/due
 4. **Gaming** — spil-presets (CS2, WARDOGS, LoL, Diablo IV, Fortnite) med KPI, 0–100 score, paste-import
 5. **In-game** — udfordringer *mens du spiller*
-6. **Hverdag** — IRL-status, soft/hard-dag, auto undertøj (præstation + kalender)
+6. **Hverdag** — IRL-status, soft/hard-dag, auto **fuld outfit** (præstation + kalender)
 7. **Udfordringer** — træk / fuldfør / skip / fail
-8. **Profil** — themes, limits, cup, intensitet
+8. **Profil** — themes, limits, cup, intensitet, **Tilføj billede**
 
-Nødstop er altid synligt. Pauset = ingen ny sex-straf-fremdrift. Gaming-præstation + kalender styrer undertøj, challenges og sex-straf-due.
+Nødstop er et lille ikon **øverst til højre**. Pauset = ingen ny sex-straf-fremdrift. Gaming-præstation + kalender styrer outfit, challenges og sex-straf-due.
+
+**Billeder:** seed-fotos i `public/media/{outfits,scenes}/` (listes i `src/data/seedImages.ts` og `src/data/looks.ts`). Bruger-uploads via **Tilføj billede** gemmes i IndexedDB på enheden (max 16 pr. slot, komprimeret).
 
 **Sex-straf due** når (og cooldown er ovre, ikke nødstop, ikke hvile-dag, ingen aktiv scene): dårligt præstationsbånd, pointgæld, nederlagsstime, ≥2 loss/quit i sidste 5, nylig failed udfordring, eller kalender-signal straf/hård. Cooldown: fuldført 12 t · skip 6 t · fail 2 t.
 
@@ -131,12 +133,12 @@ Hvis repoet er tomt, kan du også `git init` i projektmappen, tilføje remote, o
 ## Hvad er med i MVP
 
 - **PWA**: manifest, ikoner, service worker (offline skal), “Føj til hjemmeskærm”, standalone fuldskærms-app
-- Mobil-app UX: safe-area, viewport-fit=cover, bundmenu (Hjem / Udfordring / Profil) på telefon
+- Mobil-app UX: safe-area, viewport-fit=cover, bundmenu med center-+ og neon card-UI
 - **18+ gate** ved første besøg
 - **Profil**: navn låst til Frida, fake breast cup-størrelse, soft/hard intensitet, soft/hard-dag, theme packs, hard limits
-- **Dashboard**: tydelig undertøjs-beording, challenges, IRL/gaming-KPI, stort **nødstop**
+- **Dashboard**: fuld outfit-beording, challenges, IRL/gaming-KPI, lille **nødstop**-ikon øverst til højre
 - **Spil-presets**: CS2 / WARDOGS / LoL / Diablo IV / Fortnite med strukturerede metrics + 0–100 KPI-score
-- **Auto undertøj**: vægtet motor (tid, hverdag/weekend, IRL-status, valgfrit spil, intensitet, themes) — dagens valg gemmes, reroll muligt
+- **Fuld outfit**: vægtet motor til undertøj + overdel/underdel/strømper/sko/ydertøj/accessories (tid, IRL, præstation, kalender, intensitet) — dagens uniform gemmes, reroll muligt
 - **Challenge-motor**: ~118 danske skabeloner med tags/themes; anatomi-respekt (ingen vaginal-use; semen-opsamling tilladt ærligt); complete / skip / fail-log
 - **Themes** (toggle): BDSM, clothing/underwear, sex, IRL, porn, anime, hentai, fantasy roleplay
 - Mørk sort/rød æstetik, mobilvenlig

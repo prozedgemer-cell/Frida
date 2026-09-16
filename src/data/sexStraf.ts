@@ -451,6 +451,35 @@ export const SEX_STRAF_TEMPLATES: SexStrafTemplate[] = [
     bonusPoints: 15,
     penaltyPoints: 8,
   },
+  {
+    id: 'ss-bar-cowgirl',
+    titleDa: 'Bar-cowgirl (fiktiv)',
+    imageFile: 'media/scenes/bar-cowgirl-poster.jpg',
+    sceneDa:
+      'Fiktiv RP: På {place} sidder Frida i cowgirl-positur over {partner} — hun rider med lår og røv, {breastSize}-bryster fremme og i bevægelse. {duration} min, {hardness}. {why}. Hendes penis er synlig; der er ingen vagina at tage. Anal, lår-fuck og mund. Sæd på mave, bryst eller i munden. Rent fantasy-stillbillede — ingen rigtig bar-sex.',
+    partnerPool: [
+      'en fiktiv fyr på baren',
+      'hendes owner i klub-tøj',
+      'en anonym fantasy-gæst',
+    ],
+    placePool: [
+      'en tom natbar (fantasi)',
+      'bardisken efter lukketid',
+      'et mørkt hjørne i en fiktiv klub',
+    ],
+    whyPool: [
+      'fordi hun smed rangliste-point og skal vises frem',
+      'fordi nederlagsstimen kræver offentlig-fantasi ydmygelse',
+      'fordi panelet vil have kropslig indløsning i cowgirl-positur',
+    ],
+    durationMinRange: [10, 22],
+    hardnessPool: ['medium', 'hård'],
+    themes: ['sex', 'porn', 'fantasy'],
+    intensity: ['soft', 'hard'],
+    allowsSemenCollection: true,
+    bonusPoints: 20,
+    penaltyPoints: 11,
+  },
 ];
 
 export const SEX_STRAF_TEMPLATE_COUNT = SEX_STRAF_TEMPLATES.length;

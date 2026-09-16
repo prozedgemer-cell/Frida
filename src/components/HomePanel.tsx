@@ -1,4 +1,6 @@
 import { getUnderwearById } from '../engines/underwearEngine';
+import { OutfitHero } from './OutfitHero';
+import { OutfitLayers } from './OutfitLayers';
 import type { CalendarSummary } from '../engines/calendarEngine';
 import type { SexStrafDue } from '../engines/sexStrafEngine';
 import type {
@@ -28,7 +30,6 @@ type Props = {
   activeChallenge: ActiveChallenge | null;
   inGameChallenge: ActiveChallenge | null;
   emergencyStop: boolean;
-  onEmergencyStop: (on: boolean) => void;
   onGoChallenges: () => void;
   onGoInGame: () => void;
   onGoSex: () => void;
@@ -94,7 +95,6 @@ export function HomePanel({
   activeChallenge,
   inGameChallenge,
   emergencyStop,
-  onEmergencyStop,
   onGoChallenges,
   onGoInGame,
   onGoSex,
@@ -154,18 +154,9 @@ export function HomePanel({
       <section className="panel panel--command panel--home-order">
         <div className="panel__head">
           <div>
-            <p className="eyebrow">Beording</p>
+            <p className="eyebrow">Fuld outfit</p>
             <h2>På dig lige nu</h2>
           </div>
-          <button
-            type="button"
-            className={`btn btn--estop-mini ${emergencyStop ? 'is-on' : ''}`}
-            onClick={() => onEmergencyStop(!emergencyStop)}
-            aria-pressed={emergencyStop}
-            title="Nødstop"
-          >
-            {emergencyStop ? 'NØDSTOP ON' : 'NØDSTOP'}
-          </button>
         </div>
 
         {emergencyStop && (
@@ -176,8 +167,14 @@ export function HomePanel({
 
         {underwear && (
           <>
+            <OutfitHero
+              imageFile={underwear.imageFile}
+              captionDa={underwear.lookNameDa}
+              altDa={underwear.lookNameDa ?? 'Dagens outfit'}
+            />
             <p className="command-line command-line--xl">{underwear.orderTextDa}</p>
-            {item && (
+            <OutfitLayers layers={underwear.layers} />
+            {item && !underwear.layers?.length && (
               <p className="home-item-meta">
                 <strong>{item.nameDa}</strong>
                 <span className="muted"> · {item.category}</span>

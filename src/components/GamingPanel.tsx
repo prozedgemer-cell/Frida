@@ -15,6 +15,7 @@ import {
   type MetricMap,
 } from '../engines/gameScoreEngine';
 import { getUnderwearById } from '../engines/underwearEngine';
+import { OutfitLayers } from './OutfitLayers';
 import type {
   ContextState,
   GameResult,
@@ -794,23 +795,23 @@ export function GamingPanel({
       </section>
 
       <section className="panel panel--command">
-        <p className="eyebrow">Gaming · undertøjssignal</p>
-        <h2>Session-beording</h2>
+        <p className="eyebrow">Gaming · outfit-signal</p>
+        <h2>Session-uniform</h2>
         {paused && <p className="banner banner--warn">Pauset af nødstop</p>}
         {!underwear && <p className="muted">Ingen beording endnu…</p>}
-        {underwear && item && (
+        {underwear && (
           <>
             <p className="command-line">{underwear.orderTextDa}</p>
-            <dl className="meta-grid">
-              <div>
-                <dt>Stykke</dt>
-                <dd>{item.nameDa}</dd>
-              </div>
-              <div>
-                <dt>Begrundelse</dt>
-                <dd>{underwear.reasonDa}</dd>
-              </div>
-            </dl>
+            <OutfitLayers layers={underwear.layers} />
+            {item && !underwear.layers?.length && (
+              <dl className="meta-grid">
+                <div>
+                  <dt>Undertøj</dt>
+                  <dd>{item.nameDa}</dd>
+                </div>
+              </dl>
+            )}
+            <p className="tiny muted">{underwear.reasonDa}</p>
             {underwear.performanceInfluenceDa && (
               <p className="influence-note">{underwear.performanceInfluenceDa}</p>
             )}

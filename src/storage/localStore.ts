@@ -145,6 +145,7 @@ function migrateSexStraf(row: unknown): SexStrafInstance | null {
     resolvedAt: typeof r.resolvedAt === 'string' ? r.resolvedAt : undefined,
     pointsDelta: typeof r.pointsDelta === 'number' ? r.pointsDelta : undefined,
     redeemBoost: typeof r.redeemBoost === 'number' ? r.redeemBoost : undefined,
+    imageFile: typeof r.imageFile === 'string' && r.imageFile ? r.imageFile : undefined,
   };
 }
 

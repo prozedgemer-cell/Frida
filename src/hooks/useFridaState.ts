@@ -14,6 +14,7 @@ import {
   sexStrafPointsDelta,
 } from '../engines/sexStrafEngine';
 import { pickUnderwear, todayKey } from '../engines/underwearEngine';
+import { attachOutfitToPick } from '../engines/outfitEngine';
 import { loadState, saveState } from '../storage/localStore';
 import type {
   AppState,
@@ -68,11 +69,27 @@ export function useFridaState() {
     ],
   );
 
-  // Ensure today's underwear exists when age-verified and not emergency-stopped
+  // Ensure today's full outfit exists when age-verified and not emergency-stopped
   useEffect(() => {
     if (!state.profile.ageVerified) return;
     if (state.emergencyStop) return;
-    if (state.underwearToday?.dateKey === todayKey()) return;
+    if (state.underwearToday?.dateKey === todayKey()) {
+      if (!state.underwearToday.layers || state.underwearToday.layers.length < 2) {
+        setState((s) => {
+          if (!s.underwearToday) return s;
+          if (s.underwearToday.layers && s.underwearToday.layers.length > 1) return s;
+          return {
+            ...s,
+            underwearToday: attachOutfitToPick(s.underwearToday, s.profile, s.context, {
+              performance: computePerformance(s.gameSessions),
+              calendar: summarizeCalendar(s.calendarEntries, localDateKey()),
+              force: true,
+            }),
+          };
+        });
+      }
+      return;
+    }
     setState((s) => ({
       ...s,
       underwearToday: pickUnderwear(s.profile, s.context, {
@@ -80,7 +97,7 @@ export function useFridaState() {
         calendar: summarizeCalendar(s.calendarEntries, localDateKey()),
       }),
     }));
-  }, [state.profile.ageVerified, state.emergencyStop, state.underwearToday?.dateKey]);
+  }, [state.profile.ageVerified, state.emergencyStop, state.underwearToday?.dateKey, state.underwearToday?.layers?.length]);
 
   const updateProfile = useCallback((patch: Partial<Profile>) => {
     setState((s) => ({
@@ -135,6 +152,7 @@ export function useFridaState() {
         ...s,
         underwearToday: pickUnderwear(s.profile, s.context, {
           excludeId: s.underwearToday?.itemId,
+          excludeLookId: s.underwearToday?.lookId,
           performance: perf,
           calendar: summarizeCalendar(s.calendarEntries, localDateKey()),
         }),

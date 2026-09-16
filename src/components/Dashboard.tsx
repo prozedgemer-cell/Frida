@@ -1,12 +1,12 @@
 import { useEffect, useState } from 'react';
 import { TEMPLATE_COUNT } from '../data/challenges';
-import { UNDERWEAR_CATALOG } from '../data/underwear';
+import { OUTFIT_CATALOG_COUNT } from '../data/outfits';
 import { estimateVariationSpace } from '../engines/challengeEngine';
 import type { useFridaState } from '../hooks/useFridaState';
 import { loadUiTab, saveUiTab } from '../storage/localStore';
 import { BottomNav, type AppTab } from './BottomNav';
 import { ChallengesPanel } from './ChallengesPanel';
-import { EmergencyStop } from './EmergencyStop';
+import { PanicButton } from './EmergencyStop';
 import { EverydayPanel } from './EverydayPanel';
 import { GamingPanel } from './GamingPanel';
 import { CalendarPanel } from './CalendarPanel';
@@ -83,6 +83,7 @@ export function Dashboard({ api }: { api: Hook }) {
 
   return (
     <div className={`app-shell ${tab === 'hoved' ? 'is-hoved' : ''}`}>
+      <PanicButton active={state.emergencyStop} onToggle={api.setEmergencyStop} />
       <header className="topbar">
         <div>
           <p className="eyebrow">Personligt kontrolpanel · da-DK</p>
@@ -105,15 +106,6 @@ export function Dashboard({ api }: { api: Hook }) {
           </p>
         </div>
         <div className="topbar__right">
-          <button
-            type="button"
-            className={`btn btn--estop-mini ${state.emergencyStop ? 'is-on' : ''}`}
-            onClick={() => api.setEmergencyStop(!state.emergencyStop)}
-            aria-pressed={state.emergencyStop}
-            title="Nødstop"
-          >
-            {state.emergencyStop ? 'NØDSTOP ON' : 'NØDSTOP'}
-          </button>
           <div className="topbar__stats">
             <div>
               <strong>{state.pointsBalance}</strong>
@@ -124,16 +116,14 @@ export function Dashboard({ api }: { api: Hook }) {
               <span>skabeloner</span>
             </div>
             <div className="topbar__stats--hide-sm">
-              <strong>{UNDERWEAR_CATALOG.length}</strong>
-              <span>undertøj</span>
+              <strong>{OUTFIT_CATALOG_COUNT}</strong>
+              <span>tøj-lag</span>
             </div>
           </div>
         </div>
       </header>
 
       <InstallBanner />
-
-      <EmergencyStop active={state.emergencyStop} onToggle={api.setEmergencyStop} />
 
       <nav className="mode-rail" aria-label="Mode-skifter (desktop)">
         {MODE_RAIL.map(({ id, label }) => (
@@ -162,7 +152,6 @@ export function Dashboard({ api }: { api: Hook }) {
             activeChallenge={primaryChallenge}
             inGameChallenge={state.activeInGameChallenge}
             emergencyStop={state.emergencyStop}
-            onEmergencyStop={api.setEmergencyStop}
             onGoChallenges={() => setTab('udfordringer')}
             onGoInGame={() => setTab('ingame')}
             onGoSex={() => setTab('sex')}

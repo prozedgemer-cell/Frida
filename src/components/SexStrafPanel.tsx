@@ -2,6 +2,8 @@ import type { ChallengeOutcome, SexStrafInstance } from '../types';
 import { SEX_STRAF_HARDNESS_DA, SEX_STRAF_STATUS_DA } from '../types';
 import type { SexStrafDue } from '../engines/sexStrafEngine';
 import { SEX_STRAF_TEMPLATE_COUNT } from '../data/sexStraf';
+import { ImageGallery } from './ImageGallery';
+import { OutfitHero } from './OutfitHero';
 
 type Props = {
   active: SexStrafInstance | null;
@@ -90,6 +92,11 @@ export function SexStrafPanel({
               </span>
             </div>
             <h3>{active.titleDa}</h3>
+            <OutfitHero
+              imageFile={active.imageFile}
+              captionDa="Fiktiv RP-illustration"
+              altDa={active.titleDa}
+            />
             <p className="command-line">{active.sceneDa}</p>
             <Meta inst={active} />
             <p className="tiny muted">
@@ -168,6 +175,11 @@ export function SexStrafPanel({
             )}
           </div>
         )}
+        <ImageGallery
+          slot="sex-straf"
+          titleDa="RP-billeder"
+          hintDa="Stemningsfotos til fiktiv sex-straf. Lokalt. Ingen upload til server."
+        />
       </section>
 
       {log.length > 0 && (

@@ -56,7 +56,7 @@ export function EverydayPanel({
 
         {performance.sessionCount > 0 && (
           <p className="influence-note">
-            Gaming-præstation {performance.score}/100 ({performance.band}) påvirker dagens undertøj
+            Gaming-præstation {performance.score}/100 ({performance.band}) påvirker dagens outfit
             {underwear?.performanceInfluenceDa ? ` — ${underwear.performanceInfluenceDa}` : '.'}
           </p>
         )}
@@ -95,7 +95,7 @@ export function EverydayPanel({
         </div>
 
         <p className="muted tiny">
-          Klokkeslæt, weekend, IRL og gaming-session-log styrer auto-undertøj. Soft/hard-dag hører
+          Klokkeslæt, weekend, IRL, kalender-signaler og gaming-session-log styrer fuld outfit (tøj + undertøj). Soft/hard-dag hører
           til hverdagen — intensitet og themes sættes under Profil.
         </p>
       </section>

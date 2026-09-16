@@ -1,5 +1,8 @@
 import { getUnderwearById } from '../engines/underwearEngine';
 import type { UnderwearPick } from '../types';
+import { ImageGallery } from './ImageGallery';
+import { OutfitHero } from './OutfitHero';
+import { OutfitLayers } from './OutfitLayers';
 
 type Props = {
   pick: UnderwearPick | null;
@@ -12,31 +15,28 @@ export function UnderwearOrder({ pick, paused, onReroll }: Props) {
 
   return (
     <section className="panel panel--command">
-      <p className="eyebrow">Hverdag · auto undertøj</p>
-      <h2>Dagens hovedordre</h2>
+      <p className="eyebrow">Hverdag · fuld outfit</p>
+      <h2>Dagens uniform</h2>
       {paused && <p className="banner banner--warn">Pauset af nødstop</p>}
       {!pick && <p className="muted">Ingen beording endnu…</p>}
-      {pick && item && (
+      {pick && (
         <>
+          <OutfitHero
+            imageFile={pick.imageFile}
+            captionDa={pick.lookNameDa}
+            altDa={pick.lookNameDa ?? 'Dagens outfit'}
+          />
           <p className="command-line">{pick.orderTextDa}</p>
-          <dl className="meta-grid">
-            <div>
-              <dt>Stykke</dt>
-              <dd>{item.nameDa}</dd>
-            </div>
-            <div>
-              <dt>Kategori</dt>
-              <dd>{item.category}</dd>
-            </div>
-            <div>
-              <dt>Farver</dt>
-              <dd>{item.colors.join(', ')}</dd>
-            </div>
-            <div>
-              <dt>Begrundelse</dt>
-              <dd>{pick.reasonDa}</dd>
-            </div>
-          </dl>
+          <OutfitLayers layers={pick.layers} />
+          {item && !pick.layers?.length && (
+            <dl className="meta-grid">
+              <div>
+                <dt>Undertøj</dt>
+                <dd>{item.nameDa}</dd>
+              </div>
+            </dl>
+          )}
+          <p className="tiny muted">{pick.reasonDa}</p>
           {pick.performanceInfluenceDa && (
             <p className="influence-note">{pick.performanceInfluenceDa}</p>
           )}
@@ -46,10 +46,15 @@ export function UnderwearOrder({ pick, paused, onReroll }: Props) {
             onClick={onReroll}
             disabled={paused}
           >
-            Reroll undertøj
+            Reroll outfit
           </button>
         </>
       )}
+      <ImageGallery
+        slot="outfit"
+        titleDa="Outfit-referencer"
+        hintDa="Egne fotos af looks. Gemmes kun på denne enhed."
+      />
     </section>
   );
 }
