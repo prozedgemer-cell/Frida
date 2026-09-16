@@ -386,7 +386,22 @@ export interface CalendarEntry {
   updatedAt: string;
   /** Optional local IndexedDB image id (slot calendar) */
   imageId?: string;
+  /** Optional http(s) or modest data: URL (localStorage) */
+  imageUrl?: string;
+  /** Free tags: milf / bdsm / g-string / date / outing … */
+  tags?: string[];
 }
+
+export const CALENDAR_TAG_PRESETS = [
+  'milf',
+  'bdsm',
+  'g-string',
+  'brazilian',
+  'date',
+  'outing',
+  'gaming',
+  'rest',
+] as const;
 
 export const CALENDAR_SIGNAL_LABELS_DA: Record<CalendarSignal, string> = {
   none: 'Ingen',

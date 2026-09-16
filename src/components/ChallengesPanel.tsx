@@ -10,6 +10,12 @@ import type { CalendarSummary } from '../engines/calendarEngine';
 import { CalendarInfluenceNote } from './CalendarInfluenceNote';
 import { ChallengeCard } from './ChallengeCard';
 
+const TIER_DA = {
+  easy: 'Let',
+  hard: 'Hård',
+  boundary: 'Grænse',
+} as const;
+
 type Props = {
   active: ActiveChallenge[];
   log: ChallengeLogEntry[];
@@ -18,8 +24,8 @@ type Props = {
   paused: boolean;
   onRefresh: () => void;
   onResolve: (id: string, outcome: ChallengeOutcome) => void;
-  onGoInGame?: () => void;
   morningTrio?: MorningTrioState | null;
+  onResolveMorning?: (id: string, outcome: ChallengeOutcome) => void;
 };
 
 export function ChallengesPanel({
@@ -30,15 +36,50 @@ export function ChallengesPanel({
   paused,
   onRefresh,
   onResolve,
-  onGoInGame,
   morningTrio,
+  onResolveMorning,
 }: Props) {
+  const extra = active.filter((c) => !c.morningTier);
+  const morningIds = new Set(morningTrio?.challenges.map((c) => c.id) ?? []);
+  const extraUnique = extra.filter((c) => !morningIds.has(c.id));
+
   return (
     <div className="mode-stack">
+      {morningTrio && morningTrio.challenges.length > 0 && (
+        <section className="panel panel--morning-trio">
+          <div className="panel__head">
+            <div>
+              <p className="eyebrow">Hver morgen · præcis 3</p>
+              <h2>Morgen-trio (DO / WEAR)</h2>
+            </div>
+          </div>
+          <p className="muted tiny">
+            Let · hård · grænsebrydende. Kun gøre/bære — aldrig sige eller skrive. Gælder hele
+            dagen. Dansk Frida-stemme.
+          </p>
+          <div className="morning-trio-list">
+            {morningTrio.challenges.map((c) => (
+              <div key={c.id} className="morning-trio-item">
+                {c.morningTier && (
+                  <span className={`tag tag--tier-${c.morningTier}`}>
+                    {TIER_DA[c.morningTier]}
+                  </span>
+                )}
+                <ChallengeCard
+                  challenge={c}
+                  paused={paused || c.status === 'paused'}
+                  onResolve={onResolveMorning ?? onResolve}
+                />
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
+
       <section className="panel panel--mode panel--challenges">
         <div className="panel__head">
           <div>
-            <p className="eyebrow">Mode · Udfordringer</p>
+            <p className="eyebrow">Aktive ordrer</p>
             <h2>Træk · fuldfør · skip · fail</h2>
           </div>
           <button
@@ -51,12 +92,8 @@ export function ChallengesPanel({
           </button>
         </div>
         <p className="muted tiny">
-          Aktive ordrer til Frida. {WEIGHT_FORMULA_DA} Gaming nu {performance.score}/100 ·{' '}
-          {performance.band}. Morgen-trio er DO/WEAR only.
-          {morningTrio?.challenges.length
-            ? ` I dag: ${morningTrio.challenges.length} morgen-udfordringer.`
-            : ''}{' '}
-          Nødstop pauser alle handlinger.
+          Ekstra ordrer ud over morgen-trio. {WEIGHT_FORMULA_DA} Gaming nu {performance.score}/100 ·{' '}
+          {performance.band}.
         </p>
         <CalendarInfluenceNote calendar={calendarToday} compact />
         {performance.sessionCount > 0 && (
@@ -69,7 +106,7 @@ export function ChallengesPanel({
           </p>
         )}
         <div className="challenge-list">
-          {active.map((c) => (
+          {extraUnique.map((c) => (
             <ChallengeCard
               key={c.id}
               challenge={c}
@@ -77,20 +114,10 @@ export function ChallengesPanel({
               onResolve={onResolve}
             />
           ))}
-          {!active.length && (
-            <p className="muted">
-              Ingen aktive challenges — prøv at slå themes til under Profil, eller træk nye.
-            </p>
+          {!extraUnique.length && (
+            <p className="muted">Ingen ekstra challenges — træk nye, eller tjek themes under Profil.</p>
           )}
         </div>
-        {onGoInGame && (
-          <p className="tiny muted" style={{ marginTop: '0.75rem' }}>
-            Vil du have noget <strong>mens du spiller</strong>?{' '}
-            <button type="button" className="linkish" onClick={onGoInGame}>
-              Åbn In-game
-            </button>
-          </p>
-        )}
       </section>
 
       {log.length > 0 && (

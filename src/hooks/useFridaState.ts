@@ -555,11 +555,18 @@ export function useFridaState() {
       noteDa: string;
       signal: CalendarSignal;
       imageId?: string;
+      imageUrl?: string;
       timeHm?: string;
+      tags?: string[];
     }) => {
       setState((s) => {
         const now = new Date().toISOString();
         const timeHm = entry.timeHm || undefined;
+        const tags = (entry.tags ?? [])
+          .map((x) => x.trim().toLowerCase())
+          .filter(Boolean)
+          .slice(0, 12);
+        const imageUrl = entry.imageUrl?.trim() || undefined;
         if (entry.id) {
           const calendarEntries = s.calendarEntries.map((e) =>
             e.id === entry.id
@@ -571,6 +578,8 @@ export function useFridaState() {
                   noteDa: entry.noteDa,
                   signal: entry.signal,
                   imageId: entry.imageId,
+                  imageUrl,
+                  tags: tags.length ? tags : undefined,
                   updatedAt: now,
                 }
               : e,
@@ -585,6 +594,8 @@ export function useFridaState() {
           noteDa: entry.noteDa,
           signal: entry.signal,
           imageId: entry.imageId,
+          imageUrl,
+          tags: tags.length ? tags : undefined,
           createdAt: now,
           updatedAt: now,
         };

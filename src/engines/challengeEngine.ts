@@ -100,7 +100,12 @@ export function isDoOrWear(t: ChallengeTemplate): boolean {
 export function filterTemplates(
   profile: Profile,
   _context: ContextState,
-  opts?: { kind?: ChallengeKind | ChallengeKind[]; doWearOnly?: boolean },
+  opts?: {
+    kind?: ChallengeKind | ChallengeKind[];
+    doWearOnly?: boolean;
+    ignoreIntensity?: boolean;
+    ignoreThemes?: boolean;
+  },
 ): ChallengeTemplate[] {
   const kinds = opts?.kind
     ? Array.isArray(opts.kind)
@@ -110,8 +115,8 @@ export function filterTemplates(
   return CHALLENGE_TEMPLATES.filter((t) => {
     if (!anatomyOk(t)) return false;
     if (!respectsHardLimits(t, profile.hardLimits)) return false;
-    if (!themeOk(t, profile.enabledThemes)) return false;
-    if (!intensityOk(t, profile.intensity, profile.dayMode)) return false;
+    if (!opts?.ignoreThemes && !themeOk(t, profile.enabledThemes)) return false;
+    if (!opts?.ignoreIntensity && !intensityOk(t, profile.intensity, profile.dayMode)) return false;
     if (opts?.doWearOnly && !isDoOrWear(t)) return false;
     const kind = t.kind ?? 'normal';
     if (kinds) {
@@ -335,12 +340,30 @@ export function drawMorningTrio(
   perf?: PerformanceSnapshot | null,
   cal?: CalendarSummary | null,
 ): ActiveChallenge[] {
-  const pool = filterTemplates(profile, context, { doWearOnly: true });
+  let pool = filterTemplates(profile, context, { doWearOnly: true, ignoreIntensity: true });
+  if (pool.length < 3) {
+    pool = filterTemplates(profile, context, {
+      doWearOnly: true,
+      ignoreIntensity: true,
+      ignoreThemes: true,
+    });
+  }
   const used = new Set<string>();
   const easy = pickForTier('easy', pool, profile, context, underwear, perf, cal, used);
   const hard = pickForTier('hard', pool, profile, context, underwear, perf, cal, used);
   const boundary = pickForTier('boundary', pool, profile, context, underwear, perf, cal, used);
-  return [easy, hard, boundary].filter((x): x is ActiveChallenge => !!x);
+  const out = [easy, hard, boundary].filter((x): x is ActiveChallenge => !!x);
+  const tiers: MorningTier[] = ['easy', 'hard', 'boundary'];
+  if (out.length < 3) {
+    const leftover = pool.filter((t) => !used.has(t.id) && isDoOrWear(t));
+    for (const t of leftover) {
+      if (out.length >= 3) break;
+      used.add(t.id);
+      const tier = tiers[out.length] ?? 'easy';
+      out.push(toActive(t, profile, context, underwear, perf, tier, cal));
+    }
+  }
+  return out.slice(0, 3);
 }
 
 export function estimateVariationSpace(): {

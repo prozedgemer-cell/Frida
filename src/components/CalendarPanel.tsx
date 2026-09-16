@@ -6,6 +6,7 @@ import {
   monthGrid,
   normalizeTimeHm,
   summarizeCalendar,
+  timeHmMinutes,
 } from '../engines/calendarEngine';
 import { CalendarInfluenceNote } from './CalendarInfluenceNote';
 import { addImage, getImageBlob } from '../storage/imageStore';
@@ -70,9 +71,14 @@ export function CalendarPanel({ entries, paused, onUpsert, onDelete }: Props) {
     return map;
   }, [entries]);
 
-  const dayEntries = (byDay.get(selected) ?? []).slice().sort((a, b) =>
-    b.updatedAt.localeCompare(a.updatedAt),
-  );
+  const dayEntries = (byDay.get(selected) ?? []).slice().sort((a, b) => {
+    const am = timeHmMinutes(a.timeHm);
+    const bm = timeHmMinutes(b.timeHm);
+    if (am != null && bm != null && am !== bm) return am - bm;
+    if (am != null && bm == null) return -1;
+    if (am == null && bm != null) return 1;
+    return b.updatedAt.localeCompare(a.updatedAt);
+  });
 
   const monthLabel = new Date(cursor.y, cursor.m, 1).toLocaleDateString('da-DK', {
     month: 'long',
@@ -330,9 +336,9 @@ export function CalendarPanel({ entries, paused, onUpsert, onDelete }: Props) {
         <p className="eyebrow">Denne dag</p>
         <h2>{dayEntries.length ? `${dayEntries.length} note(r)` : 'Tom'}</h2>
         {!dayEntries.length && <p className="muted tiny">Ingen noter på den valgte dag.</p>}
-        <ul className="cal-notes">
+        <ul className="cal-notes sched-notes">
           {dayEntries.map((e) => (
-            <li key={e.id}>
+            <li key={e.id} className={`sched-item ${e.signal === 'straf' || e.signal === 'hard' ? 'is-hot' : e.signal === 'reward' || e.signal === 'soft' ? 'is-ok' : ''}`}>
               <div>
                 <strong>{e.titleDa}</strong>
                 {e.timeHm && <span className="tag">{e.timeHm}</span>}
@@ -362,7 +368,7 @@ export function CalendarPanel({ entries, paused, onUpsert, onDelete }: Props) {
       <ImageGallery
         slot="calendar"
         titleDa="Kalender-billeder"
-        hintDa="Upload referencefotos til noter/planer. Kun lokalt på enheden. Outfit- og sex-straf-galleri findes under Hverdag / Sex."
+        hintDa="Upload referencefotos til noter/planer. Kun lokalt på enheden. Outfit- og sex-straf-galleri findes under Profil / Sex."
         onSelect={(id) => setImageId(id)}
         selectedId={imageId}
         selectLabelDa="Sæt på note"

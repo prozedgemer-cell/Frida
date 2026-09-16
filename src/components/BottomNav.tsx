@@ -1,13 +1,11 @@
-import { useEffect, useState, type ReactElement } from 'react';
+import type { ReactElement } from 'react';
 
 export type AppTab =
   | 'hoved'
   | 'gaming'
-  | 'ingame'
-  | 'hverdag'
+  | 'kalender'
   | 'udfordringer'
   | 'sex'
-  | 'kalender'
   | 'profil';
 
 type Props = {
@@ -26,6 +24,16 @@ function IconHome() {
     </svg>
   );
 }
+function IconGame() {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden className="nav-svg">
+      <path
+        fill="currentColor"
+        d="M7.5 8h9A4.5 4.5 0 0 1 21 12.5c0 1.4-.6 2.6-1.6 3.5l-1.7 1.5H6.3l-1.7-1.5A4.5 4.5 0 0 1 3 12.5 4.5 4.5 0 0 1 7.5 8Zm1 2.2v1.6H7v1.6H5.4v-1.6H3.8v-1.6h1.6V8.6H7v1.6h1.5Zm8.2 1.1a1.1 1.1 0 1 0 0-2.2 1.1 1.1 0 0 0 0 2.2Zm-2 2.2a1.1 1.1 0 1 0 0-2.2 1.1 1.1 0 0 0 0 2.2Z"
+      />
+    </svg>
+  );
+}
 function IconCal() {
   return (
     <svg viewBox="0 0 24 24" aria-hidden className="nav-svg">
@@ -33,6 +41,13 @@ function IconCal() {
         fill="currentColor"
         d="M7 3h2v2h6V3h2v2h3v16H4V5h3V3Zm11 6H6v10h12V9Z"
       />
+    </svg>
+  );
+}
+function IconBolt() {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden className="nav-svg">
+      <path fill="currentColor" d="M13 2 4 14h7l-1 8 10-14h-7l0-6Z" />
     </svg>
   );
 }
@@ -46,123 +61,38 @@ function IconSex() {
     </svg>
   );
 }
-function IconUser() {
-  return (
-    <svg viewBox="0 0 24 24" aria-hidden className="nav-svg">
-      <path
-        fill="currentColor"
-        d="M12 4a4 4 0 1 1 0 8 4 4 0 0 1 0-8Zm0 10c3.8 0 8 1.8 8 5v2H4v-2c0-3.2 4.2-5 8-5Z"
-      />
-    </svg>
-  );
-}
 
-const PRIMARY: { id: AppTab; label: string; icon: () => ReactElement }[] = [
+const TABS: { id: Exclude<AppTab, 'profil'>; label: string; icon: () => ReactElement }[] = [
   { id: 'hoved', label: 'Hoved', icon: IconHome },
+  { id: 'gaming', label: 'Gaming', icon: IconGame },
   { id: 'kalender', label: 'Kalender', icon: IconCal },
+  { id: 'udfordringer', label: 'Udfordr.', icon: IconBolt },
   { id: 'sex', label: 'Sex', icon: IconSex },
-  { id: 'profil', label: 'Profil', icon: IconUser },
-];
-
-const SHEET: { id: AppTab; label: string; hint: string }[] = [
-  { id: 'gaming', label: 'Gaming', hint: 'Session-log & KPI' },
-  { id: 'ingame', label: 'In-game', hint: 'Mens du spiller' },
-  { id: 'hverdag', label: 'Hverdag', hint: 'IRL & tøj' },
-  { id: 'udfordringer', label: 'Udfordringer', hint: 'Ordrer' },
 ];
 
 export function BottomNav({ tab, onChange, sexBadge }: Props) {
-  const [open, setOpen] = useState(false);
-
-  useEffect(() => {
-    setOpen(false);
-  }, [tab]);
-
-  const moreActive = SHEET.some((s) => s.id === tab);
-
   return (
-    <>
-      {open && (
-        <div className="nav-sheet-wrap">
+    <nav className="bottom-nav" aria-label="Hovedmenu">
+      {TABS.map((t) => {
+        const Icon = t.icon;
+        const active = tab === t.id;
+        const badge = (t.id === 'sex' || t.id === 'hoved') && !!sexBadge;
+        return (
           <button
+            key={t.id}
             type="button"
-            className="nav-sheet-backdrop"
-            aria-label="Luk menu"
-            onClick={() => setOpen(false)}
-          />
-          <div className="nav-sheet" role="dialog" aria-label="Flere modes">
-            <p className="eyebrow">Mere</p>
-            {SHEET.map((s) => (
-              <button
-                key={s.id}
-                type="button"
-                className={`nav-sheet__btn ${tab === s.id ? 'is-active' : ''}`}
-                onClick={() => onChange(s.id)}
-              >
-                <strong>{s.label}</strong>
-                <span>{s.hint}</span>
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
-      <nav className="bottom-nav bottom-nav--fab" aria-label="Hovedmenu">
-        {PRIMARY.slice(0, 2).map((t) => (
-          <NavBtn
-            key={t.id}
-            t={t}
-            active={tab === t.id}
-            badge={t.id === 'hoved' && !!sexBadge}
+            className={`bottom-nav__btn ${active ? 'is-active' : ''}`}
+            aria-current={active ? 'page' : undefined}
             onClick={() => onChange(t.id)}
-          />
-        ))}
-        <button
-          type="button"
-          className={`bottom-nav__fab ${open || moreActive ? 'is-active' : ''}`}
-          aria-label="Flere"
-          aria-expanded={open}
-          onClick={() => setOpen((v) => !v)}
-        >
-          <span aria-hidden>+</span>
-        </button>
-        {PRIMARY.slice(2).map((t) => (
-          <NavBtn
-            key={t.id}
-            t={t}
-            active={tab === t.id}
-            badge={(t.id === 'sex' || t.id === 'hoved') && !!sexBadge}
-            onClick={() => onChange(t.id)}
-          />
-        ))}
-      </nav>
-    </>
-  );
-}
-
-function NavBtn({
-  t,
-  active,
-  badge,
-  onClick,
-}: {
-  t: (typeof PRIMARY)[number];
-  active: boolean;
-  badge: boolean;
-  onClick: () => void;
-}) {
-  const Icon = t.icon;
-  return (
-    <button
-      type="button"
-      className={`bottom-nav__btn ${active ? 'is-active' : ''}`}
-      aria-current={active ? 'page' : undefined}
-      onClick={onClick}
-    >
-      <span className="bottom-nav__icon">
-        <Icon />
-        {badge && <i className="nav-badge" aria-label="Aktiv sex-straf" />}
-      </span>
-      <span>{t.label}</span>
-    </button>
+          >
+            <span className="bottom-nav__icon">
+              <Icon />
+              {badge && <i className="nav-badge" aria-label="Aktiv sex-straf" />}
+            </span>
+            <span>{t.label}</span>
+          </button>
+        );
+      })}
+    </nav>
   );
 }

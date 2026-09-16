@@ -1,9 +1,3 @@
-import {
-  ACTIVE_GAME_PICKER_IDS,
-  getPreset,
-  matchPresetFromGameName,
-  type GamePresetId,
-} from '../data/gameProfiles';
 import type {
   ActiveChallenge,
   ChallengeLogEntry,
@@ -11,6 +5,7 @@ import type {
   ContextState,
   PerformanceSnapshot,
 } from '../types';
+import type { GamePresetId } from '../data/gameProfiles';
 
 type Props = {
   challenge: ActiveChallenge | null;
@@ -22,8 +17,9 @@ type Props = {
   paused: boolean;
   onDraw: () => void;
   onResolve: (outcome: ChallengeOutcome) => void;
-  onGoGaming?: () => void;
   onChangeContext?: (patch: Partial<ContextState>) => void;
+  /** When true, skip duplicate game picker — lives inside Gaming tab. */
+  embedded?: boolean;
 };
 
 export function InGamePanel({
@@ -32,102 +28,38 @@ export function InGamePanel({
   performance,
   pointsBalance,
   playingGame,
-  activeGameId,
   paused,
   onDraw,
   onResolve,
-  onGoGaming,
-  onChangeContext,
+  embedded,
 }: Props) {
   const ingameLog = log.filter((e) => e.kind === 'ingame').slice(0, 8);
-  const resolvedId =
-    activeGameId ?? matchPresetFromGameName(playingGame);
-  const preset = getPreset(resolvedId);
-
-  const pickGame = (id: GamePresetId) => {
-    if (!onChangeContext) return;
-    const p = getPreset(id);
-    onChangeContext({
-      playingGame: id === 'custom' ? playingGame || p.shortDa : p.shortDa,
-      activeGameId: id === 'custom' ? undefined : id,
-    });
-  };
 
   return (
-    <div className="mode-stack">
+    <div className={embedded ? 'mode-stack mode-stack--embedded' : 'mode-stack'}>
       <section className="panel panel--mode panel--ingame">
         <div className="panel__head">
           <div>
-            <p className="eyebrow">Mode · In-game / Under spil</p>
+            <p className="eyebrow">{embedded ? 'Sektion · In-game' : 'Mode · In-game'}</p>
             <h2>Udfordring mens du spiller</h2>
           </div>
-          <div className="points-chip">
-            <strong>{pointsBalance}</strong>
-            <span>point</span>
-          </div>
+          {!embedded && (
+            <div className="points-chip">
+              <strong>{pointsBalance}</strong>
+              <span>point</span>
+            </div>
+          )}
         </div>
         <p className="muted tiny">
           Ordrer <strong>i spillet / mellem runder</strong>. Fuldfør = bonuspoint. Efter match: log
-          KDA + sejr/nederlag under Gaming.
+          KDA + sejr/nederlag ovenfor.
         </p>
         <div className="perf-banner perf-banner--compact">
           <span className="tiny">
             Præstation {performance.score}/100 · {performance.band}
-            {playingGame.trim()
-              ? ` · spiller ${playingGame.trim()} (${preset.shortDa})`
-              : ' · intet spil sat'}
+            {playingGame.trim() ? ` · spiller ${playingGame.trim()}` : ' · intet spil sat'}
           </span>
         </div>
-
-        <div className="active-game-picker active-game-picker--ingame">
-          <div className="active-game-picker__head">
-            <p className="eyebrow" style={{ margin: 0 }}>
-              Aktivt spil
-            </p>
-            <h3 className="active-game-picker__title">Hvilket spil spiller du?</h3>
-          </div>
-          <div className="game-preset-grid game-preset-grid--prominent" role="list">
-            {ACTIVE_GAME_PICKER_IDS.map((id) => {
-              const p = getPreset(id);
-              return (
-                <button
-                  key={id}
-                  type="button"
-                  role="listitem"
-                  className={`game-chip game-chip--lg ${resolvedId === id ? 'game-chip--active' : ''}`}
-                  disabled={paused || !onChangeContext}
-                  onClick={() => pickGame(id)}
-                >
-                  {p.shortDa}
-                </button>
-              );
-            })}
-          </div>
-          <p className="active-game-picker__current">
-            Nu aktivt: <strong>{preset.shortDa}</strong>
-            {playingGame.trim() && playingGame.trim() !== preset.shortDa
-              ? ` · ${playingGame.trim()}`
-              : ''}
-          </p>
-        </div>
-        {resolvedId === 'wardogs' && (
-          <p className="assumption-note tiny">
-            WARDOGS = 2026 warfare-FPS (ikke Watch Dogs / Warzone). Efter match: KDA + netto
-            penge (profit/tab).
-          </p>
-        )}
-      </section>
-
-      <section className="panel panel--command">
-        <p className="eyebrow">Hurtiglog efter match</p>
-        <h2>Indtast KPI for {preset.shortDa}</h2>
-        <p className="tiny muted">{preset.helpDa}</p>
-        <p className="tiny muted">{preset.fetchNoteDa}</p>
-        {onGoGaming && (
-          <button type="button" className="btn btn--ok" disabled={paused} onClick={onGoGaming}>
-            → Åbn Gaming & log stats
-          </button>
-        )}
       </section>
 
       <section className="panel panel--command">
@@ -146,9 +78,7 @@ export function InGamePanel({
           </button>
         </div>
         {paused && <p className="banner banner--warn">Pauset af nødstop</p>}
-        {!challenge && (
-          <p className="muted">Træk en in-game-udfordring for at starte.</p>
-        )}
+        {!challenge && <p className="muted">Træk en in-game-udfordring for at starte.</p>}
         {challenge && (
           <>
             <div className="challenge__tags">

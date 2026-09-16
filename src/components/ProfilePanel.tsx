@@ -1,4 +1,12 @@
-import type { BreastSize, DayMode, Intensity, Profile, ThemePack } from '../types';
+import type {
+  BreastSize,
+  ContextState,
+  DayMode,
+  Intensity,
+  IrlStatus,
+  Profile,
+  ThemePack,
+} from '../types';
 import { ALL_THEMES } from '../types';
 import { ImageGallery } from './ImageGallery';
 
@@ -15,13 +23,23 @@ const THEME_LABELS: Record<ThemePack, string> = {
   fantasy: 'Fantasy roleplay',
 };
 
+const IRL_OPTIONS: { value: IrlStatus; label: string }[] = [
+  { value: 'home', label: 'Hjemme' },
+  { value: 'alone', label: 'Alene' },
+  { value: 'out', label: 'Ude' },
+  { value: 'work', label: 'Arbejde' },
+  { value: 'public', label: 'Offentligt' },
+];
+
 type Props = {
   profile: Profile;
+  context?: ContextState;
   onChange: (patch: Partial<Profile>) => void;
+  onContext?: (patch: Partial<ContextState>) => void;
   disabled?: boolean;
 };
 
-export function ProfilePanel({ profile, onChange, disabled }: Props) {
+export function ProfilePanel({ profile, context, onChange, onContext, disabled }: Props) {
   const toggleTheme = (t: ThemePack) => {
     const has = profile.enabledThemes.includes(t);
     const enabledThemes = has
@@ -91,9 +109,24 @@ export function ProfilePanel({ profile, onChange, disabled }: Props) {
           </select>
         </label>
       </div>
+      {context && onContext && (
+        <label className="field">
+          <span>IRL-status</span>
+          <select
+            value={context.irlStatus}
+            disabled={disabled}
+            onChange={(e) => onContext({ irlStatus: e.target.value as IrlStatus })}
+          >
+            {IRL_OPTIONS.map((o) => (
+              <option key={o.value} value={o.value}>
+                {o.label}
+              </option>
+            ))}
+          </select>
+        </label>
+      )}
       <p className="muted tiny">
-        Soft/hard-dag styres også under <strong>Hverdag</strong>. Themes og hard limits hører til
-        profilen.
+        IRL, soft/hard-dag og themes styrer outfit (~70%) sammen med gaming-præstation (~30%).
       </p>
       <fieldset className="fieldset" disabled={disabled}>
         <legend>Theme packs</legend>

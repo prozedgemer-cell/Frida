@@ -1,5 +1,5 @@
 import { SEX_STRAF_TEMPLATES } from '../data/sexStraf';
-import type { CalendarSummary } from './calendarEngine';
+import { calendarStrafDueReason, type CalendarSummary } from './calendarEngine';
 import type {
   ChallengeLogEntry,
   Intensity,
@@ -146,11 +146,8 @@ export function evaluateSexStrafDue(opts: {
   if (perf.streak <= -2) {
     reasonsDa.push(`Nederlagsstime ×${Math.abs(perf.streak)}.`);
   }
-  if (opts.calendar?.hasStraf) reasonsDa.push('Kalender-signal i dag: straf.');
-  if (opts.calendar?.hasHard) reasonsDa.push('Kalender-signal i dag: hård dag.');
-  if (opts.calendar?.timedLabels?.length) {
-    reasonsDa.push(`Kalender-tid: ${opts.calendar.timedLabels[0]}.`);
-  }
+  const calDue = calendarStrafDueReason(opts.calendar, now);
+  if (calDue) reasonsDa.push(calDue);
 
   const recentFails = opts.challengeLog.slice(0, 3).filter((e) => e.outcome === 'fail').length;
   if (recentFails > 0) {

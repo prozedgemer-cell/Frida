@@ -66,6 +66,8 @@ export interface CalendarSummary {
   timedLabels: string[];
   eveningBias: boolean;
   morningBias: boolean;
+  /** Flattened free tags from today + upcoming notes */
+  freeTags: string[];
 }
 
 function flagsFrom(entries: CalendarEntry[]) {
@@ -90,7 +92,7 @@ export function parsePlanText(entries: CalendarEntry[]): {
   planBlurbDa: string;
 } {
   const blob = entries
-    .map((e) => `${e.titleDa} ${e.noteDa} ${e.signal}`)
+    .map((e) => `${e.titleDa} ${e.noteDa} ${e.signal} ${(e.tags ?? []).join(' ')}`)
     .join(' \n ')
     .toLowerCase();
   const hints: RoleId[] = [];
@@ -165,6 +167,15 @@ export function parsePlanText(entries: CalendarEntry[]): {
     }
     if (e.signal === 'hard' || e.signal === 'straf') push('bdsm-hard');
     if (e.signal === 'clothing') push('brazilian-cut');
+    const tags = (e.tags ?? []).map((x) => x.toLowerCase());
+    if (tags.includes('milf') && !tags.includes('bdsm')) push('brazilian-cut');
+    if (tags.includes('g-string') || tags.includes('gstring')) push('g-string-milf');
+    if (tags.includes('brazilian')) push('brazilian-cut');
+    if (tags.includes('bdsm')) push('bdsm-hard');
+    if (tags.includes('date')) push('brazilian-cut');
+    if (tags.includes('outing') || tags.includes('bytur')) push('bytur-gaatur');
+    if (tags.includes('gaming')) push('gaming-praktisk');
+    if (tags.includes('rest') || tags.includes('hvile')) push('soft-everyday-femme');
   }
 
   let boost = 0;
@@ -210,8 +221,13 @@ export function summarizeCalendar(
       if (am == null && bm != null) return 1;
       return b.updatedAt.localeCompare(a.updatedAt);
     });
+  const upcomingHorizon = addDaysKey(dateKey, 2);
+  const upcoming = entries.filter((e) => e.dateKey > dateKey && e.dateKey <= upcomingHorizon);
   const f = flagsFrom(day);
-  const plan = parsePlanText(day);
+  const plan = parsePlanText([...day, ...upcoming]);
+  const freeTags = [...new Set(
+    [...day, ...upcoming].flatMap((e) => (e.tags ?? []).map((x) => x.toLowerCase()).filter(Boolean)),
+  )];
   const labels = f.signals.map((s) => CALENDAR_SIGNAL_LABELS_DA[s]);
   const titles = day
     .map((e) => e.titleDa.trim())
@@ -232,7 +248,7 @@ export function summarizeCalendar(
       ? `${titles.join(' · ')} — ${sig}${role}${clock}`
       : `${day.length} note${day.length > 1 ? 'r' : ''} — ${sig}${role}${clock}`;
   }
-  return { dateKey, entries: day, ...f, headlineDa, ...plan, timedLabels, eveningBias, morningBias };
+  return { dateKey, entries: day, ...f, headlineDa, ...plan, timedLabels, eveningBias, morningBias, freeTags };
 }
 
 /**
@@ -349,6 +365,42 @@ export function calendarChallengeMultiplier(
   return Math.max(w, 0.08);
 }
 
+
+/** Timed straf/hard notes only trigger sex-straf inside a window (−90 / +180 min). Untimed = all day. Date/gaming times never auto-due. */
+export function calendarStrafDueReason(
+  cal: CalendarSummary | null | undefined,
+  now = new Date(),
+): string | null {
+  if (!cal || (!cal.hasStraf && !cal.hasHard)) return null;
+  const hot = cal.entries.filter((e) => e.signal === 'straf' || e.signal === 'hard');
+  const timed = hot
+    .map((e) => ({ e, min: timeHmMinutes(e.timeHm) }))
+    .filter((x): x is { e: CalendarEntry; min: number } => x.min != null);
+  if (!timed.length) {
+    return cal.hasStraf ? 'Kalender-signal i dag: straf.' : 'Kalender-signal i dag: hård dag.';
+  }
+  const nowMin = now.getHours() * 60 + now.getMinutes();
+  const hit = timed.find((row) => nowMin >= row.min - 90 && nowMin <= row.min + 180);
+  if (hit) {
+    return `Kalender ${hit.e.timeHm} «${hit.e.titleDa}» er i tidsvindue — sex-straf due.`;
+  }
+  return null;
+}
+
+export function calendarStrafScheduleNote(
+  cal: CalendarSummary | null | undefined,
+  now = new Date(),
+): string | null {
+  if (!cal || (!cal.hasStraf && !cal.hasHard)) return null;
+  if (calendarStrafDueReason(cal, now)) return null;
+  const hot = cal.entries.filter((e) => e.signal === 'straf' || e.signal === 'hard');
+  const timed = hot
+    .map((e) => e.timeHm)
+    .filter((x): x is string => !!normalizeTimeHm(x));
+  if (!timed.length) return null;
+  return `Straf/hård er planlagt ${timed.join(', ')} — due i vindue (−90 / +180 min).`;
+}
+
 export interface CalendarInfluence {
   summaryDa: string;
   outfitDa: string;
@@ -393,9 +445,13 @@ export function describeCalendarInfluence(cal?: CalendarSummary | null): Calenda
   if (cal.roleHints.includes('familie-sikker')) challengeDa += ' Familie-sikker dæmper straf hårdt.';
   if (cal.noteBoost) challengeDa += ' Plan-tekst forstærker vægt.';
 
+  const calDueNow = calendarStrafDueReason(cal);
+  const calSched = calendarStrafScheduleNote(cal);
   let strafDa = 'Sex-straf:';
   if (cal.hasRest) strafDa += ' hvile-dag blokerer NY sex-straf.';
-  else if (cal.hasStraf || cal.hasHard) strafDa += ' straf/hård-signal gør sex-straf due (hvis cooldown er ovre).';
+  else if (calDueNow) strafDa += ' straf/hård i tidsvindue gør sex-straf due (hvis cooldown er ovre).';
+  else if (calSched) strafDa += ` ${calSched}`;
+  else if (cal.hasStraf || cal.hasHard) strafDa += ' straf/hård-signal kan gøre sex-straf due i tidsvinduet.';
   else strafDa += ' ingen direkte straf-trigger fra kalenderen i dag.';
   if (timed) strafDa += ` Tidspunkter: ${timed}.`;
 

@@ -1,13 +1,11 @@
 import { useEffect, useState } from 'react';
 import { TEMPLATE_COUNT } from '../data/challenges';
-import { OUTFIT_CATALOG_COUNT } from '../data/outfits';
 import { estimateVariationSpace } from '../engines/challengeEngine';
 import type { useFridaState } from '../hooks/useFridaState';
 import { loadUiTab, saveUiTab } from '../storage/localStore';
 import { BottomNav, type AppTab } from './BottomNav';
 import { ChallengesPanel } from './ChallengesPanel';
-import { PanicButton } from './EmergencyStop';
-import { EverydayPanel } from './EverydayPanel';
+import { PanicButton, EstopSlimBanner } from './EmergencyStop';
 import { GamingPanel } from './GamingPanel';
 import { CalendarPanel } from './CalendarPanel';
 import { HomePanel } from './HomePanel';
@@ -20,10 +18,8 @@ type Hook = ReturnType<typeof useFridaState>;
 
 const TAB_TITLES: Record<AppTab, { eyebrow: string; title: string }> = {
   hoved: { eyebrow: 'Hoved', title: 'Overblik' },
-  gaming: { eyebrow: 'Gaming-mode', title: 'Session-log' },
-  ingame: { eyebrow: 'In-game', title: 'Mens du spiller' },
-  hverdag: { eyebrow: 'Hverdag-mode', title: 'Daglig kontrol' },
-  udfordringer: { eyebrow: 'Udfordringer', title: 'Ordrer' },
+  gaming: { eyebrow: 'Gaming', title: 'Session & in-game' },
+  udfordringer: { eyebrow: 'Udfordringer', title: 'Morgen-trio + ordrer' },
   sex: { eyebrow: 'Sex-straf', title: 'Indløs stats' },
   kalender: { eyebrow: 'Kalender', title: 'Noter & signaler' },
   profil: { eyebrow: 'Profil', title: 'Frida' },
@@ -32,11 +28,9 @@ const TAB_TITLES: Record<AppTab, { eyebrow: string; title: string }> = {
 const MODE_RAIL: { id: AppTab; label: string }[] = [
   { id: 'hoved', label: 'Hoved' },
   { id: 'gaming', label: 'Gaming' },
-  { id: 'ingame', label: 'In-game' },
-  { id: 'hverdag', label: 'Hverdag' },
+  { id: 'kalender', label: 'Kalender' },
   { id: 'udfordringer', label: 'Udfordringer' },
   { id: 'sex', label: 'Sex' },
-  { id: 'kalender', label: 'Kalender' },
   { id: 'profil', label: 'Profil' },
 ];
 
@@ -62,6 +56,7 @@ export function Dashboard({ api }: { api: Hook }) {
   });
   const mode = TAB_TITLES[tab];
   const primaryChallenge =
+    state.activeChallenges.find((c) => c.status === 'active' && !c.morningTier) ??
     state.activeChallenges.find((c) => c.status === 'active') ??
     state.activeChallenges[0] ??
     null;
@@ -75,7 +70,7 @@ export function Dashboard({ api }: { api: Hook }) {
   }, [ensureMorningTrio, ensureChallenges]);
 
   useEffect(() => {
-    if (tab === 'ingame') ensureInGameChallenge();
+    if (tab === 'gaming') ensureInGameChallenge();
   }, [tab, ensureInGameChallenge]);
 
   useEffect(() => {
@@ -86,62 +81,43 @@ export function Dashboard({ api }: { api: Hook }) {
   return (
     <div className={`app-shell ${tab === 'hoved' ? 'is-hoved' : ''}`}>
       <PanicButton active={state.emergencyStop} onToggle={api.setEmergencyStop} />
-      <header className="dash-hero">
-        <div>
+      <header className="dash-bar">
+        <div className="dash-bar__left">
           <p className="eyebrow">Kontrolpanel</p>
-          <h1 className="dash-hero__title">
+          <h1 className="dash-bar__title">
             Hej <span className="accent">Frida</span>
           </h1>
-          <p className="muted tiny dash-hero__meta">
+          <p className="muted tiny dash-bar__meta">
             {timeLabel} · {state.profile.dayMode}-dag · {state.pointsBalance} p
             {performance.sessionCount > 0 ? ` · ${performance.score}` : ''}
+            {' · '}
+            {mode.eyebrow}
           </p>
         </div>
-        {(sexPending || sexStrafDue.due) && (
-          <button type="button" className="sex-pill-badge" onClick={() => setTab('sex')}>
-            <i className="nav-badge" aria-hidden />
-            Sex-straf
+        <div className="dash-bar__right">
+          {(sexPending || sexStrafDue.due) && (
+            <button type="button" className="sex-pill-badge" onClick={() => setTab('sex')}>
+              <i className="nav-badge" aria-hidden />
+              Sex-straf
+            </button>
+          )}
+          <button
+            type="button"
+            className={`header-profile-btn ${tab === 'profil' ? 'is-active' : ''}`}
+            aria-label="Profil"
+            aria-current={tab === 'profil' ? 'page' : undefined}
+            onClick={() => setTab('profil')}
+          >
+            <svg viewBox="0 0 24 24" aria-hidden className="nav-svg">
+              <path
+                fill="currentColor"
+                d="M12 4a4 4 0 1 1 0 8 4 4 0 0 1 0-8Zm0 10c3.8 0 8 1.8 8 5v2H4v-2c0-3.2 4.2-5 8-5Z"
+              />
+            </svg>
           </button>
-        )}
-      </header>
-      <header className="topbar">
-        <div>
-          <p className="eyebrow">Personligt kontrolpanel · da-DK</p>
-          <h1>
-            Hej <span className="accent">Frida</span>
-          </h1>
-          <p className="muted">
-            {timeLabel} · {state.profile.dayMode}-dag · intensitet {state.profile.intensity} · cup{' '}
-            {state.profile.breastSize}
-            {state.context.playingGame.trim()
-              ? ` · spiller ${state.context.playingGame.trim()}`
-              : ''}
-            {performance.sessionCount > 0 ? ` · præst. ${performance.score}` : ''}
-          </p>
-          <p className="mode-label">
-            <span className="eyebrow" style={{ display: 'inline' }}>
-              {mode.eyebrow}
-            </span>{' '}
-            <span className="muted">· {mode.title}</span>
-          </p>
-        </div>
-        <div className="topbar__right">
-          <div className="topbar__stats">
-            <div>
-              <strong>{state.pointsBalance}</strong>
-              <span>point</span>
-            </div>
-            <div>
-              <strong>{TEMPLATE_COUNT}</strong>
-              <span>skabeloner</span>
-            </div>
-            <div className="topbar__stats--hide-sm">
-              <strong>{OUTFIT_CATALOG_COUNT}</strong>
-              <span>tøj-lag</span>
-            </div>
-          </div>
         </div>
       </header>
+      <EstopSlimBanner active={state.emergencyStop} />
 
       <InstallBanner />
 
@@ -155,7 +131,9 @@ export function Dashboard({ api }: { api: Hook }) {
             onClick={() => setTab(id)}
           >
             {label}
-            {(id === 'sex' || id === 'hoved') && (sexPending || sexStrafDue.due) && <i className="nav-badge nav-badge--inline" />}
+            {(id === 'sex' || id === 'hoved') && (sexPending || sexStrafDue.due) && (
+              <i className="nav-badge nav-badge--inline" />
+            )}
           </button>
         ))}
       </nav>
@@ -173,37 +151,33 @@ export function Dashboard({ api }: { api: Hook }) {
             inGameChallenge={state.activeInGameChallenge}
             emergencyStop={state.emergencyStop}
             onGoChallenges={() => setTab('udfordringer')}
-            onGoInGame={() => setTab('ingame')}
             onGoSex={() => setTab('sex')}
             onGoCalendar={() => setTab('kalender')}
             onGoGaming={() => setTab('gaming')}
+            onReroll={api.rerollUnderwear}
             sexActive={state.activeSexStraf}
             sexDue={sexStrafDue}
             calendarToday={calendarToday}
-            morningTrio={state.morningTrio}
-            onResolveMorning={api.resolveMorningChallenge}
+            morningPending={
+              state.morningTrio?.challenges.filter((c) => c.status === 'active').length ?? 0
+            }
           />
         </div>
 
         <div className={`tab-panel ${tab === 'gaming' ? 'is-active' : ''}`} data-tab="gaming">
           <GamingPanel
             context={state.context}
-            underwear={state.underwearToday}
             sessions={state.gameSessions}
             performance={performance}
             pointsBalance={state.pointsBalance}
             paused={state.emergencyStop}
             onChange={api.updateContext}
-            onReroll={api.rerollUnderwear}
             onAddSession={api.addGameSession}
             onUpdateSession={api.updateGameSession}
             onDeleteSession={api.deleteGameSession}
-            onGoInGame={() => setTab('ingame')}
           />
-        </div>
-
-        <div className={`tab-panel ${tab === 'ingame' ? 'is-active' : ''}`} data-tab="ingame">
           <InGamePanel
+            embedded
             challenge={state.activeInGameChallenge}
             log={state.challengeLog}
             performance={performance}
@@ -213,22 +187,7 @@ export function Dashboard({ api }: { api: Hook }) {
             paused={state.emergencyStop}
             onDraw={api.drawNewInGameChallenge}
             onResolve={api.resolveInGameChallenge}
-            onGoGaming={() => setTab('gaming')}
             onChangeContext={api.updateContext}
-          />
-        </div>
-
-        <div className={`tab-panel ${tab === 'hverdag' ? 'is-active' : ''}`} data-tab="hverdag">
-          <EverydayPanel
-            profile={state.profile}
-            context={state.context}
-            underwear={state.underwearToday}
-            performance={performance}
-            calendarToday={calendarToday}
-            paused={state.emergencyStop}
-            onContext={api.updateContext}
-            onProfile={api.updateProfile}
-            onReroll={api.rerollUnderwear}
           />
         </div>
 
@@ -245,7 +204,7 @@ export function Dashboard({ api }: { api: Hook }) {
             onRefresh={() => refreshChallenges(3)}
             onResolve={resolveChallenge}
             morningTrio={state.morningTrio}
-            onGoInGame={() => setTab('ingame')}
+            onResolveMorning={api.resolveMorningChallenge}
           />
         </div>
 
@@ -275,7 +234,9 @@ export function Dashboard({ api }: { api: Hook }) {
         <div className={`tab-panel ${tab === 'profil' ? 'is-active' : ''}`} data-tab="profil">
           <ProfilePanel
             profile={state.profile}
+            context={state.context}
             onChange={api.updateProfile}
+            onContext={api.updateContext}
             disabled={state.emergencyStop}
           />
           <section className="panel panel--muted">
@@ -284,7 +245,9 @@ export function Dashboard({ api }: { api: Hook }) {
           </section>
           <section className="panel panel--muted">
             <p className="eyebrow">Skala</p>
-            <p className="tiny">{variation.noteDa}</p>
+            <p className="tiny">
+              {variation.noteDa} · {TEMPLATE_COUNT} challenge-skabeloner.
+            </p>
           </section>
         </div>
       </div>

@@ -1806,3 +1806,247 @@ html.is-standalone body {
     display: none;
   }
 }
+
+
+/* ——— Simplified 5-tab nav + compact header (this release) ——— */
+.dash-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 0.75rem;
+  margin-bottom: 0.85rem;
+  padding: 0.2rem 2.6rem 0.15rem 0.1rem;
+}
+.dash-bar__title {
+  font-size: clamp(1.25rem, 4vw, 1.7rem);
+  text-transform: none;
+  letter-spacing: -0.02em;
+  margin: 0;
+}
+.dash-bar__meta {
+  margin: 0.15rem 0 0;
+  text-transform: capitalize;
+}
+.dash-bar__right {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-shrink: 0;
+}
+.header-profile-btn {
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  border-radius: 50%;
+  border: 1px solid var(--border);
+  background: var(--bg-elevated);
+  color: var(--muted);
+  display: grid;
+  place-items: center;
+  box-shadow: 0 8px 20px rgba(8, 6, 20, 0.35);
+}
+.header-profile-btn.is-active,
+.header-profile-btn:hover {
+  color: var(--pink);
+  border-color: var(--purple);
+  background: rgba(168, 85, 247, 0.16);
+}
+.bottom-nav {
+  grid-template-columns: repeat(5, 1fr);
+  gap: 0.12rem;
+  padding: 0.35rem 0.4rem calc(0.35rem + var(--sab));
+  background: rgba(14, 16, 24, 0.94);
+  border-top: 1px solid rgba(168, 85, 247, 0.22);
+}
+.bottom-nav__btn {
+  min-height: 54px;
+  font-size: 0.62rem;
+  letter-spacing: 0.03em;
+}
+.bottom-nav__btn.is-active {
+  color: var(--pink);
+  background: rgba(168, 85, 247, 0.14);
+}
+.topbar,
+.dash-hero {
+  display: none !important;
+}
+.bottom-nav--fab,
+.bottom-nav__fab,
+.nav-sheet-wrap {
+  display: none !important;
+}
+.btn--estop,
+.e-stop {
+  display: none !important;
+}
+.mode-stack--embedded {
+  margin-top: 0.15rem;
+}
+@media (min-width: 860px) {
+  .bottom-nav {
+    display: none;
+  }
+  .dash-bar {
+    padding-right: 0.1rem;
+  }
+}
+@media (max-width: 420px) {
+  .bottom-nav__btn span:last-child {
+    font-size: 0.54rem;
+    letter-spacing: 0;
+  }
+}
+
+/* ——— Mockup polish: charcoal island nav, neon cards, schedule ——— */
+.app-shell {
+  padding-bottom: calc(6.2rem + var(--sab));
+}
+.dash-bar {
+  padding-top: 0.15rem;
+}
+.dash-bar__left .eyebrow {
+  color: var(--blue);
+  letter-spacing: 0.18em;
+}
+.dash-cards {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0.7rem;
+  margin-bottom: 0.9rem;
+}
+@media (min-width: 420px) {
+  .dash-cards {
+    grid-template-columns: 1.15fr 0.85fr;
+  }
+}
+.dash-card {
+  text-align: left;
+  border: 0;
+  border-radius: 22px;
+  padding: 0.95rem 1.05rem;
+  min-height: 96px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 0.25rem;
+  color: var(--text);
+  box-shadow: 0 14px 32px rgba(8, 6, 24, 0.4);
+  cursor: pointer;
+}
+.dash-card__k {
+  font-size: 0.68rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  font-weight: 700;
+  opacity: 0.85;
+}
+.dash-card strong {
+  font-size: 1.05rem;
+  font-weight: 750;
+  line-height: 1.2;
+}
+.dash-card span:last-child {
+  font-size: 0.78rem;
+  opacity: 0.82;
+}
+.dash-card--today {
+  background:
+    linear-gradient(135deg, #4aa3ff 0%, #6d7dff 48%, #8b5cf6 100%);
+  box-shadow: 0 14px 34px rgba(90, 168, 255, 0.32);
+}
+.dash-card--hot {
+  background:
+    linear-gradient(135deg, #ff4d9a 0%, #a855f7 100%);
+  box-shadow: 0 14px 34px rgba(255, 77, 154, 0.3);
+}
+.dash-card--cal {
+  background:
+    linear-gradient(135deg, rgba(90, 168, 255, 0.22), rgba(168, 85, 247, 0.2));
+  border: 1px solid rgba(168, 85, 247, 0.28);
+}
+.status-chips {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.55rem;
+}
+.status-chip {
+  min-width: 0;
+  border-radius: 16px;
+  padding: 0.7rem 0.8rem;
+  background: var(--bg-elevated);
+  box-shadow: 0 10px 24px rgba(8, 6, 20, 0.32);
+}
+.sched-list {
+  list-style: none;
+  padding-left: 0;
+  gap: 0.5rem;
+}
+.sched-list li {
+  position: relative;
+  padding: 0.7rem 0.8rem 0.7rem 1.15rem;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--border);
+}
+.sched-list li::before {
+  content: "";
+  position: absolute;
+  left: 0.45rem;
+  top: 0.85rem;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--blue);
+  box-shadow: 0 0 8px var(--blue);
+}
+.sched-notes {
+  gap: 0.55rem;
+}
+.sched-notes li,
+.sched-item {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.85rem 0.95rem;
+  border-radius: 16px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--blue);
+  box-shadow: 0 10px 22px rgba(8, 6, 20, 0.28);
+}
+.sched-item.is-hot {
+  border-left-color: var(--pink);
+}
+.sched-item.is-ok {
+  border-left-color: var(--ok);
+}
+.bottom-nav {
+  left: 0.65rem;
+  right: 0.65rem;
+  bottom: calc(0.4rem + var(--sab));
+  width: auto;
+  border-radius: 28px;
+  border: 1px solid rgba(168, 85, 247, 0.28);
+  background: rgba(16, 14, 28, 0.92);
+  box-shadow:
+    0 16px 40px rgba(6, 4, 18, 0.55),
+    0 0 0 1px rgba(90, 168, 255, 0.08),
+    0 0 28px rgba(168, 85, 247, 0.16);
+  padding: 0.4rem 0.35rem 0.45rem;
+}
+.cal-cell.is-today {
+  background: rgba(90, 168, 255, 0.16);
+}
+.cal-cell.is-selected {
+  color: #fff;
+  box-shadow: 0 0 16px rgba(90, 168, 255, 0.35);
+}
+.panel {
+  box-shadow: var(--shadow), 0 0 32px rgba(90, 168, 255, 0.07);
+}
+@media (min-width: 860px) {
+  .app-shell {
+    padding-bottom: calc(2.5rem + var(--sab));
+  }
+}

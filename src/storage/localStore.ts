@@ -15,7 +15,7 @@ import { ALL_THEMES, DEFAULT_HARD_LIMITS } from '../types';
 const KEY = 'frida-kontrolpanel-v1';
 const UI_TAB_KEY = 'frida-ui-tab-v1';
 
-const VALID_TABS = ['hoved', 'gaming', 'ingame', 'hverdag', 'udfordringer', 'sex', 'kalender', 'profil'] as const;
+const VALID_TABS = ['hoved', 'gaming', 'kalender', 'udfordringer', 'sex', 'profil'] as const;
 export type StoredUiTab = (typeof VALID_TABS)[number];
 
 const VALID_GAME_IDS: GamePresetId[] = [
@@ -163,6 +163,13 @@ function migrateCalendarEntry(row: unknown): CalendarEntry | null {
   const timeRaw = typeof r.timeHm === 'string' ? r.timeHm : typeof r.time === 'string' ? r.time : '';
   const timeM = timeRaw.trim().match(/^([01]?\d|2[0-3]):([0-5]\d)$/);
   const timeHm = timeM ? `${timeM[1].padStart(2, '0')}:${timeM[2]}` : undefined;
+  const tags = Array.isArray(r.tags)
+    ? r.tags.map((x) => String(x).trim().toLowerCase()).filter(Boolean).slice(0, 12)
+    : undefined;
+  const imageUrl =
+    typeof r.imageUrl === 'string' && r.imageUrl.trim() && r.imageUrl.length < 180_000
+      ? r.imageUrl.trim()
+      : undefined;
   return {
     id: r.id,
     dateKey,
@@ -173,6 +180,8 @@ function migrateCalendarEntry(row: unknown): CalendarEntry | null {
     createdAt: String(r.createdAt ?? new Date().toISOString()),
     updatedAt: String(r.updatedAt ?? r.createdAt ?? new Date().toISOString()),
     imageId: typeof r.imageId === 'string' && r.imageId ? r.imageId : undefined,
+    imageUrl,
+    tags: tags?.length ? tags : undefined,
   };
 }
 
@@ -308,6 +317,10 @@ export function loadUiTab(): StoredUiTab {
     if (raw === 'udfordring') return 'udfordringer';
     if (raw === 'sex-straf' || raw === 'sexstraf') return 'sex';
     if (raw === 'kalender-tab') return 'kalender';
+    if (raw === 'ingame' || raw === 'in-game') return 'gaming';
+    if (raw === 'hverdag') return 'hoved';
+    if (raw === 'ingame') return 'gaming';
+    if (raw === 'hverdag') return 'profil';
   } catch {
     /* ignore */
   }

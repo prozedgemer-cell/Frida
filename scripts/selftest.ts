@@ -15,8 +15,9 @@ import {
   filterSexStrafTemplates,
   sexStrafPointsDelta,
 } from '../src/engines/sexStrafEngine';
-import { filterTemplates } from '../src/engines/challengeEngine';
+import { drawMorningTrio, filterTemplates } from '../src/engines/challengeEngine';
 import { blendContextGaming } from '../src/engines/weightBlend';
+import { inferMegaSituation, MEGA_LOOK_COUNT, pickMegaLook } from '../src/engines/megaOutfitEngine';
 import { ROLE_PACKS } from '../src/data/rolePacks';
 import { buildOutfitOrderText } from '../src/engines/outfitEngine';
 import { defaultProfile } from '../src/storage/localStore';
@@ -186,6 +187,120 @@ assert(!/dæk mere til|belønning\/reveal/i.test(poorOrder), 'poor order not inv
 const goodPerf: PerformanceSnapshot = { ...poor, band: 'good', score: 80, summaryDa: 'god' };
 const goodOrder = buildOutfitOrderText(testLayers, profile, goodPerf, ROLE_PACKS[0]);
 assert(/dækket|belønning|Gaming-god|blødere/i.test(goodOrder), 'good order uses cover/reward voice');
+
+
+const SAY_WRITE_RE = /\b(skriv|læs højt|sig højt|sig:|sig "|tal |hvisk|råb|fortæl|besked|voice chat|mantraer|dagbog|pagt)\b/i;
+const softProfile = { ...profile, dayMode: 'soft' as const, intensity: 'soft' as const };
+const ctx = { irlStatus: 'home' as const, playingGame: '', notes: '' };
+const trio = drawMorningTrio(softProfile, ctx, null, null, null);
+assert(trio.length === 3, `morning trio always 3 (got ${trio.length})`);
+assert(trio[0]?.morningTier === 'easy', 'slot 1 easy');
+assert(trio[1]?.morningTier === 'hard', 'slot 2 hard');
+assert(trio[2]?.morningTier === 'boundary', 'slot 3 boundary');
+for (const c of trio) {
+  const cls = c.actionClass ?? 'do';
+  assert(cls === 'do' || cls === 'wear', `morning ${c.templateId} is do/wear not ${cls}`);
+  assert(!SAY_WRITE_RE.test(`${c.titleDa} ${c.bodyDa}`), `morning ${c.templateId} has no say/write`);
+}
+assert(MEGA_LOOK_COUNT >= 20, `mega core catalog loaded (${MEGA_LOOK_COUNT})`);
+const okPerf: PerformanceSnapshot = {
+  score: 60,
+  streak: 0,
+  band: 'ok',
+  summaryDa: 'ok',
+  lastSession: null,
+  sessionCount: 2,
+};
+const noon = new Date();
+noon.setHours(12, 0, 0, 0);
+const dateOnlyCal = summarizeCalendar(
+  [
+    {
+      id: 'date-only',
+      dateKey: today,
+      timeHm: '19:30',
+      titleDa: 'Date',
+      noteDa: 'café',
+      signal: 'date',
+      createdAt: '2026-09-16T10:00:00.000Z',
+      updatedAt: '2026-09-16T10:00:00.000Z',
+    },
+  ],
+  today,
+);
+const dateOnlyDue = evaluateSexStrafDue({
+  paused: false,
+  active: null,
+  log: [],
+  lastSexStrafAt: null,
+  performance: okPerf,
+  pointsBalance: 8,
+  challengeLog: [],
+  calendar: dateOnlyCal,
+  now: noon,
+});
+assert(!dateOnlyDue.due, 'timed date-only event does not make sex-straf due');
+
+const hm = `${String(noon.getHours()).padStart(2, '0')}:${String(noon.getMinutes()).padStart(2, '0')}`;
+const strafNowCal = summarizeCalendar(
+  [
+    {
+      id: 'straf-now',
+      dateKey: today,
+      timeHm: hm,
+      titleDa: 'Straf-session',
+      noteDa: 'domme',
+      signal: 'straf',
+      createdAt: '2026-09-16T10:00:00.000Z',
+      updatedAt: '2026-09-16T10:00:00.000Z',
+    },
+  ],
+  today,
+);
+const strafNowDue = evaluateSexStrafDue({
+  paused: false,
+  active: null,
+  log: [],
+  lastSexStrafAt: null,
+  performance: okPerf,
+  pointsBalance: 8,
+  challengeLog: [],
+  calendar: strafNowCal,
+  now: noon,
+});
+assert(strafNowDue.due, 'timed straf in window makes sex-straf due');
+
+const strafLaterCal = summarizeCalendar(
+  [
+    {
+      id: 'straf-later',
+      dateKey: today,
+      timeHm: '03:00',
+      titleDa: 'Nat-straf',
+      noteDa: 'domme',
+      signal: 'straf',
+      createdAt: '2026-09-16T10:00:00.000Z',
+      updatedAt: '2026-09-16T10:00:00.000Z',
+    },
+  ],
+  today,
+);
+const strafLaterDue = evaluateSexStrafDue({
+  paused: false,
+  active: null,
+  log: [],
+  lastSexStrafAt: null,
+  performance: okPerf,
+  pointsBalance: 8,
+  challengeLog: [],
+  calendar: strafLaterCal,
+  now: noon,
+});
+assert(!strafLaterDue.due, 'timed straf outside window is not due by itself');
+
+const sit = inferMegaSituation({ context: ctx, now: noon });
+assert(sit === 'hjemme' || sit === 'weekend', `home noon maps to hjemme/weekend (got ${sit})`);
+assert(!!pickMegaLook({ profile, context: ctx, performance: poor, now: noon }), 'pickMegaLook returns a look');
 
 
 if (failed) {

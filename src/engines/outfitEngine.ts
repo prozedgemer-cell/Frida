@@ -26,6 +26,7 @@ import type {
 import { OUTFIT_LAYER_LABELS_DA } from '../types';
 import { influenceTextDa } from './performanceEngine';
 import { blendContextGaming, WEIGHT_FORMULA_DA } from './weightBlend';
+import { megaAddonText, pickMegaLook } from './megaOutfitEngine';
 
 function hourBucket(d = new Date()): 'morning' | 'day' | 'evening' | 'night' {
   const h = d.getHours();
@@ -189,6 +190,7 @@ function calendarPackMatch(role: RolePack, cal?: CalendarSummary | null, now = n
     weekend ? 'weekend' : 'hverdag',
     ...(cal?.signals ?? []),
     ...(cal?.roleHints ?? []),
+    ...(cal?.freeTags ?? []),
   ]);
   if (cal?.hasDate) bag.add('date');
   if (cal?.hasClothing) bag.add('clothing');
@@ -266,6 +268,15 @@ function weightedPick<T>(rows: { item: T; score: number }[]): T {
   return rows[rows.length - 1]!.item;
 }
 
+const BDSM_GEAR_RE = /cage|harness|kønsbur|kyskhed|chastity|collar-leash|domme|lædersele/i;
+const BDSM_TAGS = new Set(['cage', 'harness', 'bdsm', 'dominatrix', 'leather', 'chastity', 'kyskhed']);
+const BDSM_ROLES = new Set(['bdsm-hard', 'bdsm-soft']);
+
+function isBdsmGear(item: OutfitPiece): boolean {
+  if (item.tags.some((t) => BDSM_TAGS.has(t))) return true;
+  return BDSM_GEAR_RE.test(`${item.nameDa} ${item.descriptionDa}`);
+}
+
 function pickLayer(
   layer: OutfitPiece['layer'],
   profile: Profile,
@@ -275,15 +286,19 @@ function pickLayer(
   cal?: CalendarSummary | null,
   excludeId?: string,
   tagBoost?: string[],
+  roleId?: RoleId,
 ): OutfitPiece | null {
   const pool = OUTFIT_CATALOG.filter((p) => p.layer === layer && p.id !== excludeId);
   if (!pool.length) return null;
+  const bdsmRole = !!roleId && BDSM_ROLES.has(roleId);
   const scored = pool.map((item) => {
     let score = scorePiece(item, profile, context, now, perf, cal);
     if (tagBoost?.length) {
       const hit = item.tags.filter((t) => tagBoost.includes(t)).length;
       if (hit) score *= 1 + hit * 0.45;
     }
+    // Non-BDSM roles must not be forced into cage/harness/domme gear
+    if (!bdsmRole && isBdsmGear(item)) score *= 0.04;
     return { item, score };
   });
   return weightedPick(scored);
@@ -442,7 +457,7 @@ export function pickOutfitLayersForRole(
   }
   for (const layer of need) {
     if (usedLayers.has(layer)) continue;
-    const piece = pickLayer(layer, profile, context, now, perf, cal, undefined, gamingTags);
+    const piece = pickLayer(layer, profile, context, now, perf, cal, undefined, gamingTags, role.id);
     if (piece) {
       layers.push(toLayerPick(piece));
       usedLayers.add(layer);
@@ -451,7 +466,7 @@ export function pickOutfitLayersForRole(
   }
 
   if (!usedLayers.has('legs') && chance(role.id === 'bdsm-hard' || role.id === 'fantasy-femme' || role.id === 'fantasy-look' || role.id === 'fest-aften' || role.id === 'hentai-inspireret' || role.id === 'brazilian-cut' ? 0.85 : 0.45)) {
-    const legs = pickLayer('legs', profile, context, now, perf, cal, undefined, gamingTags);
+    const legs = pickLayer('legs', profile, context, now, perf, cal, undefined, gamingTags, role.id);
     if (legs) layers.push(toLayerPick(legs));
   }
   // Poor gaming → less outer cover (mere afslørende); good → prefer outerwear cover
@@ -464,11 +479,11 @@ export function pickOutfitLayersForRole(
           ? 0.75
           : 0.3;
   if (!usedLayers.has('outerwear') && chance(outerP)) {
-    const outer = pickLayer('outerwear', profile, context, now, perf, cal, undefined, gamingTags);
+    const outer = pickLayer('outerwear', profile, context, now, perf, cal, undefined, gamingTags, role.id);
     if (outer) layers.push(toLayerPick(outer));
   }
   if (!usedLayers.has('accessory') && chance(0.8)) {
-    const acc = pickLayer('accessory', profile, context, now, perf, cal, undefined, gamingTags);
+    const acc = pickLayer('accessory', profile, context, now, perf, cal, undefined, gamingTags, role.id);
     if (acc) layers.push(toLayerPick(acc));
   }
 
@@ -684,6 +699,16 @@ export function attachOutfitToPick(
           excludeLookId: opts?.excludeLookId ?? pick.lookId,
         });
 
+  const mega = pickMegaLook({
+    profile,
+    context,
+    performance: perf,
+    calendar: opts?.calendar,
+    now: opts?.now,
+    roleId: role.id,
+  });
+  const megaBit = mega ? megaAddonText(mega, perf) : '';
+
   if (look) {
     return {
       ...pick,
@@ -692,7 +717,7 @@ export function attachOutfitToPick(
       lookNameDa: look.nameDa,
       imageFile: look.imageFile,
       layers: look.layers,
-      orderTextDa: buildLookOrderText(look, profile, perf),
+      orderTextDa: buildLookOrderText(look, profile, perf) + megaBit,
       performanceInfluenceDa: influence,
       roleId: role.id,
       roleNameDa: role.nameDa,
@@ -702,11 +727,11 @@ export function attachOutfitToPick(
   return {
     ...pick,
     itemId: uwForRole.id,
-    lookId: undefined,
-    lookNameDa: undefined,
+    lookId: mega?.id,
+    lookNameDa: mega?.nameDa,
     imageFile: undefined,
     layers,
-    orderTextDa: buildOutfitOrderText(layers, profile, perf, role),
+    orderTextDa: buildOutfitOrderText(layers, profile, perf, role) + megaBit,
     performanceInfluenceDa: influence,
     roleId: role.id,
     roleNameDa: role.nameDa,

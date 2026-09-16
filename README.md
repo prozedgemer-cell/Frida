@@ -5,16 +5,14 @@ Local-first MVP: React + TypeScript + Vite. Data i `localStorage`. Ingen auth.
 
 ## Modes (bundnavigation)
 
-Mobil: **Hoved · Kalender · + · Sex · Profil**. Plus-knappen åbner Gaming, In-game, Hverdag og Udfordringer. Desktop viser alle modes i toppen.
+Mobil: **Hoved · Gaming · Kalender · Udfordringer · Sex**. **Profil** er et ikon i headeren. Desktop-rail matcher (inkl. Profil). Ingen In-game- eller Hverdag-tab — de er slået sammen.
 
-1. **Hoved** — greeting-overblik, **fuldt outfit via Frida Mode ROLE-pack** (g-string-milf · brazilian-cut · bdsm-hard/klassik · soft-everyday-femme · hentai-anime · fantasy-elf-heks · milf-power · strappy-show) · milf-power (alias) · strappy-show (alias)), **morgen-trio** (let/hård/grænse · kun DO/WEAR), status-chips, «Nu»-liste, badge hvis sex-straf afventer
-2. **Kalender** — lokale noter/aftaler med dato, valgfrit klokkeslæt og signal-tags (straf, belønning, blød/hård, tøj, gaming, hvile, date). Signaler + tid + plan-tekst påvirker tøj, challenges og om sex-straf er due. UI viser hvordan/hvorfor.
-3. **Sex-straf** — fiktiv RP som indløsning af stats (partner, sted, hvorfor, varighed, hårdhed). Badge på nav når pending/due
-4. **Gaming** — spil-presets (CS2, WARDOGS, LoL, Diablo IV, Fortnite) med KPI, 0–100 score, paste-import
-5. **In-game** — udfordringer *mens du spiller*
-6. **Hverdag** — IRL-status, soft/hard-dag, auto **fuld outfit** (præstation + kalender)
-7. **Udfordringer** — træk / fuldfør / skip / fail
-8. **Profil** — themes, limits, cup, intensitet, **Tilføj billede**
+1. **Hoved** — kun tøj-ordre (fuldt outfit / role-pack), status-chips, «hvad sker der nu», lille badge hvis sex-straf afventer. Egne outfit-fotos.
+2. **Gaming** — ét sted: vælg spil, log KDA + sejr/nederlag (WARDOGS: netto cash), sessions, stats/præstation. In-game-udfordring er en sektion her.
+3. **Kalender** — noter/events for dagen; appen læser dem som signaler (milf, bdsm, date, work, home …) til outfit, challenges og sex-straf.
+4. **Udfordringer** — **morgen-trio** hver dag (let / hård / grænsebrydende — kun DO/WEAR, aldrig sige/skrive) + ekstra aktive ordrer.
+5. **Sex** — sex-straf RP (pending + historik) og RP-billeder.
+6. **Profil** — themes, limits, cup, intensitet, IRL-status, **Tilføj billede**.
 
 Nødstop er et lille ikon **øverst til højre** (header-hjørne). Pauset = ingen ny sex-straf-fremdrift. **Vægt:** kalender/rolle/dag ≈ **70%**, gaming-præstation ≈ **30%** — styrer outfit-role, challenges og sex-straf-due. Kalender-noter/signaler matcher packs via `kalender`-tags; dårlig gaming → `gaming_daarlig` (mere afslørende/straf), god → `gaming_god` (mere dækket/sofistikeret belønning).
 

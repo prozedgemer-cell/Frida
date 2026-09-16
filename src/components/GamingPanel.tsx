@@ -14,32 +14,26 @@ import {
   ratingFromScore,
   type MetricMap,
 } from '../engines/gameScoreEngine';
-import { getUnderwearById } from '../engines/underwearEngine';
-import { OutfitLayers } from './OutfitLayers';
 import type {
   ContextState,
   GameResult,
   GameSessionLog,
   PerformanceRating,
   PerformanceSnapshot,
-  UnderwearPick,
 } from '../types';
 import { RATING_LABELS_DA, RESULT_LABELS_DA } from '../types';
 import { parseTrackerPaste } from '../utils/trackerPaste';
 
 type Props = {
   context: ContextState;
-  underwear: UnderwearPick | null;
   sessions: GameSessionLog[];
   performance: PerformanceSnapshot;
   pointsBalance: number;
   paused: boolean;
   onChange: (patch: Partial<ContextState>) => void;
-  onReroll: () => void;
   onAddSession: (entry: Omit<GameSessionLog, 'id' | 'at'> & { at?: string }) => void;
   onUpdateSession: (id: string, patch: Partial<Omit<GameSessionLog, 'id'>>) => void;
   onDeleteSession: (id: string) => void;
-  onGoInGame?: () => void;
 };
 
 const RESULTS: GameResult[] = ['win', 'loss', 'quit', 'draw', 'other'];
@@ -174,19 +168,15 @@ function renderMetricField(
 
 export function GamingPanel({
   context,
-  underwear,
   sessions,
   performance,
   pointsBalance,
   paused,
   onChange,
-  onReroll,
   onAddSession,
   onUpdateSession,
   onDeleteSession,
-  onGoInGame,
 }: Props) {
-  const item = underwear ? getUnderwearById(underwear.itemId) : undefined;
   const gaming = Boolean(context.playingGame.trim());
   const [form, setForm] = useState<FormState>(() =>
     emptyForm(context.playingGame, context.activeGameId),
@@ -348,8 +338,8 @@ export function GamingPanel({
       <section className="panel panel--mode panel--gaming">
         <div className="panel__head">
           <div>
-            <p className="eyebrow">Mode · Gaming / Under spil</p>
-            <h2>KPI-session & præstation</h2>
+            <p className="eyebrow">Mode · Gaming</p>
+            <h2>Spil · KDA · stats</h2>
           </div>
           <div className="points-chip" title="Bonus-/strafpoint">
             <strong>{pointsBalance}</strong>
@@ -794,51 +784,6 @@ export function GamingPanel({
         </ul>
       </section>
 
-      <section className="panel panel--command">
-        <p className="eyebrow">Gaming · outfit-signal</p>
-        <h2>Session-uniform</h2>
-        {paused && <p className="banner banner--warn">Pauset af nødstop</p>}
-        {!underwear && <p className="muted">Ingen beording endnu…</p>}
-        {underwear && (
-          <>
-            <p className="command-line">{underwear.orderTextDa}</p>
-            <OutfitLayers layers={underwear.layers} />
-            {item && !underwear.layers?.length && (
-              <dl className="meta-grid">
-                <div>
-                  <dt>Undertøj</dt>
-                  <dd>{item.nameDa}</dd>
-                </div>
-              </dl>
-            )}
-            <p className="tiny muted">{underwear.reasonDa}</p>
-            {underwear.performanceInfluenceDa && (
-              <p className="influence-note">{underwear.performanceInfluenceDa}</p>
-            )}
-            <button
-              type="button"
-              className="btn btn--secondary"
-              onClick={onReroll}
-              disabled={paused}
-            >
-              Reroll til session
-            </button>
-          </>
-        )}
-      </section>
-
-      <section className="panel panel--muted">
-        <p className="eyebrow">In-game</p>
-        <p className="tiny muted">
-          Træk en udfordring der skal gøres <strong>mens du spiller</strong> — bonuspoint ved
-          fuldførelse. Kom tilbage her og log KPI efter match.
-        </p>
-        {onGoInGame && (
-          <button type="button" className="btn btn--secondary" onClick={onGoInGame}>
-            Åbn In-game
-          </button>
-        )}
-      </section>
     </div>
   );
 }
