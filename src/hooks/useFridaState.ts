@@ -214,6 +214,10 @@ export function useFridaState() {
           context: {
             ...s.context,
             playingGame: session.gameName || s.context.playingGame,
+            activeGameId:
+              session.gameId && session.gameId !== 'custom'
+                ? session.gameId
+                : s.context.activeGameId,
           },
           underwearToday:
             underwearToday && s.underwearToday?.dateKey === todayKey()

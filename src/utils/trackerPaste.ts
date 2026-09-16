@@ -29,10 +29,10 @@ export function parseTrackerPaste(
   };
 
   // Common K/D/A patterns: 12/8/4 or 12-8-4 or Kills: 12 Deaths: 8
-  const kdaSlash = t.match(/\b(\d{1,2})\s*\/\s*(\d{1,2})\s*\/\s*(\d{1,2})\b/);
-  const kdSlash = t.match(/\b(\d{1,2})\s*\/\s*(\d{1,2})\b/);
+  const kdaSlash = t.match(/\b(\d{1,3})\s*\/\s*(\d{1,3})\s*\/\s*(\d{1,3})\b/);
+  const kdSlash = t.match(/\b(\d{1,3})\s*\/\s*(\d{1,3})\b/);
 
-  if (gameId === 'lol' && kdaSlash) {
+  if (kdaSlash && (gameId === 'lol' || gameId === 'cs2' || gameId === 'wardogs' || gameId === 'fortnite')) {
     metrics.kills = Number(kdaSlash[1]);
     metrics.deaths = Number(kdaSlash[2]);
     metrics.assists = Number(kdaSlash[3]);
@@ -43,7 +43,7 @@ export function parseTrackerPaste(
 
   const kills = grab(/(?:kills?|drab)\s*[:=]?\s*(\d+(?:[.,]\d+)?)/i);
   const deaths = grab(/(?:deaths?|døde|dødsfald)\s*[:=]?\s*(\d+(?:[.,]\d+)?)/i);
-  const assists = grab(/(?:assists?)\s*[:=]?\s*(\d+(?:[.,]\d+)?)/i);
+  const assists = grab(/(?:assists?|revives?)\s*[:=]?\s*(\d+(?:[.,]\d+)?)/i);
   if (kills != null) metrics.kills = kills;
   if (deaths != null) metrics.deaths = deaths;
   if (assists != null) metrics.assists = assists;
@@ -60,19 +60,26 @@ export function parseTrackerPaste(
   const vision = grab(/(?:vision(?:\s*score)?)\s*[:=]?\s*(\d+(?:[.,]\d+)?)/i);
   if (vision != null) metrics.visionScore = vision;
 
-  const cash = grab(/(?:cash|earned|\$)\s*[:=]?\s*\$?\s*([\d.,]+)/i);
-  if (cash != null) metrics.cash = cash;
+  // Netto / cash — allow signed values (profit vs tab)
+  const signedCash = t.match(
+    /(?:netto|profit|tab|cash|earned|net)\s*[:=]?\s*([+-]?)\s*\$?\s*([\d.,]+)/i,
+  );
+  if (signedCash) {
+    const signWord = signedCash[0].toLowerCase();
+    let n = Number(signedCash[2]!.replace(',', '.'));
+    if (signedCash[1] === '-') n = -Math.abs(n);
+    else if (/tab|loss|lost/.test(signWord) && signedCash[1] !== '+') n = -Math.abs(n);
+    if (Number.isFinite(n)) metrics.cash = n;
+  } else {
+    const cash = grab(/(?:cash|earned|\$)\s*[:=]?\s*\$?\s*([\d.,]+)/i);
+    if (cash != null) metrics.cash = cash;
+  }
 
   const pit = grab(/(?:pit(?:\s*tier)?|tier)\s*[:=]?\s*(\d{1,3})/i);
   if (pit != null && gameId === 'diablo4') metrics.pitTier = pit;
 
   const place = grab(/(?:placement|place|#)\s*[:=]?\s*#?\s*(\d{1,3})/i);
   if (place != null && gameId === 'fortnite') metrics.placement = place;
-
-  const kdLabel = grab(/(?:K\s*\/\s*D|KD)\s*[:=]?\s*(\d+(?:[.,]\d+)?)/i);
-  if (kdLabel != null && metrics.kills == null) {
-    // Can't reverse KD without kills — stash in note only
-  }
 
   const filled = Object.keys(metrics).length;
   return {

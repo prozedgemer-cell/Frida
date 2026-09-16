@@ -1031,3 +1031,131 @@ html.is-standalone body {
   color: #ffd0d8;
   font-variant-numeric: tabular-nums;
 }
+
+
+/* Active game picker — prominent */
+.active-game-picker {
+  margin: 0 0 1rem;
+  padding: 0.85rem 0.9rem;
+  border-radius: 14px;
+  border: 1px solid rgba(196, 30, 58, 0.45);
+  background: linear-gradient(160deg, rgba(196, 30, 58, 0.14), rgba(13, 13, 13, 0.9));
+  box-shadow: 0 0 0 1px rgba(196, 30, 58, 0.12);
+}
+.active-game-picker--ingame {
+  margin-top: 0.65rem;
+}
+.active-game-picker__head {
+  margin-bottom: 0.55rem;
+}
+.active-game-picker__title {
+  margin: 0.15rem 0 0.25rem;
+  font-size: 1.05rem;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+}
+.active-game-picker__current {
+  margin: 0.45rem 0 0;
+  font-size: 0.82rem;
+  color: #e8b4bc;
+}
+.game-preset-grid--prominent {
+  margin: 0;
+  gap: 0.5rem;
+}
+.game-chip--lg {
+  min-height: 46px;
+  padding: 0.5rem 1rem;
+  font-size: 0.92rem;
+}
+
+/* Win / loss primary controls */
+.result-block {
+  margin: 0 0 0.85rem;
+  padding: 0.65rem 0.75rem;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: #0d0d0d;
+}
+.result-block__label {
+  display: block;
+  font-size: 0.78rem;
+  font-weight: 650;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #c9a0a8;
+  margin-bottom: 0.45rem;
+}
+.result-toggle {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+.result-btn {
+  flex: 1 1 120px;
+  min-height: 48px;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: #141414;
+  color: var(--text);
+  font-weight: 700;
+  font-size: 1rem;
+  cursor: pointer;
+}
+.result-btn--win.result-btn--active {
+  border-color: #2ecc71;
+  background: rgba(46, 204, 113, 0.22);
+  color: #b8f5d0;
+  box-shadow: 0 0 0 1px rgba(46, 204, 113, 0.35);
+}
+.result-btn--loss.result-btn--active {
+  border-color: var(--red);
+  background: rgba(196, 30, 58, 0.28);
+  color: #ffd0d8;
+  box-shadow: 0 0 0 1px rgba(196, 30, 58, 0.4);
+}
+.result-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+.result-extra {
+  margin-top: 0.45rem;
+}
+.result-extra select {
+  width: 100%;
+  max-width: 220px;
+}
+
+.metrics-section-label {
+  margin: 0 0 0.4rem;
+  font-size: 0.78rem;
+  font-weight: 650;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #c9a0a8;
+}
+.advanced-metrics {
+  margin: 0 0 0.85rem;
+}
+.metrics-grid--advanced {
+  margin-top: 0.55rem;
+}
+
+/* WARDOGS net cash */
+.field--net-cash input {
+  border-color: rgba(212, 160, 23, 0.55);
+}
+.net-cash-hint {
+  display: block;
+  margin-top: 0.25rem;
+  font-size: 0.75rem;
+  color: #b8a0a6;
+}
+.net-cash-hint--profit {
+  color: #7dcea0;
+  font-weight: 650;
+}
+.net-cash-hint--tab {
+  color: #f5a3b0;
+  font-weight: 650;
+}

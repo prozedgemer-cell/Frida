@@ -1,5 +1,5 @@
 import {
-  GAME_PRESETS,
+  ACTIVE_GAME_PICKER_IDS,
   getPreset,
   matchPresetFromGameName,
   type GamePresetId,
@@ -68,7 +68,7 @@ export function InGamePanel({
         </div>
         <p className="muted tiny">
           Ordrer <strong>i spillet / mellem runder</strong>. Fuldfør = bonuspoint. Efter match: log
-          rigtige KPI&apos;er under Gaming.
+          KDA + sejr/nederlag under Gaming.
         </p>
         <div className="perf-banner perf-banner--compact">
           <span className="tiny">
@@ -79,23 +79,41 @@ export function InGamePanel({
           </span>
         </div>
 
-        <div className="game-preset-grid game-preset-grid--compact" role="list">
-          {GAME_PRESETS.filter((p) => p.id !== 'custom').map((p) => (
-            <button
-              key={p.id}
-              type="button"
-              role="listitem"
-              className={`game-chip ${resolvedId === p.id ? 'game-chip--active' : ''}`}
-              disabled={paused || !onChangeContext}
-              onClick={() => pickGame(p.id)}
-            >
-              {p.shortDa}
-            </button>
-          ))}
+        <div className="active-game-picker active-game-picker--ingame">
+          <div className="active-game-picker__head">
+            <p className="eyebrow" style={{ margin: 0 }}>
+              Aktivt spil
+            </p>
+            <h3 className="active-game-picker__title">Hvilket spil spiller du?</h3>
+          </div>
+          <div className="game-preset-grid game-preset-grid--prominent" role="list">
+            {ACTIVE_GAME_PICKER_IDS.map((id) => {
+              const p = getPreset(id);
+              return (
+                <button
+                  key={id}
+                  type="button"
+                  role="listitem"
+                  className={`game-chip game-chip--lg ${resolvedId === id ? 'game-chip--active' : ''}`}
+                  disabled={paused || !onChangeContext}
+                  onClick={() => pickGame(id)}
+                >
+                  {p.shortDa}
+                </button>
+              );
+            })}
+          </div>
+          <p className="active-game-picker__current">
+            Nu aktivt: <strong>{preset.shortDa}</strong>
+            {playingGame.trim() && playingGame.trim() !== preset.shortDa
+              ? ` · ${playingGame.trim()}`
+              : ''}
+          </p>
         </div>
         {resolvedId === 'wardogs' && (
           <p className="assumption-note tiny">
-            WARDOGS = 2026 warfare-FPS (ikke Watch Dogs / Warzone).
+            WARDOGS = 2026 warfare-FPS (ikke Watch Dogs / Warzone). Efter match: KDA + netto
+            penge (profit/tab).
           </p>
         )}
       </section>
@@ -103,9 +121,7 @@ export function InGamePanel({
       <section className="panel panel--command">
         <p className="eyebrow">Hurtiglog efter match</p>
         <h2>Indtast KPI for {preset.shortDa}</h2>
-        <p className="tiny muted">
-          {preset.helpDa}
-        </p>
+        <p className="tiny muted">{preset.helpDa}</p>
         <p className="tiny muted">{preset.fetchNoteDa}</p>
         {onGoGaming && (
           <button type="button" className="btn btn--ok" disabled={paused} onClick={onGoGaming}>

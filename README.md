@@ -170,13 +170,15 @@ Undertøjskatalog: `src/data/underwear.ts`.
 
 **Wardogs-antagelse:** tolket som **WARDOGS** (BULKHEAD / Team17, Early Access sep 2026) — tactical all-out warfare FPS. Ikke Watch Dogs, ikke Warzone. Markeret i UI + her.
 
-| Spil | KPI-felter | Score-vægte (0–100) | Fetch |
+| Spil | Primær log | Score-vægte (0–100) | Fetch |
 |------|------------|---------------------|-------|
-| **CS2** | Kills, deaths, ADR, HS%, rank | K/D 30% · ADR 28% · HS% 12% · resultat 30% | Manuel / paste (Leetify m.m. kræver nøgle) |
-| **WARDOGS** | Kills, deaths, cash, zone-bidrag | K/D 25% · cash 25% · resultat 30% · zone 20% | Manuel (community boards, ingen gratis API) |
-| **LoL** | K/D/A, CS/min, vision, dmg%, rank | KDA 30% · CS/min 20% · vision 10% · dmg 10% · resultat 30% | Manuel / paste (Riot/OP.GG kræver nøgle) |
+| **CS2** | K/D/A + sejr/nederlag (ADR/HS valgfri) | KDA 45% · resultat 40% · ADR/HS valgfri | Manuel / paste (Leetify m.m. kræver nøgle) |
+| **WARDOGS** | K/D/A + sejr/nederlag + **netto penge** (profit/tab) | KDA 30% · netto cash 35% · resultat 30% · zone valgfri | Manuel (community boards, ingen gratis API) |
+| **LoL** | K/D/A + sejr/nederlag | KDA 40% · resultat 35% · CS/vision/dmg valgfri | Manuel / paste (Riot/OP.GG kræver nøgle) |
 | **Diablo IV** | Pit tier, cleartid, deaths, journey | Pit 40% · clear 20% · deaths 15% · journey 15% · resultat 10% | Manuel (helltides crowdsource) |
-| **Fortnite** | Placement, kills, mode, rank | Placement 40% · kills 25% · K/D 15% · resultat 20% | Manuel / paste (TRN-Api-Key) |
+| **Fortnite** | K/D/A + sejr/nederlag (placement valgfri) | KDA 40% · resultat 40% · placement valgfri | Manuel / paste (TRN-Api-Key) |
+
+**Aktivt spil:** tydelig chip-vælger under Gaming og In-game (CS2 / WARDOGS / LoL / Diablo IV / Fortnite) — gemmes og styrer logging + challenges.
 
 Formel-detaljer ligger i `src/engines/gameScoreEngine.ts` + in-app «Formel / hjælp». Score driver undertøj, challenges og straf/belønning som før.
 

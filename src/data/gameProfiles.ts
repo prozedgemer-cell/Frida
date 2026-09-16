@@ -29,6 +29,11 @@ export interface MetricFieldDef {
   options?: { value: string; labelDa: string }[];
   /** Optional — used when deriving a display note */
   optional?: boolean;
+  /**
+   * Advanced / secondary stats — shown collapsed in shooter forms.
+   * Primary path = KDA + win/loss (+ WARDOGS netto).
+   */
+  advanced?: boolean;
 }
 
 export interface GamePreset {
@@ -41,6 +46,8 @@ export interface GamePreset {
   helpDa: string;
   fields: MetricFieldDef[];
   ranks?: { value: string; labelDa: string }[];
+  /** FPS / shooter: simplify UI to KDA + win/loss */
+  isShooter?: boolean;
 }
 
 const CS2_RANKS = [
@@ -107,16 +114,34 @@ export const GAME_PRESETS: GamePreset[] = [
     nameDa: 'CS2 (Counter-Strike 2)',
     nameEn: 'Counter-Strike 2',
     shortDa: 'CS2',
+    isShooter: true,
     trackerHintDa: 'Leetify, FACEIT, CSMeta, Tracker.gg/cs2',
     fetchNoteDa:
-      'Ingen gratis no-key API i PWA. Indtast fra scoreboard / Leetify, eller paste tracker-tekst.',
+      'Ingen gratis no-key API i PWA. Indtast K/D/A + sejr/nederlag, eller paste tracker-tekst.',
     helpDa:
-      'Score 0–100: K/D 30% · ADR 28% · HS% 12% · resultat 30%. K/D 2,0 ≈ 100; ADR 40→0 / 120→100; HS 60% ≈ 100.',
+      'Score 0–100: KDA 45% · resultat 40% · ADR/HS valgfri (op til ~15%). Hovedsti = K/D/A + win/loss.',
     ranks: CS2_RANKS,
     fields: [
       { key: 'kills', labelDa: 'Kills', type: 'number', min: 0, max: 80, hint: 'fx 18' },
       { key: 'deaths', labelDa: 'Deaths', type: 'number', min: 0, max: 80, hint: 'fx 12' },
-      { key: 'adr', labelDa: 'ADR', type: 'number', min: 0, max: 200, hint: 'damage/runde' },
+      {
+        key: 'assists',
+        labelDa: 'Assists',
+        type: 'number',
+        min: 0,
+        max: 40,
+        hint: 'fx 4',
+      },
+      {
+        key: 'adr',
+        labelDa: 'ADR',
+        type: 'number',
+        min: 0,
+        max: 200,
+        hint: 'damage/runde',
+        optional: true,
+        advanced: true,
+      },
       {
         key: 'hsPercent',
         labelDa: 'HS %',
@@ -124,15 +149,8 @@ export const GAME_PRESETS: GamePreset[] = [
         min: 0,
         max: 100,
         hint: 'headshot %',
-      },
-      {
-        key: 'assists',
-        labelDa: 'Assists',
-        type: 'number',
-        min: 0,
-        max: 40,
         optional: true,
-        hint: 'valgfri',
+        advanced: true,
       },
       {
         key: 'rank',
@@ -140,6 +158,7 @@ export const GAME_PRESETS: GamePreset[] = [
         type: 'select',
         options: CS2_RANKS,
         optional: true,
+        advanced: true,
       },
     ],
   },
@@ -148,21 +167,31 @@ export const GAME_PRESETS: GamePreset[] = [
     nameDa: 'WARDOGS',
     nameEn: 'WARDOGS',
     shortDa: 'WARDOGS',
+    isShooter: true,
     trackerHintDa: 'wardogs.zone leaderboard, wardogs.tools (community)',
     fetchNoteDa:
       'Antaget: WARDOGS (2026 FPS), ikke Watch Dogs / Warzone. Ingen officiel gratis player-API — manuel indtastning.',
     helpDa:
-      'Score 0–100: K/D 25% · cash 25% · resultat 30% · zone-bidrag 20%. Cash: 0→0, 50k→40, 200k→70, 500k+→100.',
+      'Score 0–100: KDA 30% · netto cash 35% · resultat 30% · zone valgfri (~5%). Netto: positiv = profit, negativ = tab (spilvaluta/cash).',
     fields: [
       { key: 'kills', labelDa: 'Kills', type: 'number', min: 0, max: 500, hint: 'scoreboard' },
       { key: 'deaths', labelDa: 'Deaths', type: 'number', min: 0, max: 500, hint: 'scoreboard' },
       {
-        key: 'cash',
-        labelDa: 'Cash tjent',
+        key: 'assists',
+        labelDa: 'Assists / revives',
         type: 'number',
         min: 0,
+        max: 100,
+        hint: 'valgfri men anbefalet',
+        optional: true,
+      },
+      {
+        key: 'cash',
+        labelDa: 'Netto penge / profit eller tab',
+        type: 'number',
+        min: -5_000_000,
         max: 5_000_000,
-        hint: 'match payout (ikke spend)',
+        hint: 'spilvaluta/cash · +profit / −tab',
       },
       {
         key: 'zoneScore',
@@ -171,14 +200,8 @@ export const GAME_PRESETS: GamePreset[] = [
         min: 0,
         max: 100,
         hint: 'selvvurderet tid i Control/Hot Zone',
-      },
-      {
-        key: 'revives',
-        labelDa: 'Revives / assists',
-        type: 'number',
-        min: 0,
-        max: 100,
         optional: true,
+        advanced: true,
       },
     ],
   },
@@ -191,7 +214,7 @@ export const GAME_PRESETS: GamePreset[] = [
     fetchNoteDa:
       'Riot / OP.GG kræver API-nøgle eller credits. Indtast post-match eller paste OP.GG-lignende tekst.',
     helpDa:
-      'Score 0–100: KDA 30% · CS/min 20% · vision 10% · damage-andel 10% · resultat 30%. KDA 5,0 ≈ 100; CS/min 4→0 / 10→100.',
+      'Score 0–100: KDA 40% · resultat 35% · CS/min / vision / dmg valgfri. Hovedsti = K/D/A + win/loss.',
     ranks: LOL_RANKS,
     fields: [
       { key: 'kills', labelDa: 'Kills', type: 'number', min: 0, max: 40 },
@@ -205,6 +228,8 @@ export const GAME_PRESETS: GamePreset[] = [
         max: 15,
         step: 0.1,
         hint: 'fx 7.2',
+        optional: true,
+        advanced: true,
       },
       {
         key: 'visionScore',
@@ -213,6 +238,8 @@ export const GAME_PRESETS: GamePreset[] = [
         min: 0,
         max: 200,
         hint: 'post-game',
+        optional: true,
+        advanced: true,
       },
       {
         key: 'damageShare',
@@ -221,6 +248,7 @@ export const GAME_PRESETS: GamePreset[] = [
         min: 0,
         max: 100,
         optional: true,
+        advanced: true,
         hint: 'valgfri',
       },
       {
@@ -229,6 +257,7 @@ export const GAME_PRESETS: GamePreset[] = [
         type: 'select',
         options: LOL_RANKS,
         optional: true,
+        advanced: true,
       },
     ],
   },
@@ -273,6 +302,7 @@ export const GAME_PRESETS: GamePreset[] = [
         type: 'select',
         options: D4_WORLD_TIERS,
         optional: true,
+        advanced: true,
       },
       {
         key: 'seasonJourney',
@@ -281,6 +311,7 @@ export const GAME_PRESETS: GamePreset[] = [
         min: 0,
         max: 100,
         optional: true,
+        advanced: true,
         hint: 'valgfri progress',
       },
       {
@@ -288,6 +319,7 @@ export const GAME_PRESETS: GamePreset[] = [
         labelDa: 'Build / klasse',
         type: 'text',
         optional: true,
+        advanced: true,
         hint: 'fx Poison Swarm Spiritborn',
       },
     ],
@@ -297,13 +329,25 @@ export const GAME_PRESETS: GamePreset[] = [
     nameDa: 'Fortnite',
     nameEn: 'Fortnite',
     shortDa: 'Fortnite',
+    isShooter: true,
     trackerHintDa: 'Fortnite Tracker / Tracker.gg',
     fetchNoteDa:
-      'Tracker Network kræver TRN-Api-Key (ikke bundtet her). Indtast placement/kills eller paste summary.',
+      'Tracker Network kræver TRN-Api-Key (ikke bundtet her). Indtast K/D + sejr/nederlag, eller paste summary.',
     helpDa:
-      'Score 0–100: placement 40% · kills 25% · K/D 15% · resultat 20%. #1 = 100 placement; Top 3 ≈ 85; Top 10 ≈ 65.',
+      'Score 0–100: KDA 40% · resultat 40% · placement valgfri (~20%). Hovedsti = K/D/A + win/loss (#1 ≈ sejr).',
     ranks: FN_RANKS,
     fields: [
+      { key: 'kills', labelDa: 'Kills', type: 'number', min: 0, max: 40 },
+      { key: 'deaths', labelDa: 'Deaths', type: 'number', min: 0, max: 20, hint: 'typisk 1 i BR' },
+      {
+        key: 'assists',
+        labelDa: 'Assists',
+        type: 'number',
+        min: 0,
+        max: 40,
+        optional: true,
+        hint: 'valgfri',
+      },
       {
         key: 'placement',
         labelDa: 'Placement',
@@ -311,14 +355,16 @@ export const GAME_PRESETS: GamePreset[] = [
         min: 1,
         max: 100,
         hint: '1 = sejr',
+        optional: true,
+        advanced: true,
       },
-      { key: 'kills', labelDa: 'Kills', type: 'number', min: 0, max: 40 },
-      { key: 'deaths', labelDa: 'Deaths', type: 'number', min: 0, max: 20, optional: true },
       {
         key: 'mode',
         labelDa: 'Mode',
         type: 'select',
         options: FN_MODES,
+        optional: true,
+        advanced: true,
       },
       {
         key: 'rank',
@@ -326,6 +372,7 @@ export const GAME_PRESETS: GamePreset[] = [
         type: 'select',
         options: FN_RANKS,
         optional: true,
+        advanced: true,
       },
     ],
   },
@@ -340,6 +387,15 @@ export const GAME_PRESETS: GamePreset[] = [
       'Score fra selvvurdering + resultat (klassisk Frida-formel), uden spil-specifikke KPI-vægte.',
     fields: [],
   },
+];
+
+/** Presets shown in the active-game picker (excludes custom "Andet"). */
+export const ACTIVE_GAME_PICKER_IDS: GamePresetId[] = [
+  'cs2',
+  'wardogs',
+  'lol',
+  'diablo4',
+  'fortnite',
 ];
 
 export function getPreset(id: string | undefined | null): GamePreset {

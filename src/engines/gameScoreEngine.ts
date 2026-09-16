@@ -38,25 +38,31 @@ function lin(value: number, lo: number, hi: number): number {
 }
 
 /**
- * KD with soft curve: 0 → 0, 1.0 → 50, 1.5 → 70, 2.0 → 90, 2.5+ → 100
+ * KDA-style: (kills + assists) / max(deaths, 1)
+ * 0 → 0, 1.0 → 45, 2.0 → 70, 3.0 → 85, 5.0+ → 100
  */
-function kdScore(kills: number, deaths: number): number {
-  const kd = kills / Math.max(deaths, 1);
-  if (kd <= 1) return lin(kd, 0, 1) * 0.5;
-  if (kd <= 1.5) return 50 + lin(kd, 1, 1.5) * 0.2;
-  if (kd <= 2) return 70 + lin(kd, 1.5, 2) * 0.2;
-  return 90 + lin(kd, 2, 2.5) * 0.1;
+function kdaScore(kills: number, deaths: number, assists: number): number {
+  const kda = (kills + assists) / Math.max(deaths, 1);
+  if (kda <= 1) return lin(kda, 0, 1) * 0.45;
+  if (kda <= 2) return 45 + lin(kda, 1, 2) * 0.25;
+  if (kda <= 3) return 70 + lin(kda, 2, 3) * 0.15;
+  if (kda <= 5) return 85 + lin(kda, 3, 5) * 0.15;
+  return 100;
 }
 
 /**
- * Cash earned (WARDOGS): log-ish steps
- * 0 → 0, 50k → 40, 200k → 70, 500k+ → 100
+ * Net cash (WARDOGS): positive = profit, negative = tab (spilvaluta).
+ * −500k → 0 · 0 → 45 · +50k → 70 · +200k → 90 · +500k+ → 100
  */
-function cashScore(cash: number): number {
-  if (cash <= 0) return 0;
-  if (cash < 50_000) return lin(cash, 0, 50_000) * 0.4;
-  if (cash < 200_000) return 40 + lin(cash, 50_000, 200_000) * 0.3;
-  if (cash < 500_000) return 70 + lin(cash, 200_000, 500_000) * 0.3;
+function netCashScore(net: number): number {
+  if (net < 0) {
+    if (net <= -500_000) return 0;
+    return lin(net, -500_000, 0) * 0.45;
+  }
+  if (net === 0) return 45;
+  if (net < 50_000) return 45 + lin(net, 0, 50_000) * 0.25;
+  if (net < 200_000) return 70 + lin(net, 50_000, 200_000) * 0.2;
+  if (net < 500_000) return 90 + lin(net, 200_000, 500_000) * 0.1;
   return 100;
 }
 
@@ -102,12 +108,12 @@ function weighted(parts: { score: number; w: number }[]): number {
 /**
  * Per-game normalized performance 0–100.
  *
- * Formulas (documented for UI help + README):
- * - CS2:      K/D 30% · ADR 28% · HS% 12% · result 30%
- * - WARDOGS:  K/D 25% · cash 25% · result 30% · zone 20%
- * - LoL:      KDA 30% · CS/min 20% · vision 10% · dmg% 10% · result 30%
+ * Recalibrated (shooters dominate on KDA + win/loss; WARDOGS netto is major):
+ * - CS2:      KDA 45% · result 40% · ADR ~10% · HS ~5% (optional)
+ * - WARDOGS:  KDA 30% · netto cash 35% · result 30% · zone ~5% (optional)
+ * - LoL:      KDA 40% · result 35% · CS/min / vision / dmg optional
  * - Diablo IV: Pit 40% · clear 20% · deaths 15% · journey 15% · result 10%
- * - Fortnite: placement 40% · kills 25% · K/D 15% · result 20%
+ * - Fortnite: KDA 40% · result 40% · placement ~20% (optional)
  * - Custom:   returns null → caller uses classic rating+result
  */
 export function computeGameScore(
@@ -121,31 +127,35 @@ export function computeGameScore(
   if (gameId === 'cs2') {
     const kills = num(metrics, 'kills') ?? 0;
     const deaths = num(metrics, 'deaths') ?? 0;
+    const assists = num(metrics, 'assists') ?? 0;
     const adr = num(metrics, 'adr');
     const hs = num(metrics, 'hsPercent');
     const parts: { score: number; w: number }[] = [
-      { score: kdScore(kills, deaths), w: 0.3 },
-      { score: r, w: 0.3 },
+      { score: kdaScore(kills, deaths, assists), w: 0.45 },
+      { score: r, w: 0.4 },
     ];
-    if (adr != null) parts.push({ score: lin(adr, 40, 120), w: 0.28 });
-    if (hs != null) parts.push({ score: lin(hs, 0, 60), w: 0.12 });
-    // If ADR/HS missing, reweight remaining (KD+result already present)
+    if (adr != null) parts.push({ score: lin(adr, 40, 120), w: 0.1 });
+    if (hs != null) parts.push({ score: lin(hs, 0, 60), w: 0.05 });
     return Math.round(weighted(parts));
   }
 
   if (gameId === 'wardogs') {
     const kills = num(metrics, 'kills') ?? 0;
     const deaths = num(metrics, 'deaths') ?? 0;
-    const cash = num(metrics, 'cash') ?? 0;
-    const zone = num(metrics, 'zoneScore') ?? 50;
-    return Math.round(
-      weighted([
-        { score: kdScore(kills, deaths), w: 0.25 },
-        { score: cashScore(cash), w: 0.25 },
-        { score: r, w: 0.3 },
-        { score: clamp(zone, 0, 100), w: 0.2 },
-      ]),
-    );
+    const assists = num(metrics, 'assists') ?? num(metrics, 'revives') ?? 0;
+    const cash = num(metrics, 'cash');
+    const zone = num(metrics, 'zoneScore');
+    const parts: { score: number; w: number }[] = [
+      { score: kdaScore(kills, deaths, assists), w: 0.3 },
+      { score: r, w: 0.3 },
+    ];
+    if (cash != null) {
+      parts.push({ score: netCashScore(cash), w: 0.35 });
+    }
+    if (zone != null) {
+      parts.push({ score: clamp(zone, 0, 100), w: 0.05 });
+    }
+    return Math.round(weighted(parts));
   }
 
   if (gameId === 'lol') {
@@ -157,12 +167,12 @@ export function computeGameScore(
     const vision = num(metrics, 'visionScore');
     const dmg = num(metrics, 'damageShare');
     const parts: { score: number; w: number }[] = [
-      { score: clamp((kda / 5) * 100, 0, 100), w: 0.3 },
-      { score: r, w: 0.3 },
+      { score: clamp((kda / 5) * 100, 0, 100), w: 0.4 },
+      { score: r, w: 0.35 },
     ];
-    if (cspm != null) parts.push({ score: lin(cspm, 4, 10), w: 0.2 });
-    if (vision != null) parts.push({ score: lin(vision, 10, 80), w: 0.1 });
-    if (dmg != null) parts.push({ score: lin(dmg, 10, 40), w: 0.1 });
+    if (cspm != null) parts.push({ score: lin(cspm, 4, 10), w: 0.15 });
+    if (vision != null) parts.push({ score: lin(vision, 10, 80), w: 0.05 });
+    if (dmg != null) parts.push({ score: lin(dmg, 10, 40), w: 0.05 });
     return Math.round(weighted(parts));
   }
 
@@ -182,19 +192,16 @@ export function computeGameScore(
   }
 
   if (gameId === 'fortnite') {
-    const place = num(metrics, 'placement') ?? 50;
     const kills = num(metrics, 'kills') ?? 0;
-    const deaths = num(metrics, 'deaths');
+    const deaths = num(metrics, 'deaths') ?? 1;
+    const assists = num(metrics, 'assists') ?? 0;
+    const place = num(metrics, 'placement');
     const parts: { score: number; w: number }[] = [
-      { score: placementScore(place), w: 0.4 },
-      { score: lin(kills, 0, 10), w: 0.25 },
-      { score: r, w: 0.2 },
+      { score: kdaScore(kills, deaths, assists), w: 0.4 },
+      { score: r, w: 0.4 },
     ];
-    if (deaths != null) {
-      parts.push({ score: kdScore(kills, deaths), w: 0.15 });
-    } else {
-      // No deaths: boost kill weight slightly already covered; add mild kill-only kd proxy
-      parts.push({ score: lin(kills, 0, 8), w: 0.15 });
+    if (place != null) {
+      parts.push({ score: placementScore(place), w: 0.2 });
     }
     return Math.round(weighted(parts));
   }
@@ -222,19 +229,29 @@ export function metricsSummaryDa(
   const d = num(metrics, 'deaths');
   const a = num(metrics, 'assists');
 
-  if (gameId === 'cs2' || gameId === 'wardogs') {
+  if (gameId === 'cs2' || gameId === 'wardogs' || gameId === 'fortnite') {
     if (k != null && d != null) {
-      const kd = (k / Math.max(d, 1)).toFixed(2);
-      bits.push(`${k}/${d} (K/D ${kd})`);
+      const assistPart = a != null ? `/${a}` : '';
+      const kd = ((k + (a ?? 0)) / Math.max(d, 1)).toFixed(2);
+      bits.push(`${k}/${d}${assistPart} (KDA ${kd})`);
     }
     const adr = num(metrics, 'adr');
     if (adr != null) bits.push(`ADR ${adr}`);
     const hs = num(metrics, 'hsPercent');
     if (hs != null) bits.push(`HS ${hs}%`);
     const cash = num(metrics, 'cash');
-    if (cash != null) bits.push(`$${Math.round(cash).toLocaleString('da-DK')}`);
+    if (cash != null) {
+      const sign = cash > 0 ? '+' : '';
+      bits.push(`netto ${sign}${Math.round(cash).toLocaleString('da-DK')}`);
+    }
     const zone = num(metrics, 'zoneScore');
     if (zone != null) bits.push(`zone ${zone}`);
+    if (gameId === 'fortnite') {
+      const place = num(metrics, 'placement');
+      if (place != null) bits.push(`#${place}`);
+      const mode = metrics.mode;
+      if (typeof mode === 'string' && mode) bits.push(mode);
+    }
   } else if (gameId === 'lol') {
     if (k != null && d != null && a != null) {
       bits.push(`${k}/${d}/${a}`);
@@ -252,12 +269,6 @@ export function metricsSummaryDa(
     if (d != null) bits.push(`${d} deaths`);
     const build = metrics.buildNote;
     if (typeof build === 'string' && build.trim()) bits.push(build.trim());
-  } else if (gameId === 'fortnite') {
-    const place = num(metrics, 'placement');
-    if (place != null) bits.push(`#${place}`);
-    if (k != null) bits.push(`${k} kills`);
-    const mode = metrics.mode;
-    if (typeof mode === 'string' && mode) bits.push(mode);
   }
 
   const rank = metrics.rank;
@@ -280,3 +291,12 @@ export function maybeInferResult(
   }
   return result;
 }
+
+/** Unused export kept for possible UI hints — net cash formatter. */
+export function formatNetCashDa(cash: number): string {
+  const abs = Math.abs(Math.round(cash)).toLocaleString('da-DK');
+  if (cash > 0) return `Profit +${abs}`;
+  if (cash < 0) return `Tab −${abs}`;
+  return 'Break-even 0';
+}
+

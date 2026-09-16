@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import {
-  GAME_PRESETS,
+  ACTIVE_GAME_PICKER_IDS,
   getPreset,
   matchPresetFromGameName,
   type GamePresetId,
@@ -8,6 +8,7 @@ import {
 } from '../data/gameProfiles';
 import {
   computeGameScore,
+  formatNetCashDa,
   maybeInferResult,
   metricsSummaryDa,
   ratingFromScore,
@@ -41,6 +42,7 @@ type Props = {
 };
 
 const RESULTS: GameResult[] = ['win', 'loss', 'quit', 'draw', 'other'];
+const SHOOTER_RESULTS: GameResult[] = ['win', 'loss', 'draw', 'quit', 'other'];
 const RATINGS: PerformanceRating[] = [1, 2, 3, 4, 5];
 const MOODS = ['', 'frustreret', 'ok', 'glad', 'kåt', 'underdanig', 'træt'];
 
@@ -56,6 +58,7 @@ type FormState = {
   pasteText: string;
   showHelp: boolean;
   showPaste: boolean;
+  showAdvanced: boolean;
 };
 
 function emptyMetrics(fields: MetricFieldDef[]): MetricMap {
@@ -85,12 +88,87 @@ function emptyForm(gameName: string, gameId?: GamePresetId): FormState {
     pasteText: '',
     showHelp: false,
     showPaste: false,
+    showAdvanced: false,
   };
 }
 
 function livePreviewScore(form: FormState): number | null {
   const result = maybeInferResult(form.gameId, form.metrics, form.result);
   return computeGameScore(form.gameId, form.metrics, result);
+}
+
+function renderMetricField(
+  field: MetricFieldDef,
+  value: string,
+  paused: boolean,
+  onChange: (key: string, value: string) => void,
+  extraClass?: string,
+) {
+  const isNetCash = field.key === 'cash';
+  const numVal = Number(String(value).replace(',', '.'));
+  const cashHint =
+    isNetCash && value !== '' && Number.isFinite(numVal)
+      ? formatNetCashDa(numVal)
+      : null;
+
+  return (
+    <label
+      key={field.key}
+      className={`field ${isNetCash ? 'field--net-cash' : ''} ${extraClass ?? ''}`}
+    >
+      <span>
+        {field.labelDa}
+        {field.optional && !isNetCash ? ' (valgfri)' : ''}
+        {isNetCash ? ' ★' : ''}
+      </span>
+      {field.type === 'select' ? (
+        <select
+          value={value}
+          disabled={paused}
+          onChange={(e) => onChange(field.key, e.target.value)}
+        >
+          {(field.options ?? []).map((o) => (
+            <option key={o.value || 'empty'} value={o.value}>
+              {o.labelDa}
+            </option>
+          ))}
+        </select>
+      ) : field.type === 'text' ? (
+        <input
+          type="text"
+          value={value}
+          disabled={paused}
+          placeholder={field.hint}
+          onChange={(e) => onChange(field.key, e.target.value)}
+        />
+      ) : (
+        <input
+          type="number"
+          inputMode="decimal"
+          min={field.min}
+          max={field.max}
+          step={field.step ?? 'any'}
+          value={value}
+          disabled={paused}
+          placeholder={field.hint}
+          onChange={(e) => onChange(field.key, e.target.value)}
+        />
+      )}
+      {isNetCash && (
+        <span
+          className={`net-cash-hint ${
+            cashHint?.startsWith('Profit')
+              ? 'net-cash-hint--profit'
+              : cashHint?.startsWith('Tab')
+                ? 'net-cash-hint--tab'
+                : ''
+          }`}
+        >
+          {cashHint ?? 'Spilvaluta/cash · positiv = profit · negativ = tab'}
+        </span>
+      )}
+    </label>
+  );
 }
 
 export function GamingPanel({
@@ -124,6 +202,7 @@ export function GamingPanel({
         gameId: context.activeGameId!,
         gameName: context.playingGame || preset.shortDa,
         metrics: emptyMetrics(preset.fields),
+        showAdvanced: false,
       }));
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps -- only react to context preset switches
@@ -136,6 +215,9 @@ export function GamingPanel({
   const last = recent[0] ?? null;
   const preset = getPreset(form.gameId);
   const preview = livePreviewScore(form);
+  const isShooter = Boolean(preset.isShooter);
+  const primaryFields = preset.fields.filter((f) => !f.advanced);
+  const advancedFields = preset.fields.filter((f) => f.advanced);
 
   const selectGame = (id: GamePresetId) => {
     const p = getPreset(id);
@@ -146,6 +228,9 @@ export function GamingPanel({
       gameName: name,
       metrics: emptyMetrics(p.fields),
       pasteText: '',
+      showAdvanced: false,
+      // Default shooters toward a clear win/loss choice
+      result: p.isShooter && f.result === 'other' ? f.result : f.result,
     }));
     onChange({
       playingGame: name,
@@ -175,6 +260,7 @@ export function GamingPanel({
       pasteText: '',
       showHelp: false,
       showPaste: false,
+      showAdvanced: false,
     });
   };
 
@@ -254,6 +340,8 @@ export function GamingPanel({
     setForm(emptyForm(context.playingGame, context.activeGameId));
   };
 
+  const resultChoices = isShooter ? SHOOTER_RESULTS : RESULTS;
+
   return (
     <div className="mode-stack">
       <section className="panel panel--mode panel--gaming">
@@ -268,8 +356,8 @@ export function GamingPanel({
           </div>
         </div>
         <p className="muted tiny">
-          Vælg spil → indtast rigtige KPI&apos;er → Frida scorer 0–100 og styrer undertøj / straf /
-          belønning. Ingen passwords — kun manuel / paste.
+          Vælg aktivt spil → log KDA + sejr/nederlag (shooters) → Frida scorer 0–100. Avancerede
+          stats er valgfrie. Ingen passwords — kun manuel / paste.
         </p>
 
         <div className="perf-banner">
@@ -290,24 +378,63 @@ export function GamingPanel({
           </p>
         </div>
 
-        <div className="game-preset-grid" role="list">
-          {GAME_PRESETS.map((p) => (
+        <div className="active-game-picker">
+          <div className="active-game-picker__head">
+            <p className="eyebrow" style={{ margin: 0 }}>
+              Aktivt spil
+            </p>
+            <h3 className="active-game-picker__title">Hvilket spil spiller du?</h3>
+            <p className="tiny muted" style={{ margin: 0 }}>
+              Sætter spil for logging, in-game-udfordringer og præstation. Valget gemmes.
+            </p>
+          </div>
+          <div className="game-preset-grid game-preset-grid--prominent" role="list">
+            {ACTIVE_GAME_PICKER_IDS.map((id) => {
+              const p = getPreset(id);
+              const active =
+                form.gameId === id ||
+                context.activeGameId === id ||
+                (!context.activeGameId &&
+                  matchPresetFromGameName(context.playingGame) === id &&
+                  form.gameId === id);
+              return (
+                <button
+                  key={id}
+                  type="button"
+                  role="listitem"
+                  className={`game-chip game-chip--lg ${active ? 'game-chip--active' : ''}`}
+                  disabled={paused}
+                  onClick={() => selectGame(id)}
+                >
+                  {p.shortDa}
+                </button>
+              );
+            })}
             <button
-              key={p.id}
               type="button"
               role="listitem"
-              className={`game-chip ${form.gameId === p.id ? 'game-chip--active' : ''}`}
+              className={`game-chip ${form.gameId === 'custom' ? 'game-chip--active' : ''}`}
               disabled={paused}
-              onClick={() => selectGame(p.id)}
+              onClick={() => selectGame('custom')}
             >
-              {p.shortDa}
+              Andet
             </button>
-          ))}
+          </div>
+          {(context.activeGameId || form.gameId !== 'custom') && (
+            <p className="active-game-picker__current">
+              Nu aktivt:{' '}
+              <strong>{getPreset(context.activeGameId ?? form.gameId).shortDa}</strong>
+              {context.playingGame.trim() && context.playingGame.trim() !== getPreset(context.activeGameId ?? form.gameId).shortDa
+                ? ` · ${context.playingGame.trim()}`
+                : ''}
+            </p>
+          )}
         </div>
+
         {form.gameId === 'wardogs' && (
           <p className="assumption-note">
             Antagelse: <strong>WARDOGS</strong> (BULKHEAD 2026 warfare-FPS) — ikke Watch Dogs /
-            Warzone.
+            Warzone. Log <strong>netto penge</strong> (profit eller tab i spilvaluta).
           </p>
         )}
         {form.gameId === 'diablo4' && (
@@ -317,7 +444,7 @@ export function GamingPanel({
         )}
 
         <label className="field">
-          <span>Jeg spiller lige nu</span>
+          <span>Jeg spiller lige nu (fritekst)</span>
           <input
             type="text"
             placeholder="fx CS2, WARDOGS, LoL…"
@@ -338,6 +465,7 @@ export function GamingPanel({
                         gameName: v,
                         gameId: id,
                         metrics: emptyMetrics(getPreset(id).fields),
+                        showAdvanced: false,
                       }
                     : { ...f, gameName: v },
                 );
@@ -359,8 +487,8 @@ export function GamingPanel({
           <strong>{gaming ? 'Spil aktivt' : 'Intet spil sat'}</strong>
           <span>
             {gaming
-              ? `Frida er i "${context.playingGame.trim()}" — log KPI efter match.`
-              : 'Vælg et spil-preset og log KPI for at aktivere præstations-styring.'}
+              ? `Frida er i "${context.playingGame.trim()}" — log KDA + resultat efter match.`
+              : 'Vælg aktivt spil ovenfor og log session for at aktivere præstations-styring.'}
           </span>
         </div>
       </section>
@@ -372,78 +500,94 @@ export function GamingPanel({
         </h2>
         <p className="tiny muted">{preset.fetchNoteDa}</p>
 
-        <div className="row">
-          <label className="field">
-            <span>Spilnavn</span>
-            <input
-              type="text"
-              value={form.gameName}
-              disabled={paused}
-              onChange={(e) => setForm((f) => ({ ...f, gameName: e.target.value }))}
-              placeholder="Spilnavn"
-            />
-          </label>
-          <label className="field">
-            <span>Resultat</span>
+        <label className="field">
+          <span>Spilnavn</span>
+          <input
+            type="text"
+            value={form.gameName}
+            disabled={paused}
+            onChange={(e) => setForm((f) => ({ ...f, gameName: e.target.value }))}
+            placeholder="Spilnavn"
+          />
+        </label>
+
+        {/* Win / loss — prominent for shooters */}
+        <div className="result-block">
+          <span className="result-block__label">
+            {isShooter ? 'Sejr eller nederlag' : 'Resultat'}
+          </span>
+          <div className="result-toggle" role="group" aria-label="Resultat">
+            {(['win', 'loss'] as GameResult[]).map((r) => (
+              <button
+                key={r}
+                type="button"
+                className={`result-btn result-btn--${r} ${form.result === r ? 'result-btn--active' : ''}`}
+                disabled={paused}
+                onClick={() => setForm((f) => ({ ...f, result: r }))}
+              >
+                {RESULT_LABELS_DA[r]}
+              </button>
+            ))}
+          </div>
+          <div className="result-extra">
             <select
               value={form.result}
               disabled={paused}
+              aria-label="Andet resultat"
               onChange={(e) =>
                 setForm((f) => ({ ...f, result: e.target.value as GameResult }))
               }
             >
-              {RESULTS.map((r) => (
+              {resultChoices.map((r) => (
                 <option key={r} value={r}>
                   {RESULT_LABELS_DA[r]}
                 </option>
               ))}
             </select>
-          </label>
+          </div>
         </div>
 
-        {preset.fields.length > 0 && (
-          <div className="metrics-grid">
-            {preset.fields.map((field) => (
-              <label key={field.key} className="field">
-                <span>
-                  {field.labelDa}
-                  {field.optional ? ' (valgfri)' : ''}
-                </span>
-                {field.type === 'select' ? (
-                  <select
-                    value={String(form.metrics[field.key] ?? '')}
-                    disabled={paused}
-                    onChange={(e) => setMetric(field.key, e.target.value)}
-                  >
-                    {(field.options ?? []).map((o) => (
-                      <option key={o.value || 'empty'} value={o.value}>
-                        {o.labelDa}
-                      </option>
-                    ))}
-                  </select>
-                ) : field.type === 'text' ? (
-                  <input
-                    type="text"
-                    value={String(form.metrics[field.key] ?? '')}
-                    disabled={paused}
-                    placeholder={field.hint}
-                    onChange={(e) => setMetric(field.key, e.target.value)}
-                  />
-                ) : (
-                  <input
-                    type="number"
-                    inputMode="decimal"
-                    min={field.min}
-                    max={field.max}
-                    step={field.step ?? 'any'}
-                    value={String(form.metrics[field.key] ?? '')}
-                    disabled={paused}
-                    placeholder={field.hint}
-                    onChange={(e) => setMetric(field.key, e.target.value)}
-                  />
+        {primaryFields.length > 0 && (
+          <>
+            <p className="metrics-section-label">
+              {isShooter ? 'KDA (primært)' : 'KPI-felter'}
+            </p>
+            <div className="metrics-grid">
+              {primaryFields.map((field) =>
+                renderMetricField(
+                  field,
+                  String(form.metrics[field.key] ?? ''),
+                  paused,
+                  setMetric,
+                ),
+              )}
+            </div>
+          </>
+        )}
+
+        {advancedFields.length > 0 && (
+          <div className="advanced-metrics">
+            <button
+              type="button"
+              className="btn btn--ghost btn--tiny"
+              onClick={() => setForm((f) => ({ ...f, showAdvanced: !f.showAdvanced }))}
+            >
+              {form.showAdvanced
+                ? 'Skjul avancerede stats'
+                : `Avancerede stats (${advancedFields.length}) — valgfrit`}
+            </button>
+            {form.showAdvanced && (
+              <div className="metrics-grid metrics-grid--advanced">
+                {advancedFields.map((field) =>
+                  renderMetricField(
+                    field,
+                    String(form.metrics[field.key] ?? ''),
+                    paused,
+                    setMetric,
+                  ),
                 )}
-              </label>
-            ))}
+              </div>
+            )}
           </div>
         )}
 
@@ -573,7 +717,7 @@ export function GamingPanel({
                 rows={4}
                 value={form.pasteText}
                 disabled={paused}
-                placeholder="fx 18/12 · ADR 92 · HS 48%  Victory"
+                placeholder="fx 18/12/4 · ADR 92 · HS 48%  Victory"
                 onChange={(e) => setForm((f) => ({ ...f, pasteText: e.target.value }))}
               />
             </label>
