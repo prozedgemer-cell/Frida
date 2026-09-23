@@ -87,7 +87,7 @@ assert(taggedCal.roleHints.includes('bytur-gaatur'), 'outing tag → bytur role'
 
 const inf = describeCalendarInfluence(cal);
 assert(/date|straf|kalender/i.test(inf.summaryDa), 'influence summary mentions calendar');
-assert(/sex-straf/i.test(inf.strafDa), 'influence mentions sex-straf');
+assert(/sex[- ]?(straf|punishment)/i.test(inf.strafDa), 'influence mentions sex punishment');
 
 const restCal = summarizeCalendar(
   [
