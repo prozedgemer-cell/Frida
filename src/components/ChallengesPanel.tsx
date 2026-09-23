@@ -10,10 +10,10 @@ import type { CalendarSummary } from '../engines/calendarEngine';
 import { CalendarInfluenceNote } from './CalendarInfluenceNote';
 import { ChallengeCard } from './ChallengeCard';
 
-const TIER_DA = {
-  easy: 'Let',
-  hard: 'Hård',
-  boundary: 'Grænse',
+const TIER_EN = {
+  easy: 'Easy',
+  hard: 'Hard',
+  boundary: 'Boundary',
 } as const;
 
 type Props = {
@@ -44,25 +44,25 @@ export function ChallengesPanel({
   const extraUnique = extra.filter((c) => !morningIds.has(c.id));
 
   return (
-    <div className="mode-stack">
+    <div className="mode-stack challenges-embedded">
       {morningTrio && morningTrio.challenges.length > 0 && (
         <section className="panel panel--morning-trio">
           <div className="panel__head">
             <div>
-              <p className="eyebrow">Hver morgen · præcis 3</p>
-              <h2>Morgen-trio (DO / WEAR)</h2>
+              <p className="eyebrow">Every morning · exactly 3</p>
+              <h2>Morning trio (DO / WEAR)</h2>
             </div>
           </div>
           <p className="muted tiny">
-            Let · hård · grænsebrydende. Kun gøre/bære — aldrig sige eller skrive. Gælder hele
-            dagen. Dansk Frida-stemme.
+            Easy · hard · boundary-breaking. DO / WEAR only — never “say…” or “write…”. Applies all
+            day.
           </p>
           <div className="morning-trio-list">
             {morningTrio.challenges.map((c) => (
               <div key={c.id} className="morning-trio-item">
                 {c.morningTier && (
                   <span className={`tag tag--tier-${c.morningTier}`}>
-                    {TIER_DA[c.morningTier]}
+                    {TIER_EN[c.morningTier]}
                   </span>
                 )}
                 <ChallengeCard
@@ -79,8 +79,8 @@ export function ChallengesPanel({
       <section className="panel panel--mode panel--challenges">
         <div className="panel__head">
           <div>
-            <p className="eyebrow">Aktive ordrer</p>
-            <h2>Træk · fuldfør · skip · fail</h2>
+            <p className="eyebrow">Active orders</p>
+            <h2>Draw · complete · skip · fail</h2>
           </div>
           <button
             type="button"
@@ -88,21 +88,21 @@ export function ChallengesPanel({
             disabled={paused}
             onClick={onRefresh}
           >
-            Nye challenges
+            New challenges
           </button>
         </div>
         <p className="muted tiny">
-          Ekstra ordrer ud over morgen-trio. {WEIGHT_FORMULA_DA} Gaming nu {performance.score}/100 ·{' '}
-          {performance.band}.
+          Extra orders beyond the morning trio. {WEIGHT_FORMULA_DA} Gaming now {performance.score}
+          /100 · {performance.band}.
         </p>
         <CalendarInfluenceNote calendar={calendarToday} compact />
         {performance.sessionCount > 0 && (
           <p className="influence-note">
             {performance.band === 'poor'
-              ? 'Fordi din sidste session var svag: flere straf-/ydmygelses-udfordringer.'
+              ? 'Because your last session was weak: more punishment / humiliation challenges.'
               : performance.band === 'good' || performance.band === 'godlike'
-                ? 'Fordi din sidste session gik godt: flere belønnings-/tease-udfordringer.'
-                : 'Middel præstation: blandet pool.'}
+                ? 'Because your last session went well: more reward / tease challenges.'
+                : 'Mid performance: mixed pool.'}
           </p>
         )}
         <div className="challenge-list">
@@ -115,21 +115,23 @@ export function ChallengesPanel({
             />
           ))}
           {!extraUnique.length && (
-            <p className="muted">Ingen ekstra challenges — træk nye, eller tjek themes under Profil.</p>
+            <p className="muted">No extra challenges — draw new ones, or check themes under Profile.</p>
           )}
         </div>
       </section>
 
       {log.length > 0 && (
         <section className="panel">
-          <p className="eyebrow">Historik</p>
-          <h2>Seneste resultater</h2>
+          <p className="eyebrow">History</p>
+          <h2>Recent challenges</h2>
           <ul className="log">
             {log.slice(0, 12).map((e) => (
               <li key={e.id}>
-                <span className={`pill pill--${e.outcome}`}>{e.outcome}</span>
-                {e.kind === 'straf' && <span className="tag tag--straf">straf</span>}
-                {e.kind === 'ingame' && <span className="tag">ingame</span>}
+                <span
+                  className={`pill pill--${e.outcome === 'complete' ? 'complete' : e.outcome === 'fail' ? 'fail' : 'skip'}`}
+                >
+                  {e.outcome}
+                </span>
                 <span>{e.titleDa}</span>
                 {e.pointsDelta != null && e.pointsDelta !== 0 && (
                   <span className={e.pointsDelta > 0 ? 'pts-pos' : 'pts-neg'}>
@@ -138,7 +140,7 @@ export function ChallengesPanel({
                   </span>
                 )}
                 <time dateTime={e.at}>
-                  {new Date(e.at).toLocaleString('da-DK', {
+                  {new Date(e.at).toLocaleString('en-GB', {
                     hour: '2-digit',
                     minute: '2-digit',
                     day: 'numeric',

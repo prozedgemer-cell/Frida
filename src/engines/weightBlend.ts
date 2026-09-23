@@ -15,4 +15,4 @@ export function blendContextGaming(contextMul: number, gamingMul: number): numbe
 }
 
 export const WEIGHT_FORMULA_DA =
-  'Vægt: kalender/rolle/dag/IRL/tid ≈ 70% · gaming-præstation ≈ 30% (blendContextGaming).';
+  'Weight: calendar/role/day/IRL/time ≈ 70% · gaming performance ≈ 30% (blendContextGaming).';

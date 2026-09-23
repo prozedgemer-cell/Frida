@@ -15,7 +15,7 @@ import { ALL_THEMES, DEFAULT_HARD_LIMITS } from '../types';
 const KEY = 'frida-kontrolpanel-v1';
 const UI_TAB_KEY = 'frida-ui-tab-v1';
 
-const VALID_TABS = ['hoved', 'gaming', 'kalender', 'udfordringer', 'sex', 'profil'] as const;
+const VALID_TABS = ['home', 'gaming', 'calendar', 'sex', 'profile'] as const;
 export type StoredUiTab = (typeof VALID_TABS)[number];
 
 const VALID_GAME_IDS: GamePresetId[] = [
@@ -313,18 +313,17 @@ export function loadUiTab(): StoredUiTab {
     if (raw && (VALID_TABS as readonly string[]).includes(raw)) {
       return raw as StoredUiTab;
     }
-    if (raw === 'hjem') return 'hoved';
-    if (raw === 'udfordring') return 'udfordringer';
+    // Migrate older Danish / legacy tab ids
+    if (raw === 'hjem' || raw === 'hoved' || raw === 'hverdag' || raw === 'udfordringer' || raw === 'udfordring')
+      return 'home';
     if (raw === 'sex-straf' || raw === 'sexstraf') return 'sex';
-    if (raw === 'kalender-tab') return 'kalender';
+    if (raw === 'kalender' || raw === 'kalender-tab') return 'calendar';
     if (raw === 'ingame' || raw === 'in-game') return 'gaming';
-    if (raw === 'hverdag') return 'hoved';
-    if (raw === 'ingame') return 'gaming';
-    if (raw === 'hverdag') return 'profil';
+    if (raw === 'profil') return 'profile';
   } catch {
     /* ignore */
   }
-  return 'hoved';
+  return 'home';
 }
 
 export function saveUiTab(tab: StoredUiTab): void {

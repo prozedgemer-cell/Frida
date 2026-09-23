@@ -8,45 +8,42 @@ export function InstallBanner() {
   return (
     <aside className="install-banner" role="note">
       <div>
-        <p className="eyebrow">Telefon-app</p>
-        <h2>Føj til hjemmeskærm</h2>
+        <p className="eyebrow">Phone app</p>
+        <h2>Add to Home Screen</h2>
         {pwa.canPrompt ? (
-          <p className="tiny">
-            Installér Frida som app — åbner fuld skærm uden browser-chrome.
-          </p>
+          <p className="tiny">Install Frida as an app — full screen, no browser chrome.</p>
         ) : pwa.ios ? (
           <ol className="install-steps">
             <li>
-              Åbn i <strong>Safari</strong> (ikke Chrome).
+              Open in <strong>Safari</strong> (not Chrome).
             </li>
             <li>
-              Tryk <strong>Del</strong> (firkant med pil op).
+              Tap <strong>Share</strong> (square with up arrow).
             </li>
             <li>
-              Vælg <strong>Føj til hjemmeskærm</strong> → Tilføj.
+              Choose <strong>Add to Home Screen</strong> → Add.
             </li>
           </ol>
         ) : (
           <ol className="install-steps">
             <li>
-              Åbn siden i <strong>Chrome</strong> (Android) eller Edge.
+              Open the page in <strong>Chrome</strong> (Android) or Edge.
             </li>
             <li>
-              Menu <strong>⋮</strong> → <strong>Installer app</strong> / Føj til
-              startskærm.
+              Menu <strong>⋮</strong> → <strong>Install app</strong> / Add to Home screen.
             </li>
-            <li>HTTPS-host er påkrævet — se README.</li>
+            <li>HTTPS host required — see README.</li>
           </ol>
         )}
       </div>
       <div className="install-banner__actions">
         {pwa.canPrompt && (
           <button type="button" className="btn btn--danger" onClick={() => void pwa.promptInstall()}>
-            Installer Frida
+            Install Frida
           </button>
         )}
         <button type="button" className="btn btn--ghost" onClick={pwa.dismiss}>
-          Skjul
+          Dismiss
         </button>
       </div>
     </aside>
@@ -56,12 +53,12 @@ export function InstallBanner() {
 export function InstallHint() {
   const pwa = usePwaInstall();
   if (pwa.standalone) {
-    return <p className="muted tiny">Kører som installeret app (standalone).</p>;
+    return <p className="muted tiny">Running as installed app (standalone).</p>;
   }
   return (
     <p className="muted tiny">
-      Tip: føj Frida til hjemmeskærmen, så den åbner som en rigtig app. På iPhone
-      skal det gøres fra Safari → Del → Føj til hjemmeskærm. Kræver HTTPS.
+      Tip: add Frida to your home screen so it opens like a real app. On iPhone use Safari → Share →
+      Add to Home Screen. HTTPS required.
     </p>
   );
 }

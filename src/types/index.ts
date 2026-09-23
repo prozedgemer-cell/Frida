@@ -105,12 +105,12 @@ export type OutfitLayer =
   | 'accessory';
 
 export const OUTFIT_LAYER_LABELS_DA: Record<OutfitLayer, string> = {
-  underwear: 'Undertøj',
-  top: 'Overdel',
-  bottom: 'Underdel',
-  legs: 'Strømper',
-  shoes: 'Sko',
-  outerwear: 'Ydertøj',
+  underwear: 'Underwear',
+  top: 'Top',
+  bottom: 'Bottom',
+  legs: 'Stockings',
+  shoes: 'Shoes',
+  outerwear: 'Outerwear',
   accessory: 'Accessories',
 };
 
@@ -303,19 +303,19 @@ export const ALL_THEMES: ThemePack[] = [
 ];
 
 export const RATING_LABELS_DA: Record<PerformanceRating, string> = {
-  1: 'Dårlig',
+  1: 'Poor',
   2: 'Ok',
-  3: 'God',
-  4: 'Stærk',
+  3: 'Good',
+  4: 'Strong',
   5: 'Godlike',
 };
 
 export const RESULT_LABELS_DA: Record<GameResult, string> = {
-  win: 'Sejr',
-  loss: 'Nederlag',
+  win: 'Win',
+  loss: 'Loss',
   quit: 'Quit',
-  draw: 'Uafgjort',
-  other: 'Andet',
+  draw: 'Draw',
+  other: 'Other',
 };
 
 /** Sex-straf hardness scale (blød → hård) */
@@ -404,27 +404,27 @@ export const CALENDAR_TAG_PRESETS = [
 ] as const;
 
 export const CALENDAR_SIGNAL_LABELS_DA: Record<CalendarSignal, string> = {
-  none: 'Ingen',
-  straf: 'Straf',
-  reward: 'Belønning',
-  soft: 'Blød dag',
-  hard: 'Hård dag',
-  clothing: 'Tøj-fokus',
+  none: 'None',
+  straf: 'Punishment',
+  reward: 'Reward',
+  soft: 'Soft day',
+  hard: 'Hard day',
+  clothing: 'Clothing focus',
   gaming: 'Gaming',
-  rest: 'Hvile',
-  date: 'Date/aftale',
+  rest: 'Rest',
+  date: 'Date / plans',
 };
 
 export const SEX_STRAF_HARDNESS_DA: Record<SexStrafHardness, string> = {
-  blød: 'Blød',
+  blød: 'Soft',
   medium: 'Medium',
-  hård: 'Hård',
+  hård: 'Hard',
 };
 
 export const SEX_STRAF_STATUS_DA: Record<SexStrafStatus, string> = {
-  pending: 'Afventer',
-  active: 'Aktiv',
-  done: 'Fuldført',
-  skipped: 'Sprunget over',
-  failed: 'Fejlet',
+  pending: 'Pending',
+  active: 'Active',
+  done: 'Done',
+  skipped: 'Skipped',
+  failed: 'Failed',
 };

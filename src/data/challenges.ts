@@ -1292,7 +1292,7 @@ export const CHALLENGE_TEMPLATES: ChallengeTemplate[] = [
   },
 
 
-  // ——— MORNING TRIO (DO / WEAR only) ———
+  // ——— MORNING TRIO (GØR / TAG PÅ only) ———
   {
     id: 'ch-morning-easy-01',
     titleDa: 'Morgen: BH + trusse check',
@@ -1310,7 +1310,7 @@ export const CHALLENGE_TEMPLATES: ChallengeTemplate[] = [
   {
     id: 'ch-morning-easy-02',
     titleDa: 'Morgen: strømper på',
-    bodyDa: 'Tag strømpebukser eller knæstrømper på nu. Gå 20 skridt hjemme. DO/WEAR — ingen tekst eller tale.',
+    bodyDa: 'Tag strømpebukser eller knæstrømper på nu. Gå 20 skridt hjemme. GØR/TAG PÅ — ingen tekst eller tale.',
     tags: ['morgen', 'wear', 'easy', 'strømper'],
     themes: ['clothing', 'irl'],
     intensity: ['soft'],
@@ -1363,7 +1363,7 @@ export const CHALLENGE_TEMPLATES: ChallengeTemplate[] = [
   {
     id: 'ch-morning-hard-02',
     titleDa: 'Morgen: hæle + nederdel',
-    bodyDa: 'Tag nederdel/kjole og hæle på (eller hæl-gang barfodet hvis ingen hæle). Gå 40 skridt. Hard DO/WEAR.',
+    bodyDa: 'Tag nederdel/kjole og hæle på (eller hæl-gang barfodet hvis ingen hæle). Gå 40 skridt. Hard GØR/TAG PÅ.',
     tags: ['morgen', 'wear', 'hard', 'hæle'],
     themes: ['clothing', 'irl'],
     intensity: ['hard'],
@@ -1444,7 +1444,7 @@ export const CHALLENGE_TEMPLATES: ChallengeTemplate[] = [
   {
     id: 'ch-morning-bound-04',
     titleDa: 'Morgen: offentlig diskret lag',
-    bodyDa: 'Gå udenfor (kort tur eller til døren) i dit fulde feminine outfit under normal jakke. Ingen outning. Boundary IRL DO/WEAR.',
+    bodyDa: 'Gå udenfor (kort tur eller til døren) i dit fulde feminine outfit under normal jakke. Ingen outning. Boundary IRL GØR/TAG PÅ.',
     tags: ['morgen', 'wear', 'boundary', 'irl', 'diskret'],
     themes: ['irl', 'clothing'],
     intensity: ['hard'],

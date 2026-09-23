@@ -1159,7 +1159,7 @@ html.is-standalone body {
   color: #7dcea0;
   font-weight: 650;
 }
-.net-cash-hint--tab {
+.net-cash-hint--loss {
   color: #f5a3b0;
   font-weight: 650;
 }
@@ -1545,7 +1545,7 @@ html.is-standalone body {
 
 .panic-btn {
   position: relative;
-  z-index: 2;
+  z-index: 5;
   width: 40px;
   height: 40px;
   padding: 0;
@@ -1556,7 +1556,6 @@ html.is-standalone body {
   display: grid;
   place-items: center;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
-  backdrop-filter: blur(10px);
   flex-shrink: 0;
 }
 .panic-btn__icon {
@@ -2119,4 +2118,73 @@ button.status-chip {
   margin-top: 1.1rem;
   padding-top: 0.85rem;
   border-top: 1px solid var(--border);
+}
+
+
+/* ——— Big center emergency stop (Home) ——— */
+.estop-hero {
+  display: flex;
+  justify-content: center;
+  margin: 0.25rem 0 1rem;
+}
+.estop-hero__btn {
+  width: min(100%, 22rem);
+  min-height: 7.5rem;
+  padding: 1.1rem 1.25rem;
+  border-radius: 1.25rem;
+  border: 2px solid rgba(255, 80, 80, 0.55);
+  background: radial-gradient(circle at 50% 30%, rgba(255, 70, 70, 0.35), rgba(40, 12, 16, 0.95));
+  color: #fff;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+  box-shadow: 0 12px 36px rgba(180, 20, 40, 0.35), inset 0 1px 0 rgba(255,255,255,0.12);
+  cursor: pointer;
+  transition: transform 0.12s ease, box-shadow 0.12s ease, background 0.12s ease;
+}
+.estop-hero__btn:active {
+  transform: scale(0.98);
+}
+.estop-hero__btn.is-on,
+.estop-hero.is-on .estop-hero__btn {
+  border-color: rgba(255, 210, 80, 0.7);
+  background: radial-gradient(circle at 50% 30%, rgba(255, 180, 40, 0.4), rgba(50, 30, 8, 0.95));
+  box-shadow: 0 12px 36px rgba(200, 120, 20, 0.4), inset 0 1px 0 rgba(255,255,255,0.12);
+  animation: estop-pulse 1.6s ease-in-out infinite;
+}
+@keyframes estop-pulse {
+  0%, 100% { filter: brightness(1); }
+  50% { filter: brightness(1.12); }
+}
+.estop-hero__icon {
+  width: 2.4rem;
+  height: 2.4rem;
+  display: grid;
+  place-items: center;
+}
+.estop-hero__icon svg {
+  width: 100%;
+  height: 100%;
+}
+.estop-hero__label {
+  font-size: 1.15rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.estop-hero__hint {
+  font-size: 0.78rem;
+  opacity: 0.85;
+  text-align: center;
+  max-width: 16rem;
+}
+.sex-adjust {
+  margin-top: 0.85rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid rgba(255,255,255,0.08);
+}
+.challenges-embedded {
+  margin-top: 0.5rem;
 }

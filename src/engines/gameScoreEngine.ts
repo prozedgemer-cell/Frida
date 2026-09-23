@@ -218,7 +218,7 @@ export function ratingFromScore(score: number): PerformanceRating {
   return 5;
 }
 
-/** Build a short Danish performance note from metrics. */
+/** Build a short performance note from metrics. */
 export function metricsSummaryDa(
   gameId: GamePresetId | undefined,
   metrics: MetricMap | undefined,
@@ -296,7 +296,7 @@ export function maybeInferResult(
 export function formatNetCashDa(cash: number): string {
   const abs = Math.abs(Math.round(cash)).toLocaleString('da-DK');
   if (cash > 0) return `Profit +${abs}`;
-  if (cash < 0) return `Tab −${abs}`;
+  if (cash < 0) return `Loss −${abs}`;
   return 'Break-even 0';
 }
 

@@ -21,8 +21,8 @@ export function ChallengeCard({ challenge, paused, onResolve }: Props) {
           </span>
         ))}
         <span className={`tag tag--${challenge.intensity}`}>{challenge.intensity}</span>
-        {isStraf && <span className="tag tag--straf">straf</span>}
-        {isReward && <span className="tag tag--reward">belønning</span>}
+        {isStraf && <span className="tag tag--straf">punishment</span>}
+        {isReward && <span className="tag tag--reward">reward</span>}
         {challenge.kind === 'tease' && <span className="tag">tease</span>}
       </div>
       <h3>{challenge.titleDa}</h3>
@@ -37,7 +37,7 @@ export function ChallengeCard({ challenge, paused, onResolve }: Props) {
           disabled={paused}
           onClick={() => onResolve(challenge.id, 'complete')}
         >
-          Fuldført
+          Complete
         </button>
         <button
           type="button"
@@ -45,7 +45,7 @@ export function ChallengeCard({ challenge, paused, onResolve }: Props) {
           disabled={paused}
           onClick={() => onResolve(challenge.id, 'skip')}
         >
-          Spring over
+          Skip
         </button>
         <button
           type="button"
@@ -53,7 +53,7 @@ export function ChallengeCard({ challenge, paused, onResolve }: Props) {
           disabled={paused}
           onClick={() => onResolve(challenge.id, 'fail')}
         >
-          Fejlet
+          Fail
         </button>
       </div>
     </article>

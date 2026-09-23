@@ -3,7 +3,6 @@ import { estimateVariationSpace } from '../engines/challengeEngine';
 import type { useFridaState } from '../hooks/useFridaState';
 import { loadUiTab, saveUiTab } from '../storage/localStore';
 import { BottomNav, type AppTab } from './BottomNav';
-import { ChallengesPanel } from './ChallengesPanel';
 import { PanicButton } from './EmergencyStop';
 import { GamingPanel } from './GamingPanel';
 import { CalendarPanel } from './CalendarPanel';
@@ -15,20 +14,19 @@ import { SexStrafPanel } from './SexStrafPanel';
 type Hook = ReturnType<typeof useFridaState>;
 
 const TAB_TITLES: Record<AppTab, { eyebrow: string; title: string }> = {
-  hoved: { eyebrow: 'Hoved', title: 'Overblik' },
+  home: { eyebrow: 'Home', title: 'Overview' },
   gaming: { eyebrow: 'Gaming', title: 'Session & log' },
-  kalender: { eyebrow: 'Kalender', title: 'Noter & tags' },
-  udfordringer: { eyebrow: 'Udfordringer', title: 'Ordrer' },
-  sex: { eyebrow: 'Sex-straf', title: 'Indløs stats' },
-  profil: { eyebrow: 'Profil', title: 'Frida' },
+  calendar: { eyebrow: 'Calendar', title: 'Notes & tags' },
+  sex: { eyebrow: 'Sex punishment', title: 'Pending → accept' },
+  profile: { eyebrow: 'Profile', title: 'Frida' },
 };
 
 const MODE_RAIL: { id: AppTab; label: string }[] = [
-  { id: 'hoved', label: 'Hoved' },
+  { id: 'home', label: 'Home' },
   { id: 'gaming', label: 'Gaming' },
-  { id: 'kalender', label: 'Kalender' },
-  { id: 'udfordringer', label: 'Udfordringer' },
   { id: 'sex', label: 'Sex' },
+  { id: 'calendar', label: 'Calendar' },
+  { id: 'profile', label: 'Profile' },
 ];
 
 export function Dashboard({ api }: { api: Hook }) {
@@ -46,7 +44,7 @@ export function Dashboard({ api }: { api: Hook }) {
   const [tab, setTab] = useState<AppTab>(() => loadUiTab());
   const variation = estimateVariationSpace();
   const now = new Date();
-  const timeLabel = now.toLocaleString('da-DK', {
+  const timeLabel = now.toLocaleString('en-GB', {
     weekday: 'long',
     hour: '2-digit',
     minute: '2-digit',
@@ -85,21 +83,21 @@ export function Dashboard({ api }: { api: Hook }) {
   }, [sexBadge]);
 
   return (
-    <div className={`app-shell ${tab === 'hoved' ? 'is-hoved' : ''}`}>
+    <div className={`app-shell ${tab === 'home' ? 'is-hoved' : ''}`}>
       <header className="dash-bar">
         <div>
           <p className="eyebrow">{mode.eyebrow}</p>
           <h1 className="dash-bar__title">
-            {tab === 'hoved' ? (
+            {tab === 'home' ? (
               <>
-                Hej <span className="accent">Frida</span>
+                Hi <span className="accent">Frida</span>
               </>
             ) : (
               mode.title
             )}
           </h1>
           <p className="muted tiny dash-bar__meta">
-            {timeLabel} · {state.profile.dayMode}-dag · {state.pointsBalance} p
+            {timeLabel} · {state.profile.dayMode}-day · {state.pointsBalance} pts
             {performance.sessionCount > 0 ? ` · ${performance.score}` : ''}
           </p>
         </div>
@@ -110,27 +108,13 @@ export function Dashboard({ api }: { api: Hook }) {
               Sex
             </button>
           )}
-          <button
-            type="button"
-            className={`header-profile-btn ${tab === 'profil' ? 'is-active' : ''}`}
-            onClick={() => setTab('profil')}
-            aria-label="Profil"
-            title="Profil"
-          >
-            <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden>
-              <path
-                fill="currentColor"
-                d="M12 4a4 4 0 1 1 0 8 4 4 0 0 1 0-8Zm0 10c3.8 0 8 1.8 8 5v2H4v-2c0-3.2 4.2-5 8-5Z"
-              />
-            </svg>
-          </button>
           <PanicButton active={state.emergencyStop} onToggle={api.setEmergencyStop} />
         </div>
       </header>
 
       <InstallBanner />
 
-      <nav className="mode-rail" aria-label="Mode-skifter (desktop)">
+      <nav className="mode-rail" aria-label="Mode switcher (desktop)">
         {MODE_RAIL.map(({ id, label }) => (
           <button
             key={id}
@@ -140,7 +124,7 @@ export function Dashboard({ api }: { api: Hook }) {
             onClick={() => setTab(id)}
           >
             {label}
-            {(id === 'sex' || id === 'hoved') && sexBadge && (
+            {(id === 'sex' || id === 'home') && sexBadge && (
               <i className="nav-badge nav-badge--inline" />
             )}
           </button>
@@ -148,7 +132,7 @@ export function Dashboard({ api }: { api: Hook }) {
       </nav>
 
       <div className="layout layout--modes">
-        <div className={`tab-panel ${tab === 'hoved' ? 'is-active' : ''}`} data-tab="hoved">
+        <div className={`tab-panel ${tab === 'home' ? 'is-active' : ''}`} data-tab="home">
           <HomePanel
             underwear={state.underwearToday}
             pointsBalance={state.pointsBalance}
@@ -160,16 +144,21 @@ export function Dashboard({ api }: { api: Hook }) {
             activeChallenge={primaryChallenge}
             inGameChallenge={state.activeInGameChallenge}
             emergencyStop={state.emergencyStop}
-            onGoChallenges={() => setTab('udfordringer')}
+            onEmergencyStop={api.setEmergencyStop}
             onGoSex={() => setTab('sex')}
-            onGoCalendar={() => setTab('kalender')}
+            onGoCalendar={() => setTab('calendar')}
             onGoGaming={() => setTab('gaming')}
-            onGoProfil={() => setTab('profil')}
+            onGoProfile={() => setTab('profile')}
             onIrl={(irlStatus) => api.updateContext({ irlStatus })}
             sexActive={state.activeSexStraf}
             sexDue={sexStrafDue}
             calendarToday={calendarToday}
             morningTrio={state.morningTrio}
+            activeChallenges={state.activeChallenges}
+            challengeLog={state.challengeLog}
+            onRefreshChallenges={() => refreshChallenges(3)}
+            onResolveChallenge={resolveChallenge}
+            onResolveMorning={api.resolveMorningChallenge}
           />
         </div>
 
@@ -191,23 +180,6 @@ export function Dashboard({ api }: { api: Hook }) {
           />
         </div>
 
-        <div
-          className={`tab-panel ${tab === 'udfordringer' ? 'is-active' : ''}`}
-          data-tab="udfordringer"
-        >
-          <ChallengesPanel
-            active={state.activeChallenges}
-            log={state.challengeLog}
-            performance={performance}
-            calendarToday={calendarToday}
-            paused={state.emergencyStop}
-            onRefresh={() => refreshChallenges(3)}
-            onResolve={resolveChallenge}
-            morningTrio={state.morningTrio}
-            onResolveMorning={api.resolveMorningChallenge}
-          />
-        </div>
-
         <div className={`tab-panel ${tab === 'sex' ? 'is-active' : ''}`} data-tab="sex">
           <SexStrafPanel
             active={state.activeSexStraf}
@@ -219,10 +191,11 @@ export function Dashboard({ api }: { api: Hook }) {
             onClaim={api.claimSexStraf}
             onStart={api.startSexStraf}
             onResolve={api.resolveSexStraf}
+            onAdjust={api.adjustSexStraf}
           />
         </div>
 
-        <div className={`tab-panel ${tab === 'kalender' ? 'is-active' : ''}`} data-tab="kalender">
+        <div className={`tab-panel ${tab === 'calendar' ? 'is-active' : ''}`} data-tab="calendar">
           <CalendarPanel
             entries={state.calendarEntries}
             paused={state.emergencyStop}
@@ -231,7 +204,7 @@ export function Dashboard({ api }: { api: Hook }) {
           />
         </div>
 
-        <div className={`tab-panel ${tab === 'profil' ? 'is-active' : ''}`} data-tab="profil">
+        <div className={`tab-panel ${tab === 'profile' ? 'is-active' : ''}`} data-tab="profile">
           <ProfilePanel
             profile={state.profile}
             context={state.context}
@@ -244,7 +217,7 @@ export function Dashboard({ api }: { api: Hook }) {
             <InstallHint />
           </section>
           <section className="panel panel--muted">
-            <p className="eyebrow">Skala</p>
+            <p className="eyebrow">Scale</p>
             <p className="tiny">{variation.noteDa}</p>
           </section>
         </div>

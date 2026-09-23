@@ -66,7 +66,7 @@ export function computePerformance(sessions: GameSessionLog[]): PerformanceSnaps
       score: 50,
       streak: 0,
       band: 'ok',
-      summaryDa: 'Ingen sessions logget endnu — neutral præstation.',
+      summaryDa: 'No sessions logged yet — neutral performance.',
       lastSession: null,
       sessionCount: 0,
     };
@@ -100,9 +100,9 @@ export function computePerformance(sessions: GameSessionLog[]): PerformanceSnaps
 
   const streakDa =
     streak > 0
-      ? `sejrsstime ×${streak}`
+      ? `win streak ×${streak}`
       : streak < 0
-        ? `nederlagsstime ×${Math.abs(streak)}`
+        ? `loss streak ×${Math.abs(streak)}`
         : 'ingen streak';
 
   const lastDa = last
@@ -115,18 +115,18 @@ export function computePerformance(sessions: GameSessionLog[]): PerformanceSnaps
 
   const bandDa =
     band === 'poor'
-      ? 'svag præstation'
+      ? 'weak performance'
       : band === 'ok'
-        ? 'middel præstation'
+        ? 'average performance'
         : band === 'good'
-          ? 'stærk præstation'
-          : 'godlike præstation';
+          ? 'strong performance'
+          : 'godlike performance';
 
   return {
     score: Math.round(score),
     streak,
     band,
-    summaryDa: `${bandDa} (${Math.round(score)}/100) · ${streakDa}${lastDa ? ` · sidst: ${lastDa}` : ''}`,
+    summaryDa: `${bandDa} (${Math.round(score)}/100) · ${streakDa}${lastDa ? ` · last: ${lastDa}` : ''}`,
     lastSession: last,
     sessionCount: sessions.length,
   };
@@ -134,10 +134,10 @@ export function computePerformance(sessions: GameSessionLog[]): PerformanceSnaps
 
 export function influenceTextDa(perf: PerformanceSnapshot, subject: string): string {
   if (!perf.lastSession) {
-    return `${subject} er neutralt vægtet (ingen session endnu).`;
+    return `${subject} is neutrally weighted (no session yet).`;
   }
   const last = perf.lastSession;
-  const when = new Date(last.at).toLocaleString('da-DK', {
+  const when = new Date(last.at).toLocaleString('en-GB', {
     day: 'numeric',
     month: 'short',
     hour: '2-digit',
@@ -148,12 +148,12 @@ export function influenceTextDa(perf: PerformanceSnapshot, subject: string): str
       ? `${last.computedScore}/100 KPI-score`
       : `${RESULT_LABELS_DA[last.result].toLowerCase()} / ${RATING_LABELS_DA[last.rating].toLowerCase()}`;
   if (perf.band === 'poor') {
-    return `Fordi din sidste session (${last.gameName}, ${when}) var ${detail}: ${subject} hælder til straf / hårdere kontrol.`;
+    return `Because your last session (${last.gameName}, ${when}) was ${detail}: ${subject} leans toward punishment / stricter control.`;
   }
   if (perf.band === 'godlike' || perf.band === 'good') {
-    return `Fordi din sidste session (${last.gameName}, ${when}) gik ${detail}: ${subject} hælder til belønning / blødere tease.`;
+    return `Because your last session (${last.gameName}, ${when}) went ${detail}: ${subject} leans toward reward / softer tease.`;
   }
-  return `Fordi din sidste session (${last.gameName}, ${when}) var middel (${detail}): ${subject} er afbalanceret.`;
+  return `Because your last session (${last.gameName}, ${when}) was average (${detail}): ${subject} is balanced.`;
 }
 
 /** Points for completing/failing a normal challenge (small). */

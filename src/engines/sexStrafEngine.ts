@@ -112,12 +112,12 @@ export function evaluateSexStrafDue(opts: {
   const reasonsDa: string[] = [];
   const blockedDa: string[] = [];
 
-  if (opts.paused) blockedDa.push('Nødstop er ON — ingen ny sex-straf og ingen fremdrift.');
+  if (opts.paused) blockedDa.push('Emergency stop is ON — no new sex punishment and no progress.');
   if (opts.active && (opts.active.status === 'pending' || opts.active.status === 'active')) {
-    blockedDa.push('Der ligger allerede en afventende/aktiv sex-straf.');
+    blockedDa.push('A pending/active sex punishment is already waiting.');
   }
   if (opts.calendar?.hasRest) {
-    blockedDa.push('Kalenderen markerer i dag som hvile — ingen ny sex-straf.');
+    blockedDa.push('Calendar marks today as rest — no new sex punishment.');
   }
 
   const last = lastResolved(opts.log);
@@ -131,27 +131,27 @@ export function evaluateSexStrafDue(opts: {
       if (until > now.getTime()) {
         cooldownUntil = new Date(until).toISOString();
         const hours = Math.max(1, Math.ceil((until - now.getTime()) / 36e5));
-        blockedDa.push(`Cooldown: ~${hours} t tilbage efter sidste sex-straf (${last?.status ?? 'ukendt'}).`);
+        blockedDa.push(`Cooldown: ~${hours}h left after last sex punishment (${last?.status ?? 'unknown'}).`);
       }
     }
   }
 
   const perf = opts.performance;
   if (perf.sessionCount > 0 && perf.band === 'poor') {
-    reasonsDa.push(`Præstationsbånd er dårligt (${perf.score}/100).`);
+    reasonsDa.push(`Performance band is poor (${perf.score}/100).`);
   }
   if (opts.pointsBalance < 0) {
-    reasonsDa.push(`Pointgæld: ${opts.pointsBalance}.`);
+    reasonsDa.push(`Points debt: ${opts.pointsBalance}.`);
   }
   if (perf.streak <= -2) {
-    reasonsDa.push(`Nederlagsstime ×${Math.abs(perf.streak)}.`);
+    reasonsDa.push(`Loss streak ×${Math.abs(perf.streak)}.`);
   }
   const calDue = calendarStrafDueReason(opts.calendar, now);
   if (calDue) reasonsDa.push(calDue);
 
   const recentFails = opts.challengeLog.slice(0, 3).filter((e) => e.outcome === 'fail').length;
   if (recentFails > 0) {
-    reasonsDa.push(`Nylig failed udfordring (${recentFails} i de sidste 3).`);
+    reasonsDa.push(`Recent failed challenge (${recentFails} in last 3).`);
   }
 
   const due = reasonsDa.length > 0 && blockedDa.length === 0;
@@ -174,7 +174,7 @@ export function evaluateSexStrafDueWithSessions(
 ): SexStrafDue {
   const base = evaluateSexStrafDue(opts);
   if (lossDensityTrigger(opts.sessions)) {
-    const msg = 'Mindst 2 nederlag/quit i de sidste 5 sessions.';
+    const msg = 'At least 2 losses/quits in the last 5 sessions.';
     if (!base.reasonsDa.includes(msg)) base.reasonsDa.push(msg);
   }
   const due = base.reasonsDa.length > 0 && base.blockedDa.length === 0;
@@ -265,7 +265,7 @@ export function generateSexStraf(opts: {
     opts.performance,
     opts.pointsBalance,
   );
-  const game = opts.playingGame.trim() || 'dit spil';
+  const game = opts.playingGame.trim() || 'your game';
   const sceneDa = fillScene(picked, {
     partner,
     place,

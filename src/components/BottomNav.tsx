@@ -1,12 +1,6 @@
 import type { ReactElement } from 'react';
 
-export type AppTab =
-  | 'hoved'
-  | 'gaming'
-  | 'kalender'
-  | 'udfordringer'
-  | 'sex'
-  | 'profil';
+export type AppTab = 'home' | 'gaming' | 'calendar' | 'sex' | 'profile';
 
 type Props = {
   tab: AppTab;
@@ -44,13 +38,6 @@ function IconCal() {
     </svg>
   );
 }
-function IconBolt() {
-  return (
-    <svg viewBox="0 0 24 24" aria-hidden className="nav-svg">
-      <path fill="currentColor" d="M13 2 4 14h7l-1 8 10-14h-7l0-6Z" />
-    </svg>
-  );
-}
 function IconSex() {
   return (
     <svg viewBox="0 0 24 24" aria-hidden className="nav-svg">
@@ -61,22 +48,32 @@ function IconSex() {
     </svg>
   );
 }
+function IconProfile() {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden className="nav-svg">
+      <path
+        fill="currentColor"
+        d="M12 4a4 4 0 1 1 0 8 4 4 0 0 1 0-8Zm0 10c3.8 0 8 1.8 8 5v2H4v-2c0-3.2 4.2-5 8-5Z"
+      />
+    </svg>
+  );
+}
 
-const TABS: { id: Exclude<AppTab, 'profil'>; label: string; icon: () => ReactElement }[] = [
-  { id: 'hoved', label: 'Hoved', icon: IconHome },
+const TABS: { id: AppTab; label: string; icon: () => ReactElement }[] = [
+  { id: 'home', label: 'Home', icon: IconHome },
   { id: 'gaming', label: 'Gaming', icon: IconGame },
-  { id: 'kalender', label: 'Kalender', icon: IconCal },
-  { id: 'udfordringer', label: 'Udfordr.', icon: IconBolt },
   { id: 'sex', label: 'Sex', icon: IconSex },
+  { id: 'calendar', label: 'Calendar', icon: IconCal },
+  { id: 'profile', label: 'Profile', icon: IconProfile },
 ];
 
 export function BottomNav({ tab, onChange, sexBadge }: Props) {
   return (
-    <nav className="bottom-nav" aria-label="Hovedmenu">
+    <nav className="bottom-nav" aria-label="Main menu">
       {TABS.map((t) => {
         const Icon = t.icon;
         const active = tab === t.id;
-        const badge = (t.id === 'sex' || t.id === 'hoved') && !!sexBadge;
+        const badge = (t.id === 'sex' || t.id === 'home') && !!sexBadge;
         return (
           <button
             key={t.id}
@@ -87,7 +84,7 @@ export function BottomNav({ tab, onChange, sexBadge }: Props) {
           >
             <span className="bottom-nav__icon">
               <Icon />
-              {badge && <i className="nav-badge" aria-label="Aktiv sex-straf" />}
+              {badge && <i className="nav-badge" aria-label="Pending sex punishment" />}
             </span>
             <span>{t.label}</span>
           </button>

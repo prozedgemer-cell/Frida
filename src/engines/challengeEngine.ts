@@ -36,7 +36,7 @@ function fillVars(
 ): string {
   const uw = underwear
     ? (getUnderwearById(underwear.itemId)?.nameDa ?? 'dit beordrede undertøj')
-    : 'dit beordrede undertøj';
+    : 'your ordered underwear';
   return text
     .replaceAll('{breastSize}', profile.breastSize)
     .replaceAll('{underwear}', uw)
@@ -331,7 +331,7 @@ function pickForTier(
 
 /**
  * Every morning: exactly 3 challenges — easy, hard, boundary-breaking.
- * DO / WEAR actions only (say/write/speak purged from this set).
+ * GØR / TAG PÅ (do/wear) only — say/write purged from this set.
  */
 export function drawMorningTrio(
   profile: Profile,
@@ -378,7 +378,7 @@ export function estimateVariationSpace(): {
   const approx = templates * themes * intensity * approxVars * perfBands;
   return {
     templates,
-    noteDa: `${templates} skabeloner × themes × intensitet × variabler × præstationsbånd ≈ ~${approx.toLocaleString('da-DK')} konkrete variationer. ${WEIGHT_FORMULA_DA} Morgen-trio: præcis 3 DO/WEAR (easy/hard/boundary).`,
+    noteDa: `${templates} templates × themes × intensity × variables × performance bands ≈ ~${approx.toLocaleString('en-GB')} concrete variations. ${WEIGHT_FORMULA_DA} Morning trio: exactly 3 DO/WEAR (easy/hard/boundary).`,
   };
 }
 

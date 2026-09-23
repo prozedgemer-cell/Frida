@@ -18,7 +18,7 @@ import {
   type CalendarSummary,
 } from './calendarEngine';
 import { attachOutfitToPick } from './outfitEngine';
-import { WEIGHT_FORMULA_DA } from './weightBlend';
+import { blendContextGaming, WEIGHT_FORMULA_DA } from './weightBlend';
 
 function dateKey(d = new Date()): string {
   return localDateKey(d);
@@ -157,19 +157,19 @@ export function scoreUnderwear(
 ): number {
   const bucket = hourBucket(now);
   const weekend = isWeekend(now);
-  let score = item.weight;
-  score *= themeScore(item, profile.enabledThemes);
-  score *= intensityFit(item, profile.intensity, profile.dayMode);
-  score *= irlMultiplier(item, context.irlStatus);
-  score *= timeScore(item, bucket, weekend);
-  score *= gamingScore(item, context.playingGame);
-  score *= performanceScore(item, perf);
   const hardish =
     item.intensity.includes('hard') &&
     (item.category === 'special' || item.tags.includes('hard'));
   const softish = item.intensity.includes('soft') && !hardish;
-  score *= calendarUnderwearMultiplier(item.tags, hardish, softish, cal);
-  return Math.max(score, 0.01);
+  // ~70% calendar/role/day/IRL/time · ~30% gaming performance
+  const contextMul =
+    themeScore(item, profile.enabledThemes) *
+    intensityFit(item, profile.intensity, profile.dayMode) *
+    irlMultiplier(item, context.irlStatus) *
+    timeScore(item, bucket, weekend) *
+    calendarUnderwearMultiplier(item.tags, hardish, softish, cal);
+  const gamingMul = gamingScore(item, context.playingGame) * performanceScore(item, perf);
+  return Math.max(item.weight * blendContextGaming(contextMul, gamingMul), 0.01);
 }
 
 function weightedPick(items: { item: UnderwearItem; score: number }[]): UnderwearItem {
@@ -187,15 +187,15 @@ function buildOrderText(item: UnderwearItem, profile: Profile, perf?: Performanc
   if (perf && perf.sessionCount > 0) {
     if (perf.band === 'poor') {
       extra =
-        ' Din seneste gaming-præstation var svag — så dette er en strengere / mere ydmygende beording. ';
+        ' Your recent gaming performance was weak — so this is a stricter / more humiliating order. ';
     } else if (perf.band === 'good' || perf.band === 'godlike') {
       extra =
-        ' Din seneste gaming-præstation fortjener blødere / mere komfortabelt undertøj som belønning. ';
+        ' Your recent gaming performance earned softer / more comfortable underwear as a reward. ';
     }
   }
   return (
-    `Frida — BEORDING: Tag "${item.nameDa}" på nu under dit tøj i dag. ` +
-    `Dine ${profile.breastSize}-bryster skal sidde støttet (BH hvis sættet kræver det). ` +
+    `Frida — ORDER: Put on "${item.nameDa}" now under your clothes today. ` +
+    `Your ${profile.breastSize}-cup breasts should be supported (bra if the set requires it). ` +
     `${extra}${item.descriptionDa}`
   );
 }
@@ -209,22 +209,22 @@ function buildReason(
   cal?: CalendarSummary | null,
 ): string {
   const parts: string[] = [];
-  parts.push(isWeekend(now) ? 'weekend' : 'hverdag');
+  parts.push(isWeekend(now) ? 'weekend' : 'weekday');
   parts.push(hourBucket(now));
   parts.push(`IRL: ${context.irlStatus}`);
-  parts.push(`dag: ${profile.dayMode}/${profile.intensity}`);
-  if (context.playingGame.trim()) parts.push(`spil: ${context.playingGame}`);
+  parts.push(`day: ${profile.dayMode}/${profile.intensity}`);
+  if (context.playingGame.trim()) parts.push(`game: ${context.playingGame}`);
   if (perf && perf.sessionCount > 0) {
-    parts.push(`præstation: ${perf.band} (${perf.score})`);
+    parts.push(`performance: ${perf.band} (${perf.score})`);
   }
   if (cal && cal.entries.length) {
-    parts.push(`kalender: ${cal.signals.join(', ') || 'noter'}`);
+    parts.push(`calendar: ${cal.signals.join(', ') || 'notes'}`);
     const inf = describeCalendarInfluence(cal);
     parts.push(inf.outfitDa);
   }
   const themes = item.themes.filter((t) => profile.enabledThemes.includes(t));
   if (themes.length) parts.push(`themes: ${themes.join(', ')}`);
-  return `Valgt ud fra ${parts.join(' · ')}. ${WEIGHT_FORMULA_DA}`;
+  return `Picked from ${parts.join(' · ')}. ${WEIGHT_FORMULA_DA}`;
 }
 
 export function pickUnderwear(

@@ -239,9 +239,9 @@ export function summarizeCalendar(
   const minutes = day.map((e) => timeHmMinutes(e.timeHm)).filter((n): n is number => n != null);
   const eveningBias = minutes.some((n) => n >= 17 * 60);
   const morningBias = minutes.some((n) => n < 11 * 60) && !eveningBias;
-  let headlineDa = 'Ingen kalender-noter i dag.';
+  let headlineDa = 'No calendar notes today.';
   if (day.length) {
-    const sig = labels.length ? `Signal: ${labels.join(', ')}` : 'Ingen signal-tag';
+    const sig = labels.length ? `Signal: ${labels.join(', ')}` : 'No signal tag';
     const role = plan.planBlurbDa ? ` · ${plan.planBlurbDa}` : '';
     const clock = timedLabels.length ? ` · ${timedLabels[0]}` : '';
     headlineDa = titles.length
@@ -377,12 +377,12 @@ export function calendarStrafDueReason(
     .map((e) => ({ e, min: timeHmMinutes(e.timeHm) }))
     .filter((x): x is { e: CalendarEntry; min: number } => x.min != null);
   if (!timed.length) {
-    return cal.hasStraf ? 'Kalender-signal i dag: straf.' : 'Kalender-signal i dag: hård dag.';
+    return cal.hasStraf ? 'Calendar signal today: punishment.' : 'Calendar signal today: hard day.';
   }
   const nowMin = now.getHours() * 60 + now.getMinutes();
   const hit = timed.find((row) => nowMin >= row.min - 90 && nowMin <= row.min + 180);
   if (hit) {
-    return `Kalender ${hit.e.timeHm} «${hit.e.titleDa}» er i tidsvindue — sex-straf due.`;
+    return `Calendar ${hit.e.timeHm} «${hit.e.titleDa}» is in the time window — sex punishment due.`;
   }
   return null;
 }
@@ -412,10 +412,10 @@ export interface CalendarInfluence {
 export function describeCalendarInfluence(cal?: CalendarSummary | null): CalendarInfluence {
   if (!cal || !cal.entries.length) {
     return {
-      summaryDa: 'Ingen kalender-noter i dag — kalenderen trækker ikke.',
-      outfitDa: 'Outfit: kun IRL, tid på dagen og gaming (30%).',
-      challengeDa: 'Udfordringer: kun profil, themes og gaming.',
-      strafDa: 'Sex-straf: kun gaming-præstation, pointgæld og failed challenges.',
+      summaryDa: 'No calendar notes today — calendar is not pulling.',
+      outfitDa: 'Outfit: IRL, time of day, and gaming only (30%).',
+      challengeDa: 'Challenges: profile, themes, and gaming only.',
+      strafDa: 'Sex punishment: gaming performance, points debt, and failed challenges only.',
     };
   }
   const labels = cal.signals.map((s) => CALENDAR_SIGNAL_LABELS_DA[s]);
@@ -425,35 +425,35 @@ export function describeCalendarInfluence(cal?: CalendarSummary | null): Calenda
   if (labels.length) bits.push(`signal ${labels.join(', ')}`);
   if (roles) bits.push(roles);
   if (timed) bits.push(`kl. ${timed}`);
-  const summaryDa = `Kalender i dag: ${bits.join(' · ') || cal.headlineDa}`;
+  const summaryDa = `Calendar today: ${bits.join(' · ') || cal.headlineDa}`;
 
-  let outfitDa = 'Outfit: kalender ~70% bias';
-  if (cal.hasRest) outfitDa += ' — hvile dæmper hårdt/afslørende tøj.';
-  else if (cal.hasHard || cal.hasStraf) outfitDa += ' — straf/hård trækker BDSM/afslørende lag.';
-  else if (cal.hasSoft || cal.hasReward) outfitDa += ' — blød/belønning trækker komfort og luksus.';
-  else if (cal.hasClothing || cal.hasDate) outfitDa += ' — tøj/date trækker lingeri og milf/date-look.';
-  else if (cal.hasGaming) outfitDa += ' — gaming-note trækker komfort/praktisk.';
-  if (cal.eveningBias) outfitDa += ' Aften-tid på noten → sexy/aften-lag.';
-  if (cal.morningBias) outfitDa += ' Morgen-tid på noten → diskret/hverdag.';
-  if (roles) outfitDa += ` Role-hint: ${roles}.`;
+  let outfitDa = 'Outfit: calendar ~70% bias';
+  if (cal.hasRest) outfitDa += ' — rest softens hard/revealing clothes.';
+  else if (cal.hasHard || cal.hasStraf) outfitDa += ' — punishment/hard pulls BDSM/revealing layers.';
+  else if (cal.hasSoft || cal.hasReward) outfitDa += ' — soft/reward pulls comfort and luxury.';
+  else if (cal.hasClothing || cal.hasDate) outfitDa += ' — clothing/date pulls lingerie and milf/date look.';
+  else if (cal.hasGaming) outfitDa += ' — gaming note pulls comfort/practical.';
+  if (cal.eveningBias) outfitDa += ' Evening time on the note → sexy/evening layers.';
+  if (cal.morningBias) outfitDa += ' Morning time on the note → discreet/everyday.';
+  if (roles) outfitDa += ` Role hint: ${roles}.`;
 
-  let challengeDa = 'Udfordringer:';
-  if (cal.hasRest) challengeDa += ' hvile sænker straf-udfordringer.';
-  else if (cal.hasStraf || cal.hasHard) challengeDa += ' straf/hård øger straf-pool (~2.4×).';
-  else if (cal.hasReward || cal.hasSoft) challengeDa += ' belønning/blød øger reward-pool.';
-  else challengeDa += ' noter giver let bias via keywords.';
-  if (cal.roleHints.includes('familie-sikker')) challengeDa += ' Familie-sikker dæmper straf hårdt.';
-  if (cal.noteBoost) challengeDa += ' Plan-tekst forstærker vægt.';
+  let challengeDa = 'Challenges:';
+  if (cal.hasRest) challengeDa += ' rest lowers punishment challenges.';
+  else if (cal.hasStraf || cal.hasHard) challengeDa += ' punishment/hard boosts punishment pool (~2.4×).';
+  else if (cal.hasReward || cal.hasSoft) challengeDa += ' reward/soft boosts reward pool.';
+  else challengeDa += ' notes give light bias via keywords.';
+  if (cal.roleHints.includes('familie-sikker')) challengeDa += ' Family-safe softens punishment hard.';
+  if (cal.noteBoost) challengeDa += ' Plan text strengthens weight.';
 
   const calDueNow = calendarStrafDueReason(cal);
   const calSched = calendarStrafScheduleNote(cal);
-  let strafDa = 'Sex-straf:';
-  if (cal.hasRest) strafDa += ' hvile-dag blokerer NY sex-straf.';
-  else if (calDueNow) strafDa += ' straf/hård i tidsvindue gør sex-straf due (hvis cooldown er ovre).';
+  let strafDa = 'Sex punishment:';
+  if (cal.hasRest) strafDa += ' rest day blocks NEW sex punishment.';
+  else if (calDueNow) strafDa += ' punishment/hard in the time window makes sex punishment due (if cooldown is over).';
   else if (calSched) strafDa += ` ${calSched}`;
-  else if (cal.hasStraf || cal.hasHard) strafDa += ' straf/hård-signal kan gøre sex-straf due i tidsvinduet.';
-  else strafDa += ' ingen direkte straf-trigger fra kalenderen i dag.';
-  if (timed) strafDa += ` Tidspunkter: ${timed}.`;
+  else if (cal.hasStraf || cal.hasHard) strafDa += ' punishment/hard signal can make sex punishment due in the time window.';
+  else strafDa += ' no direct punishment trigger from the calendar today.';
+  if (timed) strafDa += ` Times: ${timed}.`;
 
   return { summaryDa, outfitDa, challengeDa, strafDa };
 }
@@ -461,7 +461,7 @@ export function describeCalendarInfluence(cal?: CalendarSummary | null): Calenda
 export function formatDateKeyDa(dateKey: string): string {
   const [y, m, d] = dateKey.split('-').map(Number);
   const dt = new Date(y, (m ?? 1) - 1, d ?? 1);
-  return dt.toLocaleDateString('da-DK', {
+  return dt.toLocaleDateString('en-GB', {
     weekday: 'long',
     day: 'numeric',
     month: 'long',

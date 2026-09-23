@@ -25,7 +25,7 @@ export function ImageGallery({
   hintDa,
   onSelect,
   selectedId,
-  selectLabelDa = 'Sæt på note',
+  selectLabelDa = 'Set on note',
 }: Props) {
   const { items, urls, error, busy, add, remove } = useImageLibrary(slot);
   const seeds = seedImagesFor(SLOT_TO_SEED[slot]);
@@ -38,7 +38,7 @@ export function ImageGallery({
           <h3 className="img-gallery__title">{titleDa}</h3>
         </div>
         <label className={`btn btn--secondary ${busy ? 'is-disabled' : ''}`}>
-          Tilføj billede
+          Add image
           <input
             type="file"
             accept="image/*"
@@ -54,11 +54,11 @@ export function ImageGallery({
       </div>
       <p className="tiny muted">
         {hintDa ??
-          'Lokale billeder på enheden. Send gerne fotos til Chief of Staff for at få dem lagt i seed-galleriet.'}
+          'Local images on this device. Feel free to send photos to Chief of Staff for the seed gallery.'}
       </p>
       {onSelect && (
         <p className="tiny muted">
-          Tryk «{selectLabelDa}» på et upload for at hænge det på den aktuelle note.
+          Tap «{selectLabelDa}» on an upload to attach it to the current note.
         </p>
       )}
       {error && <p className="banner banner--warn">{error}</p>}
@@ -88,7 +88,7 @@ export function ImageGallery({
                   </button>
                 )}
                 <button type="button" className="linkish" onClick={() => void remove(m.id)}>
-                  Slet
+                  Delete
                 </button>
               </span>
             </figcaption>
@@ -96,7 +96,7 @@ export function ImageGallery({
         ))}
       </div>
       {!seeds.length && !items.length && (
-        <p className="tiny muted">Ingen billeder endnu. Tilføj fra telefonen — gemmes kun lokalt.</p>
+        <p className="tiny muted">No images yet. Add from your phone — stored locally only.</p>
       )}
     </section>
   );

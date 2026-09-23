@@ -13,7 +13,7 @@ export function CalendarInfluenceNote({ calendar, compact }: Props) {
   const has = !!calendar?.entries.length;
   return (
     <div className={`influence-note influence-note--cal ${has ? 'is-hot' : ''}`}>
-      <strong>Kalender → output</strong>
+      <strong>Calendar → output</strong>
       <p>{inf.summaryDa}</p>
       {!compact && (
         <ul className="home-next-list">

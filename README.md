@@ -1,20 +1,19 @@
-# Frida — Kontrolpanel (18+)
+# Frida — Control Panel (18+)
 
-Dansk-first personligt BDSM-flavored kontrolpanel til **Frida** (biologisk mand, tiltalt som kvinde).  
-Local-first MVP: React + TypeScript + Vite. Data i `localStorage`. Ingen auth.
+English-first personal BDSM-flavored control panel for **Frida** (always she/Frida).  
+Local-first MVP: React + TypeScript + Vite. Data in `localStorage`. No auth.
 
-## Modes (bundnavigation)
+## Modes (bottom nav)
 
-Mobil: **Hoved · Gaming · Kalender · Udfordringer · Sex**. **Profil** er et ikon i headeren. Desktop-rail matcher (inkl. Profil). Ingen In-game- eller Hverdag-tab — de er slået sammen.
+Mobile: **Home · Gaming · Sex · Calendar · Profile** (5 tabs max). Challenges (morning trio + extras) live on **Home**. In-game challenges live inside **Gaming**. No separate In-game / Everyday / Challenges top-level tabs.
 
-1. **Hoved** — kun tøj-ordre (fuldt outfit / role-pack), status-chips, «hvad sker der nu», lille badge hvis sex-straf afventer. Egne outfit-fotos.
-2. **Gaming** — ét sted: vælg spil, log KDA + sejr/nederlag (WARDOGS: netto cash), sessions, stats/præstation. In-game-udfordring er en sektion her.
-3. **Kalender** — noter/events (titel, note, tid, tags som milf/bdsm/g-string/date/outing). Appen læser **i dag + kommende dage** til tøj, challenges og sex-straf.
-4. **Udfordringer** — **morgen-trio** hver dag (let / hård / grænsebrydende — kun DO/WEAR, aldrig sige/skrive) + ekstra aktive ordrer.
-5. **Sex** — sex-straf RP (pending + historik) og RP-billeder.
-6. **Profil** — themes, limits, cup, intensitet, IRL-status, **Tilføj billede**.
+1. **Home** — big centered **Emergency Stop**, outfit order, status chips, “what’s happening”, badge when sex punishment is pending/due, morning trio + challenges.
+2. **Gaming** — one place: pick game, log KDA + win/loss, sessions, stats/performance, plus in-game challenge section.
+3. **Sex** — claim → **pending** (adjust intensity/details) → explicit **Accept** → complete/skip/fail. Never auto-consumed.
+4. **Calendar** — notes/events (title, note, time, tags). App reads **today + upcoming** for clothes, challenges, sex punishment.
+5. **Profile** — themes, limits, cup, intensity, IRL status, photos.
 
-Nødstop er et lille ikon **øverst til højre** (header-hjørne). Pauset = ingen ny sex-straf-fremdrift. **Vægt:** kalender/rolle/dag ≈ **70%**, gaming-præstation ≈ **30%** — styrer outfit-role, challenges og sex-straf-due. Kalender-noter/signaler matcher packs via `kalender`-tags; dårlig gaming → `gaming_daarlig` (mere afslørende/straf), god → `gaming_god` (mere dækket/sofistikeret belønning).
+**Emergency stop:** large center control on Home (plus compact header icon). Paused = no new sex-punishment progress. **Weight:** calendar/role/day ≈ **70%**, gaming performance ≈ **30%**. New underwear/clothes every calendar morning (date-key refresh + exclude yesterday).
 
 **Billeder:** seed-fotos i `public/media/{outfits,scenes}/`. Uploads via **Tilføj billede** → IndexedDB. Kalender-noter kan gemme valgfri `imageUrl` (http(s) eller lille `data:`/base64) i localStorage — vises med `<img>` hvis feltet findes. Send gerne billeder til **Chief of Staff** for seed-galleriet.
 

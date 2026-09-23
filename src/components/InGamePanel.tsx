@@ -40,24 +40,24 @@ export function InGamePanel({
       <section className="panel panel--mode panel--ingame">
         <div className="panel__head">
           <div>
-            <p className="eyebrow">{embedded ? 'Sektion · In-game' : 'Mode · In-game'}</p>
-            <h2>Udfordring mens du spiller</h2>
+            <p className="eyebrow">{embedded ? 'Section · In-game' : 'Mode · In-game'}</p>
+            <h2>Challenge while you play</h2>
           </div>
           {!embedded && (
             <div className="points-chip">
               <strong>{pointsBalance}</strong>
-              <span>point</span>
+              <span>pts</span>
             </div>
           )}
         </div>
         <p className="muted tiny">
-          Ordrer <strong>i spillet / mellem runder</strong>. Fuldfør = bonuspoint. Efter match: log
-          KDA + sejr/nederlag ovenfor.
+          Orders <strong>in-game / between rounds</strong>. Complete = bonus points. After a match:
+          log KDA + win/loss above.
         </p>
         <div className="perf-banner perf-banner--compact">
           <span className="tiny">
-            Præstation {performance.score}/100 · {performance.band}
-            {playingGame.trim() ? ` · spiller ${playingGame.trim()}` : ' · intet spil sat'}
+            Performance {performance.score}/100 · {performance.band}
+            {playingGame.trim() ? ` · playing ${playingGame.trim()}` : ' · no game set'}
           </span>
         </div>
       </section>
@@ -65,8 +65,8 @@ export function InGamePanel({
       <section className="panel panel--command">
         <div className="panel__head">
           <div>
-            <p className="eyebrow">Aktiv in-game</p>
-            <h2>{challenge ? challenge.titleDa : 'Ingen aktiv'}</h2>
+            <p className="eyebrow">Active in-game</p>
+            <h2>{challenge ? challenge.titleDa : 'None active'}</h2>
           </div>
           <button
             type="button"
@@ -74,11 +74,11 @@ export function InGamePanel({
             disabled={paused}
             onClick={onDraw}
           >
-            Ny in-game
+            New in-game
           </button>
         </div>
-        {paused && <p className="banner banner--warn">Pauset af nødstop</p>}
-        {!challenge && <p className="muted">Træk en in-game-udfordring for at starte.</p>}
+        {paused && <p className="banner banner--warn">Paused by emergency stop</p>}
+        {!challenge && <p className="muted">Draw an in-game challenge to start.</p>}
         {challenge && (
           <>
             <div className="challenge__tags">
@@ -102,7 +102,7 @@ export function InGamePanel({
                 disabled={paused}
                 onClick={() => onResolve('complete')}
               >
-                Fuldført (+point)
+                Complete (+pts)
               </button>
               <button
                 type="button"

@@ -1,4 +1,4 @@
-import type { ChallengeOutcome, SexStrafInstance } from '../types';
+import type { ChallengeOutcome, SexStrafHardness, SexStrafInstance } from '../types';
 import { SEX_STRAF_HARDNESS_DA, SEX_STRAF_STATUS_DA } from '../types';
 import type { SexStrafDue } from '../engines/sexStrafEngine';
 import { SEX_STRAF_TEMPLATE_COUNT } from '../data/sexStraf';
@@ -6,6 +6,13 @@ import { ImageGallery } from './ImageGallery';
 import { OutfitHero } from './OutfitHero';
 import type { CalendarSummary } from '../engines/calendarEngine';
 import { CalendarInfluenceNote } from './CalendarInfluenceNote';
+
+type AdjustPatch = {
+  hardness?: SexStrafHardness;
+  durationMin?: number;
+  partnerDa?: string;
+  placeDa?: string;
+};
 
 type Props = {
   active: SexStrafInstance | null;
@@ -17,29 +24,30 @@ type Props = {
   onClaim: () => void;
   onStart: () => void;
   onResolve: (outcome: ChallengeOutcome) => void;
+  onAdjust: (patch: AdjustPatch) => void;
 };
 
 function Meta({ inst }: { inst: SexStrafInstance }) {
   return (
     <dl className="meta-grid sex-meta">
       <div>
-        <dt>Hvem</dt>
+        <dt>Who</dt>
         <dd>{inst.partnerDa}</dd>
       </div>
       <div>
-        <dt>Hvor</dt>
+        <dt>Where</dt>
         <dd>{inst.placeDa}</dd>
       </div>
       <div>
-        <dt>Hvor længe</dt>
+        <dt>How long</dt>
         <dd>{inst.durationMin} min</dd>
       </div>
       <div>
-        <dt>Hårdhed</dt>
+        <dt>Intensity</dt>
         <dd>{SEX_STRAF_HARDNESS_DA[inst.hardness]}</dd>
       </div>
       <div>
-        <dt>Hvorfor</dt>
+        <dt>Why</dt>
         <dd>{inst.whyDa}</dd>
       </div>
       <div>
@@ -49,6 +57,8 @@ function Meta({ inst }: { inst: SexStrafInstance }) {
     </dl>
   );
 }
+
+const HARDNESS: SexStrafHardness[] = ['blød', 'medium', 'hård'];
 
 export function SexStrafPanel({
   active,
@@ -60,33 +70,39 @@ export function SexStrafPanel({
   onClaim,
   onStart,
   onResolve,
+  onAdjust,
 }: Props) {
-  const pending = active && (active.status === 'pending' || active.status === 'active');
+  const isPending = !!active && active.status === 'pending';
+  const isActive = !!active && active.status === 'active';
+  const waiting = isPending || isActive;
 
   return (
     <div className="mode-stack">
       <section className="panel panel--mode panel--sex">
         <div className="panel__head">
           <div>
-            <p className="eyebrow">Mode · Sex-straf</p>
-            <h2>Indløs stats med fiktiv RP</h2>
+            <p className="eyebrow">Mode · Sex punishment</p>
+            <h2>Claim → adjust → accept</h2>
           </div>
           <span className="points-chip">
             <strong>{pointsBalance}</strong>
-            <span>point</span>
+            <span>pts</span>
           </span>
         </div>
         <CalendarInfluenceNote calendar={calendarToday} compact />
         <p className="muted tiny">
-          Fiktiv fantasy-RP. Altid Frida. Ingen vaginal brug. Nødstop stopper ny fremdrift.
-          {` ${SEX_STRAF_TEMPLATE_COUNT} scener.`} Fuldført giver point-indløsning (gæld/præstation).
+          Fictional fantasy RP. Always Frida. No vaginal use. Emergency stop blocks progress.
+          {` ${SEX_STRAF_TEMPLATE_COUNT} scenes.`} Completing redeems points (debt / performance).
+          Pending stays until you explicitly accept.
         </p>
 
         {paused && (
-          <p className="banner banner--warn">Pauset — ingen ny sex-straf og ingen complete/skip/fail.</p>
+          <p className="banner banner--warn">
+            Paused — no new sex punishment and no complete / skip / fail.
+          </p>
         )}
 
-        {pending && active && (
+        {waiting && active && (
           <article className={`sex-card sex-card--${active.status}`}>
             <div className="sex-card__top">
               <span className={`pill pill--${active.status === 'active' ? 'fail' : 'skip'}`}>
@@ -99,69 +115,138 @@ export function SexStrafPanel({
             <h3>{active.titleDa}</h3>
             <OutfitHero
               imageFile={active.imageFile}
-              captionDa="Fiktiv RP-illustration"
+              captionDa="Fictional RP illustration"
               altDa={active.titleDa}
             />
             <p className="command-line">{active.sceneDa}</p>
             <Meta inst={active} />
-            <p className="tiny muted">
-              Fuldført: +{active.redeemBoost ?? 18} point (indløsning). Skip: −4. Fail: −10.
-            </p>
-            <div className="challenge__actions">
-              {active.status === 'pending' && (
-                <button type="button" className="btn" disabled={paused} onClick={onStart}>
-                  Start scene
-                </button>
-              )}
-              <button
-                type="button"
-                className="btn btn--ok"
-                disabled={paused}
-                onClick={() => onResolve('complete')}
-              >
-                Fuldført
-              </button>
-              <button
-                type="button"
-                className="btn btn--secondary"
-                disabled={paused}
-                onClick={() => onResolve('skip')}
-              >
-                Spring over
-              </button>
-              <button
-                type="button"
-                className="btn btn--ghost"
-                disabled={paused}
-                onClick={() => onResolve('fail')}
-              >
-                Fejlet
-              </button>
-            </div>
+
+            {isPending && (
+              <div className="sex-adjust">
+                <p className="eyebrow">Adjust before you accept</p>
+                <p className="tiny muted">
+                  Nothing is consumed until you tap Accept. Change intensity and duration while
+                  waiting.
+                </p>
+                <div className="row">
+                  <label className="field">
+                    <span>Intensity</span>
+                    <select
+                      value={active.hardness}
+                      disabled={paused}
+                      onChange={(e) =>
+                        onAdjust({ hardness: e.target.value as SexStrafHardness })
+                      }
+                    >
+                      {HARDNESS.map((h) => (
+                        <option key={h} value={h}>
+                          {SEX_STRAF_HARDNESS_DA[h]}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                  <label className="field">
+                    <span>Duration (min)</span>
+                    <input
+                      type="number"
+                      min={5}
+                      max={180}
+                      step={5}
+                      value={active.durationMin}
+                      disabled={paused}
+                      onChange={(e) => {
+                        const n = Number(e.target.value);
+                        if (Number.isFinite(n)) onAdjust({ durationMin: n });
+                      }}
+                    />
+                  </label>
+                </div>
+                <label className="field">
+                  <span>Partner detail</span>
+                  <input
+                    type="text"
+                    value={active.partnerDa}
+                    disabled={paused}
+                    onChange={(e) => onAdjust({ partnerDa: e.target.value })}
+                  />
+                </label>
+                <label className="field">
+                  <span>Place detail</span>
+                  <input
+                    type="text"
+                    value={active.placeDa}
+                    disabled={paused}
+                    onChange={(e) => onAdjust({ placeDa: e.target.value })}
+                  />
+                </label>
+                <div className="challenge__actions">
+                  <button
+                    type="button"
+                    className="btn btn--danger"
+                    disabled={paused}
+                    onClick={onStart}
+                  >
+                    Accept / take punishment
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {isActive && (
+              <>
+                <p className="tiny muted">
+                  Accepted. Complete: +{active.redeemBoost ?? 18} pts. Skip: −4. Fail: −10.
+                </p>
+                <div className="challenge__actions">
+                  <button
+                    type="button"
+                    className="btn btn--ok"
+                    disabled={paused}
+                    onClick={() => onResolve('complete')}
+                  >
+                    Complete
+                  </button>
+                  <button
+                    type="button"
+                    className="btn btn--secondary"
+                    disabled={paused}
+                    onClick={() => onResolve('skip')}
+                  >
+                    Skip
+                  </button>
+                  <button
+                    type="button"
+                    className="btn btn--ghost"
+                    disabled={paused}
+                    onClick={() => onResolve('fail')}
+                  >
+                    Fail
+                  </button>
+                </div>
+              </>
+            )}
           </article>
         )}
 
-        {!pending && (
+        {!waiting && (
           <div className={`sex-due ${due.due ? 'is-due' : ''}`}>
             {due.due ? (
               <>
-                <p className="influence-note">Sex-straf er due. Panelet vil have indløsning.</p>
+                <p className="influence-note">Sex punishment is due. Claim to enter pending.</p>
                 <ul className="home-next-list">
                   {due.reasonsDa.map((r) => (
                     <li key={r}>{r}</li>
                   ))}
                 </ul>
                 <button type="button" className="btn" disabled={paused} onClick={onClaim}>
-                  Kræv sex-straf
+                  Claim sex punishment
                 </button>
               </>
             ) : (
               <>
-                <p className="muted">Ingen aktiv sex-straf.</p>
+                <p className="muted">No active sex punishment.</p>
                 {due.reasonsDa.length > 0 && (
-                  <p className="tiny">
-                    Triggers: {due.reasonsDa.join(' · ')}
-                  </p>
+                  <p className="tiny">Triggers: {due.reasonsDa.join(' · ')}</p>
                 )}
                 {due.blockedDa.length > 0 && (
                   <ul className="tiny muted">
@@ -172,8 +257,8 @@ export function SexStrafPanel({
                 )}
                 {!due.reasonsDa.length && (
                   <p className="tiny muted">
-                    Due når: dårligt præstationsbånd, pointgæld, nederlagsstime, failed udfordringer,
-                    eller kalender-signal straf/hård — og cooldown er ovre.
+                    Due when: poor performance band, points debt, loss streak, failed challenges, or
+                    calendar punishment/hard signal — and cooldown is over.
                   </p>
                 )}
               </>
@@ -182,19 +267,21 @@ export function SexStrafPanel({
         )}
         <ImageGallery
           slot="sex-straf"
-          titleDa="RP-billeder"
-          hintDa="Stemningsfotos til fiktiv sex-straf. Lokalt file-pick — ingen server-upload."
+          titleDa="RP images"
+          hintDa="Mood photos for fictional sex punishment. Local file pick — no server upload."
         />
       </section>
 
       {log.length > 0 && (
         <section className="panel">
-          <p className="eyebrow">Historik</p>
-          <h2>Tidligere sex-straffe</h2>
+          <p className="eyebrow">History</p>
+          <h2>Past sex punishments</h2>
           <ul className="log sex-log">
             {log.slice(0, 16).map((e) => (
               <li key={e.id}>
-                <span className={`pill pill--${e.status === 'done' ? 'complete' : e.status === 'failed' ? 'fail' : 'skip'}`}>
+                <span
+                  className={`pill pill--${e.status === 'done' ? 'complete' : e.status === 'failed' ? 'fail' : 'skip'}`}
+                >
                   {SEX_STRAF_STATUS_DA[e.status]}
                 </span>
                 <span>
@@ -208,7 +295,7 @@ export function SexStrafPanel({
                   </span>
                 )}
                 <time dateTime={e.resolvedAt ?? e.createdAt}>
-                  {new Date(e.resolvedAt ?? e.createdAt).toLocaleString('da-DK', {
+                  {new Date(e.resolvedAt ?? e.createdAt).toLocaleString('en-GB', {
                     hour: '2-digit',
                     minute: '2-digit',
                     day: 'numeric',

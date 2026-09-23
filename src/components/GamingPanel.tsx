@@ -47,7 +47,7 @@ type Props = {
 const RESULTS: GameResult[] = ['win', 'loss', 'quit', 'draw', 'other'];
 const SHOOTER_RESULTS: GameResult[] = ['win', 'loss', 'draw', 'quit', 'other'];
 const RATINGS: PerformanceRating[] = [1, 2, 3, 4, 5];
-const MOODS = ['', 'frustreret', 'ok', 'glad', 'kåt', 'underdanig', 'træt'];
+const MOODS = ['', 'frustrated', 'ok', 'happy', 'horny', 'submissive', 'tired'];
 
 type FormState = {
   gameId: GamePresetId;
@@ -121,7 +121,7 @@ function renderMetricField(
     >
       <span>
         {field.labelDa}
-        {field.optional && !isNetCash ? ' (valgfri)' : ''}
+        {field.optional && !isNetCash ? ' (optional)' : ''}
         {isNetCash ? ' ★' : ''}
       </span>
       {field.type === 'select' ? (
@@ -162,12 +162,12 @@ function renderMetricField(
           className={`net-cash-hint ${
             cashHint?.startsWith('Profit')
               ? 'net-cash-hint--profit'
-              : cashHint?.startsWith('Tab')
-                ? 'net-cash-hint--tab'
+              : cashHint?.startsWith('Loss')
+                ? 'net-cash-hint--loss'
                 : ''
           }`}
         >
-          {cashHint ?? 'Spilvaluta/cash · positiv = profit · negativ = tab'}
+          {cashHint ?? 'Game currency/cash · positive = profit · negative = loss'}
         </span>
       )}
     </label>
@@ -311,7 +311,7 @@ export function GamingPanel({
       (computed != null ? `KPI ${computed}/100` : '');
 
     const payload: Omit<GameSessionLog, 'id' | 'at'> = {
-      gameName: form.gameName.trim() || context.playingGame.trim() || 'Ukendt spil',
+      gameName: form.gameName.trim() || context.playingGame.trim() || 'Unknown game',
       result,
       performanceNote,
       rating,
@@ -351,7 +351,7 @@ export function GamingPanel({
         <div className="panel__head">
           <div>
             <p className="eyebrow">Mode · Gaming</p>
-            <h2>Spil · KDA · stats</h2>
+            <h2>Games · KDA · stats</h2>
           </div>
           <div className="points-chip" title="Bonus-/strafpoint">
             <strong>{pointsBalance}</strong>
@@ -359,14 +359,14 @@ export function GamingPanel({
           </div>
         </div>
         <p className="muted tiny">
-          Vælg aktivt spil → log KDA + sejr/nederlag (shooters) → Frida scorer 0–100. Avancerede
-          stats er valgfrie. Ingen passwords — kun manuel / paste.
+          Pick active game → log KDA + win/loss (shooters) → Frida scores 0–100. Advanced
+          stats are optional. No passwords — manual / paste only.
         </p>
 
         <div className="perf-banner">
           <div>
             <span className="eyebrow" style={{ display: 'inline' }}>
-              Præstation
+              Performance
             </span>
             <strong className="perf-score">{performance.score}/100</strong>
             <span className={`pill pill--band-${performance.band}`}>{performance.band}</span>
@@ -384,11 +384,11 @@ export function GamingPanel({
         <div className="active-game-picker">
           <div className="active-game-picker__head">
             <p className="eyebrow" style={{ margin: 0 }}>
-              Aktivt spil
+              Active game
             </p>
-            <h3 className="active-game-picker__title">Hvilket spil spiller du?</h3>
+            <h3 className="active-game-picker__title">What are you playing?</h3>
             <p className="tiny muted" style={{ margin: 0 }}>
-              Sætter spil for logging, udfordringer i spillet og præstation. Valget gemmes.
+              Sets the game for logging, in-game challenges, and performance. Choice is saved.
             </p>
           </div>
           <div className="game-preset-grid game-preset-grid--prominent" role="list">
@@ -420,12 +420,12 @@ export function GamingPanel({
               disabled={paused}
               onClick={() => selectGame('custom')}
             >
-              Andet
+              Other
             </button>
           </div>
           {(context.activeGameId || form.gameId !== 'custom') && (
             <p className="active-game-picker__current">
-              Nu aktivt:{' '}
+              Now active:{' '}
               <strong>{getPreset(context.activeGameId ?? form.gameId).shortDa}</strong>
               {context.playingGame.trim() && context.playingGame.trim() !== getPreset(context.activeGameId ?? form.gameId).shortDa
                 ? ` · ${context.playingGame.trim()}`
@@ -436,18 +436,18 @@ export function GamingPanel({
 
         {form.gameId === 'wardogs' && (
           <p className="assumption-note">
-            Antagelse: <strong>WARDOGS</strong> (BULKHEAD 2026 warfare-FPS) — ikke Watch Dogs /
-            Warzone. Log <strong>netto penge</strong> (profit eller tab i spilvaluta).
+            Assumption: <strong>WARDOGS</strong> (BULKHEAD 2026 warfare-FPS) — not Watch Dogs /
+            Warzone. Log <strong>net cash</strong> (profit or loss in game currency).
           </p>
         )}
         {form.gameId === 'diablo4' && (
           <p className="assumption-note">
-            Antagelse: <strong>Diablo IV</strong> (sæson / The Pit).
+            Assumption: <strong>Diablo IV</strong> (season / The Pit).
           </p>
         )}
 
         <label className="field">
-          <span>Jeg spiller lige nu (fritekst)</span>
+          <span>Playing right now (free text)</span>
           <input
             type="text"
             placeholder="fx CS2, WARDOGS, LoL…"
@@ -477,7 +477,7 @@ export function GamingPanel({
           />
         </label>
         <label className="field">
-          <span>Gaming-noter (fri tekst)</span>
+          <span>Gaming notes (free text)</span>
           <textarea
             rows={2}
             placeholder="Party, ranked, chill…"
@@ -487,11 +487,11 @@ export function GamingPanel({
           />
         </label>
         <div className={`mode-status ${gaming ? 'mode-status--on' : ''}`}>
-          <strong>{gaming ? 'Spil aktivt' : 'Intet spil sat'}</strong>
+          <strong>{gaming ? 'Game active' : 'No game set'}</strong>
           <span>
             {gaming
-              ? `Frida er i "${context.playingGame.trim()}" — log KDA + resultat efter match.`
-              : 'Vælg aktivt spil ovenfor og log session for at aktivere præstations-styring.'}
+              ? `Frida er i "${context.playingGame.trim()}" — log KDA + result after the match.`
+              : 'Pick an active game above and log a session to enable performance control.'}
           </span>
         </div>
       </section>
@@ -511,29 +511,29 @@ export function GamingPanel({
       />
 
       <section className="panel panel--command">
-        <p className="eyebrow">{editingId ? 'Rediger sidste session' : 'Log session'}</p>
+        <p className="eyebrow">{editingId ? 'Edit last session' : 'Log session'}</p>
         <h2>
-          {editingId ? 'Opdater entry' : 'Ny session'} · {preset.shortDa}
+          {editingId ? 'Update entry' : 'New session'} · {preset.shortDa}
         </h2>
         <p className="tiny muted">{preset.fetchNoteDa}</p>
 
         <label className="field">
-          <span>Spilnavn</span>
+          <span>Game name</span>
           <input
             type="text"
             value={form.gameName}
             disabled={paused}
             onChange={(e) => setForm((f) => ({ ...f, gameName: e.target.value }))}
-            placeholder="Spilnavn"
+            placeholder="Game name"
           />
         </label>
 
         {/* Win / loss — prominent for shooters */}
         <div className="result-block">
           <span className="result-block__label">
-            {isShooter ? 'Sejr eller nederlag' : 'Resultat'}
+            {isShooter ? 'Win or loss' : 'Result'}
           </span>
-          <div className="result-toggle" role="group" aria-label="Resultat">
+          <div className="result-toggle" role="group" aria-label="Result">
             {(['win', 'loss'] as GameResult[]).map((r) => (
               <button
                 key={r}
@@ -550,7 +550,7 @@ export function GamingPanel({
             <select
               value={form.result}
               disabled={paused}
-              aria-label="Andet resultat"
+              aria-label="Other result"
               onChange={(e) =>
                 setForm((f) => ({ ...f, result: e.target.value as GameResult }))
               }
@@ -567,7 +567,7 @@ export function GamingPanel({
         {primaryFields.length > 0 && (
           <>
             <p className="metrics-section-label">
-              {isShooter ? 'KDA (primært)' : 'KPI-felter'}
+              {isShooter ? 'KDA (primary)' : 'KPI fields'}
             </p>
             <div className="metrics-grid">
               {primaryFields.map((field) =>
@@ -590,8 +590,8 @@ export function GamingPanel({
               onClick={() => setForm((f) => ({ ...f, showAdvanced: !f.showAdvanced }))}
             >
               {form.showAdvanced
-                ? 'Skjul avancerede stats'
-                : `Avancerede stats (${advancedFields.length}) — valgfrit`}
+                ? 'Hide advanced stats'
+                : `Advanced stats (${advancedFields.length}) — optional`}
             </button>
             {form.showAdvanced && (
               <div className="metrics-grid metrics-grid--advanced">
@@ -623,7 +623,7 @@ export function GamingPanel({
         <div className="row">
           {form.gameId === 'custom' && (
             <label className="field">
-              <span>Selvvurdering</span>
+              <span>Self rating</span>
               <select
                 value={form.rating}
                 disabled={paused}
@@ -643,7 +643,7 @@ export function GamingPanel({
             </label>
           )}
           <label className="field">
-            <span>Varighed (min)</span>
+            <span>Duration (min)</span>
             <input
               type="number"
               min={0}
@@ -655,7 +655,7 @@ export function GamingPanel({
             />
           </label>
           <label className="field">
-            <span>Humør</span>
+            <span>Mood</span>
             <select
               value={form.mood}
               disabled={paused}
@@ -671,7 +671,7 @@ export function GamingPanel({
         </div>
 
         <label className="field">
-          <span>Ekstra note (valgfri — KPI udfylder automatisk)</span>
+          <span>Extra note (optional — KPI fills automatically)</span>
           <input
             type="text"
             value={form.performanceNote}
@@ -683,11 +683,11 @@ export function GamingPanel({
 
         <div className="challenge__actions">
           <button type="button" className="btn btn--ok" disabled={paused} onClick={submit}>
-            {editingId ? 'Gem ændring' : 'Log session'}
+            {editingId ? 'Save change' : 'Log session'}
           </button>
           {editingId && (
             <button type="button" className="btn btn--ghost" onClick={cancelEdit}>
-              Annuller
+              Cancel
             </button>
           )}
           {!editingId && last && (
@@ -697,7 +697,7 @@ export function GamingPanel({
               disabled={paused}
               onClick={startEditLast}
             >
-              Rediger sidste
+              Edit last
             </button>
           )}
           <button
@@ -705,7 +705,7 @@ export function GamingPanel({
             className="btn btn--ghost btn--tiny"
             onClick={() => setForm((f) => ({ ...f, showHelp: !f.showHelp }))}
           >
-            {form.showHelp ? 'Skjul formel' : 'Formel / hjælp'}
+            {form.showHelp ? 'Hide formula' : 'Formula / help'}
           </button>
           {form.gameId !== 'custom' && (
             <button
@@ -729,7 +729,7 @@ export function GamingPanel({
         {form.showPaste && (
           <div className="paste-box">
             <label className="field">
-              <span>Paste fra Leetify / OP.GG / Tracker.gg (kun tekst — ingen login)</span>
+              <span>Paste from Leetify / OP.GG / Tracker.gg (text only — no login)</span>
               <textarea
                 rows={4}
                 value={form.pasteText}
@@ -739,17 +739,17 @@ export function GamingPanel({
               />
             </label>
             <button type="button" className="btn btn--secondary" disabled={paused} onClick={applyPaste}>
-              Udfyld felter fra paste
+              Fill fields from paste
             </button>
           </div>
         )}
       </section>
 
       <section className="panel">
-        <p className="eyebrow">Historik</p>
-        <h2>Seneste sessions</h2>
+        <p className="eyebrow">History</p>
+        <h2>Recent sessions</h2>
         {!recent.length && (
-          <p className="muted tiny">Ingen sessions endnu — log din første ovenfor.</p>
+          <p className="muted tiny">No sessions yet — log your first one above.</p>
         )}
         <ul className="log log--sessions">
           {recent.map((s) => (
@@ -777,7 +777,7 @@ export function GamingPanel({
                   {s.mood ? ` · ${s.mood}` : ''}
                 </span>
                 <time dateTime={s.at}>
-                  {new Date(s.at).toLocaleString('da-DK', {
+                  {new Date(s.at).toLocaleString('en-GB', {
                     hour: '2-digit',
                     minute: '2-digit',
                     day: 'numeric',
@@ -793,7 +793,7 @@ export function GamingPanel({
                     disabled={paused}
                     onClick={startEditLast}
                   >
-                    Rediger
+                    Edit
                   </button>
                 )}
                 <button
@@ -802,7 +802,7 @@ export function GamingPanel({
                   disabled={paused}
                   onClick={() => onDeleteSession(s.id)}
                 >
-                  Slet
+                  Delete
                 </button>
               </div>
             </li>

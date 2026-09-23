@@ -14,7 +14,7 @@ const BREASTS: BreastSize[] = ['A', 'B', 'C', 'D', 'DD', 'E', 'F', 'G'];
 
 const THEME_LABELS: Record<ThemePack, string> = {
   bdsm: 'BDSM',
-  clothing: 'Tøj/undertøj',
+  clothing: 'Clothes / underwear',
   sex: 'Sex',
   irl: 'IRL',
   porn: 'Porn',
@@ -24,11 +24,11 @@ const THEME_LABELS: Record<ThemePack, string> = {
 };
 
 const IRL_OPTIONS: { value: IrlStatus; label: string }[] = [
-  { value: 'home', label: 'Hjemme' },
-  { value: 'alone', label: 'Alene' },
-  { value: 'out', label: 'Ude' },
-  { value: 'work', label: 'Arbejde' },
-  { value: 'public', label: 'Offentligt' },
+  { value: 'home', label: 'Home' },
+  { value: 'alone', label: 'Alone' },
+  { value: 'out', label: 'Out' },
+  { value: 'work', label: 'Work' },
+  { value: 'public', label: 'Public' },
 ];
 
 type Props = {
@@ -65,14 +65,14 @@ export function ProfilePanel({ profile, context, onChange, onContext, disabled }
 
   return (
     <section className="panel panel--mode panel--profil">
-      <p className="eyebrow">Mode · Profil</p>
+      <p className="eyebrow">Mode · Profile</p>
       <h2>Frida</h2>
       <label className="field">
-        <span>Navn (låst)</span>
+        <span>Name (locked)</span>
         <input type="text" value="Frida" readOnly disabled />
       </label>
       <label className="field">
-        <span>Fake breast størrelse (cup)</span>
+        <span>Fake breast size (cup)</span>
         <select
           value={profile.breastSize}
           disabled={disabled}
@@ -87,7 +87,7 @@ export function ProfilePanel({ profile, context, onChange, onContext, disabled }
       </label>
       <div className="row">
         <label className="field">
-          <span>Intensitet</span>
+          <span>Intensity</span>
           <select
             value={profile.intensity}
             disabled={disabled}
@@ -98,20 +98,20 @@ export function ProfilePanel({ profile, context, onChange, onContext, disabled }
           </select>
         </label>
         <label className="field">
-          <span>Dag-tilstand</span>
+          <span>Day mode</span>
           <select
             value={profile.dayMode}
             disabled={disabled}
             onChange={(e) => onChange({ dayMode: e.target.value as DayMode })}
           >
-            <option value="soft">Soft-dag</option>
-            <option value="hard">Hard-dag</option>
+            <option value="soft">Soft day</option>
+            <option value="hard">Hard day</option>
           </select>
         </label>
       </div>
       {context && onContext && (
         <label className="field">
-          <span>IRL-status</span>
+          <span>IRL status</span>
           <select
             value={context.irlStatus}
             disabled={disabled}
@@ -126,7 +126,7 @@ export function ProfilePanel({ profile, context, onChange, onContext, disabled }
         </label>
       )}
       <p className="muted tiny">
-        IRL, soft/hard-dag og themes styrer outfit (~70%) sammen med gaming-præstation (~30%).
+        IRL, soft/hard day and themes drive outfit (~70%) together with gaming performance (~30%).
       </p>
       <fieldset className="fieldset" disabled={disabled}>
         <legend>Theme packs</legend>
@@ -162,16 +162,16 @@ export function ProfilePanel({ profile, context, onChange, onContext, disabled }
             e.currentTarget.reset();
           }}
         >
-          <input name="limit" placeholder="Tilføj hard limit…" />
+          <input name="limit" placeholder="Add hard limit…" />
           <button type="submit" className="btn btn--secondary">
-            Tilføj
+            Add
           </button>
         </form>
       </fieldset>
       <ImageGallery
         slot="profile"
-        titleDa="Profil-fotos"
-        hintDa="Egne billeder af Frida. Kun på denne enhed (IndexedDB)."
+        titleDa="Profile photos"
+        hintDa="Your own photos of Frida. On this device only (IndexedDB)."
       />
     </section>
   );

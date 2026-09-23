@@ -73,6 +73,38 @@ export function useFridaState() {
     ],
   );
 
+  // Morning clothing refresh: re-check calendar day on focus / every minute (PWA left open overnight)
+  useEffect(() => {
+    if (!state.profile.ageVerified) return;
+    const tick = () => {
+      const key = todayKey();
+      setState((s) => {
+        if (s.emergencyStop) return s;
+        if (s.underwearToday?.dateKey === key) return s;
+        return {
+          ...s,
+          underwearToday: pickUnderwear(s.profile, s.context, {
+            excludeId: s.underwearToday?.itemId,
+            excludeLookId: s.underwearToday?.lookId,
+            performance: computePerformance(s.gameSessions),
+            calendar: summarizeCalendar(s.calendarEntries, localDateKey()),
+          }),
+        };
+      });
+    };
+    const onVis = () => {
+      if (document.visibilityState === 'visible') tick();
+    };
+    window.addEventListener('focus', tick);
+    document.addEventListener('visibilitychange', onVis);
+    const id = window.setInterval(tick, 60_000);
+    return () => {
+      window.removeEventListener('focus', tick);
+      document.removeEventListener('visibilitychange', onVis);
+      window.clearInterval(id);
+    };
+  }, [state.profile.ageVerified]);
+
   // Ensure today's full outfit exists when age-verified and not emergency-stopped
   useEffect(() => {
     if (!state.profile.ageVerified) return;
@@ -97,6 +129,8 @@ export function useFridaState() {
     setState((s) => ({
       ...s,
       underwearToday: pickUnderwear(s.profile, s.context, {
+        excludeId: s.underwearToday?.itemId,
+        excludeLookId: s.underwearToday?.lookId,
         performance: computePerformance(s.gameSessions),
         calendar: summarizeCalendar(s.calendarEntries, localDateKey()),
       }),
@@ -512,6 +546,54 @@ export function useFridaState() {
     });
   }, []);
 
+
+  const adjustSexStraf = useCallback(
+    (patch: {
+      hardness?: import('../types').SexStrafHardness;
+      durationMin?: number;
+      partnerDa?: string;
+      placeDa?: string;
+    }) => {
+      setState((s) => {
+        if (s.emergencyStop) return s;
+        const inst = s.activeSexStraf;
+        if (!inst || inst.status !== 'pending') return s;
+        const durationMin =
+          patch.durationMin != null && Number.isFinite(patch.durationMin)
+            ? Math.max(5, Math.min(180, Math.round(patch.durationMin)))
+            : inst.durationMin;
+        const hardness = patch.hardness ?? inst.hardness;
+        const partnerDa = patch.partnerDa != null ? patch.partnerDa.trim() || inst.partnerDa : inst.partnerDa;
+        const placeDa = patch.placeDa != null ? patch.placeDa.trim() || inst.placeDa : inst.placeDa;
+        let sceneDa = inst.sceneDa;
+        if (partnerDa !== inst.partnerDa) {
+          sceneDa = sceneDa.split(inst.partnerDa).join(partnerDa);
+        }
+        if (placeDa !== inst.placeDa) {
+          sceneDa = sceneDa.split(inst.placeDa).join(placeDa);
+        }
+        if (durationMin !== inst.durationMin) {
+          sceneDa = sceneDa.replace(String(inst.durationMin), String(durationMin));
+        }
+        if (hardness !== inst.hardness) {
+          sceneDa = sceneDa.split(inst.hardness).join(hardness);
+        }
+        return {
+          ...s,
+          activeSexStraf: {
+            ...inst,
+            hardness,
+            durationMin,
+            partnerDa,
+            placeDa,
+            sceneDa,
+          },
+        };
+      });
+    },
+    [],
+  );
+
   const startSexStraf = useCallback(() => {
     setState((s) => {
       if (s.emergencyStop) return s;
@@ -634,6 +716,7 @@ export function useFridaState() {
     ensureInGameChallenge,
     resolveInGameChallenge,
     claimSexStraf,
+    adjustSexStraf,
     startSexStraf,
     resolveSexStraf,
     upsertCalendarEntry,

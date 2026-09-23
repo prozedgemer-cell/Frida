@@ -26,7 +26,7 @@ const SIGNALS: CalendarSignal[] = [
   'date',
 ];
 
-const WEEKDAYS = ['Man', 'Tir', 'Ons', 'Tor', 'Fre', 'Lør', 'Søn'];
+const WEEKDAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
 type Props = {
   entries: CalendarEntry[];
@@ -84,7 +84,7 @@ export function CalendarPanel({ entries, paused, onUpsert, onDelete }: Props) {
     return b.updatedAt.localeCompare(a.updatedAt);
   });
 
-  const monthLabel = new Date(cursor.y, cursor.m, 1).toLocaleDateString('da-DK', {
+  const monthLabel = new Date(cursor.y, cursor.m, 1).toLocaleDateString('en-GB', {
     month: 'long',
     year: 'numeric',
   });
@@ -184,8 +184,8 @@ export function CalendarPanel({ entries, paused, onUpsert, onDelete }: Props) {
       <section className="panel panel--mode panel--cal">
         <div className="panel__head">
           <div>
-            <p className="eyebrow">Mode · Kalender</p>
-            <h2>Noter & signaler</h2>
+            <p className="eyebrow">Mode · Calendar</p>
+            <h2>Notes & signals</h2>
           </div>
           <div className="cal-month-nav">
             <button
@@ -214,12 +214,12 @@ export function CalendarPanel({ entries, paused, onUpsert, onDelete }: Props) {
           </div>
         </div>
         <p className="muted tiny">
-          Skriv noter/aftaler. Dagens + kommende tags (milf, bdsm, g-string, date, outing) styrer tøj og challenges (~70%).
-          Straf/hård øger, hvile blødgør. Vedhæft billede til noter (lokalt).
+          Write notes/plans. Today + upcoming tags (milf, bdsm, g-string, date, outing) steer clothes and challenges (~70%).
+          Punishment/hard increases, rest softens. Attach images to notes (local).
         </p>
         <CalendarInfluenceNote calendar={summarizeCalendar(entries, today)} />
 
-        <div className="cal-grid" role="grid" aria-label="Måned">
+        <div className="cal-grid" role="grid" aria-label="Month">
           {WEEKDAYS.map((d) => (
             <span key={d} className="cal-grid__wd">
               {d}
@@ -254,9 +254,9 @@ export function CalendarPanel({ entries, paused, onUpsert, onDelete }: Props) {
       </section>
 
       <section className="panel">
-        <p className="eyebrow">{editingId ? 'Rediger note' : 'Ny note'}</p>
+        <p className="eyebrow">{editingId ? 'Edit note' : 'New note'}</p>
         <label className="field">
-          <span>Titel</span>
+          <span>Title</span>
           <input
             value={titleDa}
             onChange={(e) => setTitleDa(e.target.value)}
@@ -265,7 +265,7 @@ export function CalendarPanel({ entries, paused, onUpsert, onDelete }: Props) {
           />
         </label>
         <label className="field">
-          <span>Tidspunkt (valgfrit)</span>
+          <span>Time (optional)</span>
           <input
             type="time"
             value={timeHm}
@@ -328,13 +328,13 @@ export function CalendarPanel({ entries, paused, onUpsert, onDelete }: Props) {
           />
         </label>
         <p className="tiny muted">
-          Lokale uploads gemmes på enheden. Du kan også sende billeder til Chief of Staff, så de lægges i seed-galleriet.
+          Local uploads stay on this device. You can also send photos to Chief of Staff for the seed gallery.
         </p>
         <div className="field">
           <span>Billede til note</span>
           <div className="cal-attach-row">
             <label className={`btn btn--secondary ${busy || paused ? 'is-disabled' : ''}`}>
-              Vælg fil
+              Choose file
               <input
                 type="file"
                 accept="image/*"
@@ -354,7 +354,7 @@ export function CalendarPanel({ entries, paused, onUpsert, onDelete }: Props) {
                 disabled={paused}
                 onClick={() => setImageId(undefined)}
               >
-                Fjern billede
+                Remove image
               </button>
             )}
           </div>
@@ -365,11 +365,11 @@ export function CalendarPanel({ entries, paused, onUpsert, onDelete }: Props) {
         </div>
         <div className="challenge__actions">
           <button type="button" className="btn" disabled={paused} onClick={submit}>
-            {editingId ? 'Gem' : 'Tilføj'}
+            {editingId ? 'Save' : 'Add'}
           </button>
           {editingId && (
             <button type="button" className="btn btn--ghost" onClick={resetForm}>
-              Annuller
+              Cancel
             </button>
           )}
         </div>
@@ -378,7 +378,7 @@ export function CalendarPanel({ entries, paused, onUpsert, onDelete }: Props) {
       <section className="panel">
         <p className="eyebrow">Denne dag</p>
         <h2>{dayEntries.length ? `${dayEntries.length} note(r)` : 'Tom'}</h2>
-        {!dayEntries.length && <p className="muted tiny">Ingen noter på den valgte dag.</p>}
+        {!dayEntries.length && <p className="muted tiny">No notes on the selected day.</p>}
         <ul className="cal-notes sched-notes">
           {dayEntries.map((e) => (
             <li key={e.id} className={`sched-item ${e.signal === 'straf' || e.signal === 'hard' ? 'is-hot' : e.signal === 'reward' || e.signal === 'soft' ? 'is-ok' : ''}`}>
@@ -409,10 +409,10 @@ export function CalendarPanel({ entries, paused, onUpsert, onDelete }: Props) {
               </div>
               <div className="cal-notes__act">
                 <button type="button" className="linkish" disabled={paused} onClick={() => startEdit(e)}>
-                  Rediger
+                  Edit
                 </button>
                 <button type="button" className="linkish" disabled={paused} onClick={() => onDelete(e.id)}>
-                  Slet
+                  Delete
                 </button>
               </div>
             </li>
@@ -422,16 +422,16 @@ export function CalendarPanel({ entries, paused, onUpsert, onDelete }: Props) {
 
       <ImageGallery
         slot="calendar"
-        titleDa="Kalender-billeder"
-        hintDa="Upload referencefotos til noter/planer. Kun lokalt på enheden. Outfit- og sex-straf-galleri findes under Profil / Sex."
+        titleDa="Calendar images"
+        hintDa="Upload reference photos for notes/plans. Local on this device only. Outfit and sex-punishment galleries are under Profile / Sex."
         onSelect={(id) => setImageId(id)}
         selectedId={imageId}
-        selectLabelDa="Sæt på note"
+        selectLabelDa="Set on note"
       />
 
       {upcoming.length > 0 && (
         <section className="panel panel--muted">
-          <p className="eyebrow">Nærmeste dage</p>
+          <p className="eyebrow">Upcoming days</p>
           <ul className="log">
             {upcoming.slice(0, 8).map((e) => (
               <li key={e.id}>

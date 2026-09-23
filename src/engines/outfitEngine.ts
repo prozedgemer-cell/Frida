@@ -556,18 +556,18 @@ export function buildOutfitOrderText(
   let extra = '';
   if (perf && perf.sessionCount > 0 && !gameNote) {
     if (perf.band === 'poor') {
-      extra = ' Gaming svag — mere afslørende / straffet look inden for rollen. ';
+      extra = ' Gaming weak — more revealing / punished look within the role. ';
     } else if (perf.band === 'good' || perf.band === 'godlike') {
-      extra = ' Gaming stærk — blødere / mere dækket belønning inden for rollen. ';
+      extra = ' Gaming strong — softer / more covered reward within the role. ';
     }
   }
   const roleBlock = role
     ? `${role.commandVoiceDa} Vibe: ${role.vibe} Undertøj: ${role.undertøj} Ydre: ${role.ydre_lag} Sko/acc: ${role.sko_accessories} (${role.contrastDa}) `
-    : 'FULD BEORDING — undertøj + ydre lag. ';
+    : 'FULL ORDER — underwear + outer layers. ';
   return (
     `Frida — FULDT OUTFIT / ROLE: ${role?.nameDa ?? 'Uniform'}. ${roleBlock}` +
     `FULDT LOOK: Tag "${uw?.nameDa ?? 'beordret undertøj'}" på + hele outfittet (${list || 'ydre lag vælges'}). ` +
-    `Dine ${profile.breastSize}-bryster skal sidde støttet.${gameNote}${extra} ` +
+    `Your ${profile.breastSize}-cup breasts should be supported.${gameNote}${extra} ` +
     `${WEIGHT_FORMULA_DA} Ingen improvisation — det er dagens uniform.`
   );
 }
@@ -643,14 +643,14 @@ export function buildLookOrderText(
   let extra = '';
   if (perf && perf.sessionCount > 0) {
     if (perf.band === 'poor') {
-      extra = ' Svag gaming-præstation — looket er en del af kontrollen. ';
+      extra = ' Weak gaming performance — the look is part of the control. ';
     } else if (perf.band === 'good' || perf.band === 'godlike') {
-      extra = ' Stærk session: du har stadig en uniform, men den kan være blødere. ';
+      extra = ' Strong session: you still have a uniform, but it can be softer. ';
     }
   }
   return (
     `Frida — FULDT OUTFIT: Looket "${look.nameDa}". ${look.orderBlurbDa} ` +
-    `Lag: ${list}. Dine ${profile.breastSize}-bryster skal sidde støttet. ${extra}` +
+    `Layers: ${list}. Your ${profile.breastSize}-cup breasts should be supported. ${extra}` +
     `${WEIGHT_FORMULA_DA} Ingen improvisation — det er dagens uniform.`
   );
 }
