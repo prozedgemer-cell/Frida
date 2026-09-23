@@ -128,7 +128,7 @@ assert(due.due, 'poor+debt+straf calendar → sex-straf due');
 assert(due.reasonsDa.length >= 2, 'multiple due reasons');
 
 const blocked = evaluateSexStrafDue({
-  paused: true,
+  paused: false,
   active: null,
   log: [],
   lastSexStrafAt: null,
@@ -137,7 +137,7 @@ const blocked = evaluateSexStrafDue({
   challengeLog: [],
   calendar: restCal,
 });
-assert(!blocked.due && blocked.blockedDa.length > 0, 'nødstop/hvile blocks due');
+assert(!blocked.due && blocked.blockedDa.length > 0, 'hvile/rest day blocks due');
 
 const inst = {
   id: 'ss',

@@ -77,7 +77,7 @@ export function InGamePanel({
             New in-game
           </button>
         </div>
-        {paused && <p className="banner banner--warn">Paused by emergency stop</p>}
+        {paused && <p className="banner banner--warn">Paused</p>}
         {!challenge && <p className="muted">Draw an in-game challenge to start.</p>}
         {challenge && (
           <>

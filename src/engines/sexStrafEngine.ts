@@ -17,7 +17,7 @@ const VAGINAL_BLOCK = /\b(vagina|vaginal|kusse|skede|clitoris|klitoris|pussy)\b/
  * Due rules (documented):
  *
  * NEVER due when:
- *  - nødstop / paused
+ *  - paused (legacy / unused by UI)
  *  - an instance is already pending or active
  *  - calendar today is rest (hvile blocks NEW sex-straf)
  *  - cooldown not elapsed since last resolved sex-straf
@@ -112,7 +112,7 @@ export function evaluateSexStrafDue(opts: {
   const reasonsDa: string[] = [];
   const blockedDa: string[] = [];
 
-  if (opts.paused) blockedDa.push('Emergency stop is ON — no new sex punishment and no progress.');
+  if (opts.paused) blockedDa.push('Paused — no new sex punishment and no progress.');
   if (opts.active && (opts.active.status === 'pending' || opts.active.status === 'active')) {
     blockedDa.push('A pending/active sex punishment is already waiting.');
   }

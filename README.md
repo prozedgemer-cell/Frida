@@ -1,27 +1,27 @@
-# Frida — Control Panel (18+)
+# Frida Diary (18+)
 
-English-first personal BDSM-flavored control panel for **Frida** (always she/Frida).  
+English-first personal diary-style adult control panel for **Frida** (always she/Frida). Soft lavender / rose “Frida Diary” theme.  
 Local-first MVP: React + TypeScript + Vite. Data in `localStorage`. No auth.
 
 ## Modes (bottom nav)
 
 Mobile: **Home · Gaming · Sex · Calendar · Profile** (5 tabs max). Challenges (morning trio + extras) live on **Home**. In-game challenges live inside **Gaming**. No separate In-game / Everyday / Challenges top-level tabs.
 
-1. **Home** — big centered **Emergency Stop**, outfit order, status chips, “what’s happening”, badge when sex punishment is pending/due, morning trio + challenges.
+1. **Home** — diary day page: outfit order, status chips, “what’s happening”, badge when sex punishment is pending/due, morning trio + challenges.
 2. **Gaming** — one place: pick game, log KDA + win/loss, sessions, stats/performance, plus in-game challenge section.
 3. **Sex** — claim → **pending** (adjust intensity/details) → explicit **Accept** → complete/skip/fail. Never auto-consumed.
 4. **Calendar** — notes/events (title, note, time, tags). App reads **today + upcoming** for clothes, challenges, sex punishment.
 5. **Profile** — themes, limits, cup, intensity, IRL status, photos.
 
-**Emergency stop:** large center control on Home (plus compact header icon). Paused = no new sex-punishment progress. **Weight:** calendar/role/day ≈ **70%**, gaming performance ≈ **30%**. New underwear/clothes every calendar morning (date-key refresh + exclude yesterday).
+**Weight:** calendar/role/day ≈ **70%**, gaming performance ≈ **30%**. New underwear/clothes every calendar morning (date-key refresh + exclude yesterday). Rest calendar days pause new sex punishment.
 
 **Billeder:** seed-fotos i `public/media/{outfits,scenes}/`. Uploads via **Tilføj billede** → IndexedDB. Kalender-noter kan gemme valgfri `imageUrl` (http(s) eller lille `data:`/base64) i localStorage — vises med `<img>` hvis feltet findes. Send gerne billeder til **Chief of Staff** for seed-galleriet.
 
-**Sex-straf due** når (og cooldown er ovre, ikke nødstop, ikke hvile-dag, ingen aktiv scene): dårligt præstationsbånd, pointgæld, nederlagsstime, ≥2 loss/quit i sidste 5, nylig failed udfordring, eller kalender-signal straf/hård. Cooldown: fuldført 12 t · skip 6 t · fail 2 t.
+**Sex-straf due** når (og cooldown er ovre, ikke hvile-dag, ingen aktiv scene): dårligt præstationsbånd, pointgæld, nederlagsstime, ≥2 loss/quit i sidste 5, nylig failed udfordring, eller kalender-signal straf/hård. Cooldown: fuldført 12 t · skip 6 t · fail 2 t.
 
 **Telefon-app:** det er en Progressive Web App (PWA). Ingen App Store / Play-betaling — åbn URL’en på telefonen og vælg **Føj til hjemmeskærm**.
 
-> **18+ only.** Indeholder seksuelt / BDSM-indhold. Nødstop og hard limits er indbygget.
+> **18+ only.** Indeholder seksuelt / BDSM-indhold. Hard limits er indbygget.
 
 ## Kør lokalt
 
@@ -133,7 +133,7 @@ Hvis repoet er tomt, kan du også `git init` i projektmappen, tilføje remote, o
 - Mobil-app UX: safe-area, viewport-fit=cover, bundmenu med center-+ og neon card-UI
 - **18+ gate** ved første besøg
 - **Profil**: navn låst til Frida, fake breast cup-størrelse, soft/hard intensitet, soft/hard-dag, theme packs, hard limits
-- **Dashboard**: fuld outfit-beording, challenges, IRL/gaming-KPI, lille **nødstop**-ikon øverst til højre
+- **Dashboard**: fuld outfit-beording, challenges, IRL/gaming-KPI
 - **Spil-presets**: CS2 / WARDOGS / LoL / Diablo IV / Fortnite med strukturerede metrics + 0–100 KPI-score
 - **Fuld outfit**: vægtet motor til undertøj + overdel/underdel/strømper/sko/ydertøj/accessories (tid, IRL, præstation, kalender, intensitet) — dagens uniform gemmes, reroll muligt
 - **Challenge-motor**: ~118 danske skabeloner med tags/themes; anatomi-respekt (ingen vaginal-use; semen-opsamling tilladt ærligt); complete / skip / fail-log
@@ -200,7 +200,6 @@ Formel-detaljer ligger i `src/engines/gameScoreEngine.ts` + in-app «Formel / hj
 
 ## Sikkerhed
 
-- Nødstop pauser challenges og fryser nye ordrer
 - Hard limits filtrerer skabeloner
 - Soft-dag begrænser til soft-capable challenges
 - Privat: alt ligger lokalt i browseren

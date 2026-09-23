@@ -269,7 +269,7 @@ export function loadState(): AppState {
     return {
       profile: parsed.profile as Profile,
       context,
-      emergencyStop: typeof parsed.emergencyStop === 'boolean' ? parsed.emergencyStop : false,
+      emergencyStop: false, // dormant — UI removed
       underwearToday: migrateUnderwearToday(parsed.underwearToday),
       activeChallenges: Array.isArray(parsed.activeChallenges) ? parsed.activeChallenges : [],
       challengeLog: Array.isArray(parsed.challengeLog) ? parsed.challengeLog : [],

@@ -3,7 +3,6 @@ import { estimateVariationSpace } from '../engines/challengeEngine';
 import type { useFridaState } from '../hooks/useFridaState';
 import { loadUiTab, saveUiTab } from '../storage/localStore';
 import { BottomNav, type AppTab } from './BottomNav';
-import { PanicButton } from './EmergencyStop';
 import { GamingPanel } from './GamingPanel';
 import { CalendarPanel } from './CalendarPanel';
 import { HomePanel } from './HomePanel';
@@ -108,7 +107,6 @@ export function Dashboard({ api }: { api: Hook }) {
               Sex
             </button>
           )}
-          <PanicButton active={state.emergencyStop} onToggle={api.setEmergencyStop} />
         </div>
       </header>
 
@@ -143,8 +141,6 @@ export function Dashboard({ api }: { api: Hook }) {
             irlStatus={state.context.irlStatus}
             activeChallenge={primaryChallenge}
             inGameChallenge={state.activeInGameChallenge}
-            emergencyStop={state.emergencyStop}
-            onEmergencyStop={api.setEmergencyStop}
             onGoSex={() => setTab('sex')}
             onGoCalendar={() => setTab('calendar')}
             onGoGaming={() => setTab('gaming')}
@@ -168,7 +164,7 @@ export function Dashboard({ api }: { api: Hook }) {
             sessions={state.gameSessions}
             performance={performance}
             pointsBalance={state.pointsBalance}
-            paused={state.emergencyStop}
+            paused={false}
             onChange={api.updateContext}
             onAddSession={api.addGameSession}
             onUpdateSession={api.updateGameSession}
@@ -186,7 +182,7 @@ export function Dashboard({ api }: { api: Hook }) {
             log={state.sexStrafLog}
             due={sexStrafDue}
             calendarToday={calendarToday}
-            paused={state.emergencyStop}
+            paused={false}
             pointsBalance={state.pointsBalance}
             onClaim={api.claimSexStraf}
             onStart={api.startSexStraf}
@@ -198,7 +194,7 @@ export function Dashboard({ api }: { api: Hook }) {
         <div className={`tab-panel ${tab === 'calendar' ? 'is-active' : ''}`} data-tab="calendar">
           <CalendarPanel
             entries={state.calendarEntries}
-            paused={state.emergencyStop}
+            paused={false}
             onUpsert={api.upsertCalendarEntry}
             onDelete={api.deleteCalendarEntry}
           />
@@ -210,7 +206,7 @@ export function Dashboard({ api }: { api: Hook }) {
             context={state.context}
             onChange={api.updateProfile}
             onContext={api.updateContext}
-            disabled={state.emergencyStop}
+            disabled={false}
           />
           <section className="panel panel--muted">
             <p className="eyebrow">App</p>

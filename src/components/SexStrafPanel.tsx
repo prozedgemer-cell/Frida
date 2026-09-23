@@ -91,7 +91,7 @@ export function SexStrafPanel({
         </div>
         <CalendarInfluenceNote calendar={calendarToday} compact />
         <p className="muted tiny">
-          Fictional fantasy RP. Always Frida. No vaginal use. Emergency stop blocks progress.
+          Fictional fantasy RP. Always Frida. No vaginal use. Rest days pause new scenes.
           {` ${SEX_STRAF_TEMPLATE_COUNT} scenes.`} Completing redeems points (debt / performance).
           Pending stays until you explicitly accept.
         </p>

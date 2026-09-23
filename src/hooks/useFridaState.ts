@@ -50,7 +50,7 @@ export function useFridaState() {
   const sexStrafDue = useMemo(
     () =>
       evaluateSexStrafDueWithSessions({
-        paused: state.emergencyStop,
+        paused: false,
         active: state.activeSexStraf,
         log: state.sexStrafLog,
         lastSexStrafAt: state.lastSexStrafAt,
@@ -61,7 +61,6 @@ export function useFridaState() {
         sessions: state.gameSessions,
       }),
     [
-      state.emergencyStop,
       state.activeSexStraf,
       state.sexStrafLog,
       state.lastSexStrafAt,
@@ -79,7 +78,6 @@ export function useFridaState() {
     const tick = () => {
       const key = todayKey();
       setState((s) => {
-        if (s.emergencyStop) return s;
         if (s.underwearToday?.dateKey === key) return s;
         return {
           ...s,
@@ -105,10 +103,9 @@ export function useFridaState() {
     };
   }, [state.profile.ageVerified]);
 
-  // Ensure today's full outfit exists when age-verified and not emergency-stopped
+  // Ensure today's full outfit exists when age-verified
   useEffect(() => {
     if (!state.profile.ageVerified) return;
-    if (state.emergencyStop) return;
     if (state.underwearToday?.dateKey === todayKey()) {
       if (!state.underwearToday.layers || state.underwearToday.layers.length < 2) {
         setState((s) => {
@@ -135,7 +132,7 @@ export function useFridaState() {
         calendar: summarizeCalendar(s.calendarEntries, localDateKey()),
       }),
     }));
-  }, [state.profile.ageVerified, state.emergencyStop, state.underwearToday?.dateKey, state.underwearToday?.layers?.length]);
+  }, [state.profile.ageVerified, state.underwearToday?.dateKey, state.underwearToday?.layers?.length]);
 
   const updateProfile = useCallback((patch: Partial<Profile>) => {
     setState((s) => ({
@@ -151,29 +148,6 @@ export function useFridaState() {
     }));
   }, []);
 
-  const setEmergencyStop = useCallback((on: boolean) => {
-    setState((s) => ({
-      ...s,
-      emergencyStop: on,
-      activeChallenges: on
-        ? s.activeChallenges.map((c) => ({ ...c, status: 'paused' as const }))
-        : s.activeChallenges.map((c) =>
-            c.status === 'paused' ? { ...c, status: 'active' as const } : c,
-          ),
-      activeInGameChallenge:
-        on && s.activeInGameChallenge
-          ? { ...s.activeInGameChallenge, status: 'paused' as const }
-          : s.activeInGameChallenge
-            ? {
-                ...s.activeInGameChallenge,
-                status:
-                  s.activeInGameChallenge.status === 'paused'
-                    ? ('active' as const)
-                    : s.activeInGameChallenge.status,
-              }
-            : null,
-    }));
-  }, []);
 
   const verifyAge = useCallback(() => {
     setState((s) => ({
@@ -184,7 +158,6 @@ export function useFridaState() {
 
   const rerollUnderwear = useCallback(() => {
     setState((s) => {
-      if (s.emergencyStop) return s;
       const perf = computePerformance(s.gameSessions);
       return {
         ...s,
@@ -200,7 +173,6 @@ export function useFridaState() {
 
   const refreshChallenges = useCallback((count = 3) => {
     setState((s) => {
-      if (s.emergencyStop) return s;
       const exclude = s.activeChallenges.map((c) => c.templateId);
       const perf = computePerformance(s.gameSessions);
       const cal = summarizeCalendar(s.calendarEntries, localDateKey());
@@ -219,7 +191,6 @@ export function useFridaState() {
 
   const ensureChallenges = useCallback(() => {
     setState((s) => {
-      if (s.emergencyStop) return s;
       const key = localDateKey();
       if (
         s.morningTrio?.dateKey === key &&
@@ -248,7 +219,6 @@ export function useFridaState() {
 
   const ensureMorningTrio = useCallback(() => {
     setState((s) => {
-      if (s.emergencyStop) return s;
       if (!s.profile.ageVerified) return s;
       const key = localDateKey();
       if (s.morningTrio?.dateKey === key && s.morningTrio.challenges.length === 3) {
@@ -342,7 +312,7 @@ export function useFridaState() {
         };
         const remaining = s.activeChallenges.filter((c) => c.id !== id);
         let active = remaining;
-        if (remaining.length < 2 && !s.emergencyStop) {
+        if (remaining.length < 2) {
           const perf = computePerformance(s.gameSessions);
           const extra = drawChallenges(
             s.profile,
@@ -386,7 +356,7 @@ export function useFridaState() {
         const perf = computePerformance(gameSessions);
         // Refresh today's underwear influence when logging (same day keep dateKey)
         const underwearToday =
-          !s.emergencyStop && s.profile.ageVerified
+          s.profile.ageVerified
             ? pickUnderwear(s.profile, {
                 ...s.context,
                 playingGame: session.gameName || s.context.playingGame,
@@ -438,7 +408,6 @@ export function useFridaState() {
 
   const drawNewInGameChallenge = useCallback(() => {
     setState((s) => {
-      if (s.emergencyStop) return s;
       const perf = computePerformance(s.gameSessions);
       const exclude = s.activeInGameChallenge
         ? [s.activeInGameChallenge.templateId]
@@ -457,7 +426,6 @@ export function useFridaState() {
 
   const ensureInGameChallenge = useCallback(() => {
     setState((s) => {
-      if (s.emergencyStop) return s;
       if (s.activeInGameChallenge) return s;
       const perf = computePerformance(s.gameSessions);
       const next = drawInGameChallenge(
@@ -490,17 +458,14 @@ export function useFridaState() {
           pointsDelta: delta,
           kind: 'ingame' as const,
         };
-        let nextChallenge = null as typeof ch | null;
-        if (!s.emergencyStop) {
-          nextChallenge = drawInGameChallenge(
-            s.profile,
-            s.context,
-            s.underwearToday,
-            [ch.templateId],
-            computePerformance(s.gameSessions),
-            summarizeCalendar(s.calendarEntries, localDateKey()),
-          );
-        }
+        const nextChallenge = drawInGameChallenge(
+          s.profile,
+          s.context,
+          s.underwearToday,
+          [ch.templateId],
+          computePerformance(s.gameSessions),
+          summarizeCalendar(s.calendarEntries, localDateKey()),
+        );
         return {
           ...s,
           activeInGameChallenge: nextChallenge,
@@ -515,14 +480,13 @@ export function useFridaState() {
 
   const claimSexStraf = useCallback(() => {
     setState((s) => {
-      if (s.emergencyStop) return s;
       if (s.activeSexStraf && (s.activeSexStraf.status === 'pending' || s.activeSexStraf.status === 'active')) {
         return s;
       }
       const perf = computePerformance(s.gameSessions);
       const cal = summarizeCalendar(s.calendarEntries, localDateKey());
       const due = evaluateSexStrafDueWithSessions({
-        paused: s.emergencyStop,
+        paused: false,
         active: s.activeSexStraf,
         log: s.sexStrafLog,
         lastSexStrafAt: s.lastSexStrafAt,
@@ -555,7 +519,6 @@ export function useFridaState() {
       placeDa?: string;
     }) => {
       setState((s) => {
-        if (s.emergencyStop) return s;
         const inst = s.activeSexStraf;
         if (!inst || inst.status !== 'pending') return s;
         const durationMin =
@@ -596,7 +559,6 @@ export function useFridaState() {
 
   const startSexStraf = useCallback(() => {
     setState((s) => {
-      if (s.emergencyStop) return s;
       if (!s.activeSexStraf || s.activeSexStraf.status !== 'pending') return s;
       return { ...s, activeSexStraf: { ...s.activeSexStraf, status: 'active' } };
     });
@@ -605,7 +567,6 @@ export function useFridaState() {
   const resolveSexStraf = useCallback(
     (outcome: ChallengeOutcome) => {
       setState((s) => {
-        if (s.emergencyStop) return s;
         const inst = s.activeSexStraf;
         if (!inst) return s;
         const status =
@@ -701,7 +662,6 @@ export function useFridaState() {
     sexStrafDue,
     updateProfile,
     updateContext,
-    setEmergencyStop,
     verifyAge,
     rerollUnderwear,
     refreshChallenges,

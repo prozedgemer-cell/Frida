@@ -254,6 +254,7 @@ export interface PerformanceSnapshot {
 export interface AppState {
   profile: Profile;
   context: ContextState;
+  /** @deprecated dormant — emergency stop UI removed; kept for localStorage compat */
   emergencyStop: boolean;
   underwearToday: UnderwearPick | null;
   activeChallenges: ActiveChallenge[];

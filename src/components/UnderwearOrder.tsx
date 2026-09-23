@@ -17,7 +17,7 @@ export function UnderwearOrder({ pick, paused, onReroll }: Props) {
     <section className="panel panel--command">
       <p className="eyebrow">Hverdag · fuld outfit</p>
       <h2>Dagens uniform</h2>
-      {paused && <p className="banner banner--warn">Pauset af nødstop</p>}
+      {paused && <p className="banner banner--warn">Paused</p>}
       {!pick && <p className="muted">Ingen beording endnu…</p>}
       {pick && (
         <>

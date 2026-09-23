@@ -38,7 +38,7 @@ export const CHALLENGE_TEMPLATES: ChallengeTemplate[] = [
   {
     id: 'ch-bdsm-04',
     titleDa: 'Hårdere slag på lår',
-    bodyDa: 'Slap dig selv 10 gange på inderlåret. Tæl højt. Stop hvis det bliver farligt — nødstop er helligt.',
+    bodyDa: 'Slap dig selv 10 gange på inderlåret. Tæl højt. Stop hvis det bliver farligt — dine grænser er hellige.',
     tags: ['impact', 'hard', 'lår'],
     themes: ['bdsm'],
     intensity: ['hard'],
@@ -128,7 +128,7 @@ export const CHALLENGE_TEMPLATES: ChallengeTemplate[] = [
   {
     id: 'ch-cloth-02',
     titleDa: 'Skift til string nu',
-    bodyDa: 'Frida, skift til string inden for 5 minutter — medmindre nødstop er aktivt. Rapporter mentalt: "skiftet."',
+    bodyDa: 'Frida, skift til string inden for 5 minutter — medmindre det føles usikkert. Rapporter mentalt: "skiftet."',
     tags: ['undertøj', 'skift', 'ordre'],
     themes: ['clothing', 'bdsm'],
     intensity: ['soft', 'hard'],
@@ -760,7 +760,7 @@ export const CHALLENGE_TEMPLATES: ChallengeTemplate[] = [
   {
     id: 'ch-daily-04',
     titleDa: 'Hard day kickoff',
-    bodyDa: 'Hard-dag: vælg cage eller åben-crotch / harness-element i mindst 1 time. Nødstop overrules.',
+    bodyDa: 'Hard-dag: vælg cage eller åben-crotch / harness-element i mindst 1 time. Dine grænser overruler alt.',
     tags: ['hard', 'kickoff'],
     themes: ['bdsm', 'clothing'],
     intensity: ['hard'],
@@ -785,9 +785,9 @@ export const CHALLENGE_TEMPLATES: ChallengeTemplate[] = [
   },
   {
     id: 'ch-daily-07',
-    titleDa: 'Nødstop-drill',
-    bodyDa: 'Tryk på nødstop, vent 10 sekunder, slå fra igen. Øv at du altid kan stoppe. Sikkerhed er hot.',
-    tags: ['sikkerhed', 'nødstop'],
+    titleDa: 'Safety check-in',
+    bodyDa: 'Pause 30 sekunder. Check in: body, breath, mood. Write one sentence in your diary if anything feels off. Safety is hot.',
+    tags: ['sikkerhed', 'journal'],
     themes: ['bdsm', 'irl'],
     intensity: ['soft', 'hard'],
   },
@@ -1104,7 +1104,7 @@ export const CHALLENGE_TEMPLATES: ChallengeTemplate[] = [
   {
     id: 'ch-straf-07',
     titleDa: 'Straf: lår-tælling',
-    bodyDa: 'Slap dig selv 8 gange på inderlåret. Tæl højt på dansk. Stop ved fare — nødstop er helligt.',
+    bodyDa: 'Slap dig selv 8 gange på inderlåret. Tæl højt på dansk. Stop ved fare — dine grænser er hellige.',
     tags: ['straf', 'impact', 'lår'],
     themes: ['bdsm'],
     intensity: ['hard'],
@@ -1376,7 +1376,7 @@ export const CHALLENGE_TEMPLATES: ChallengeTemplate[] = [
   {
     id: 'ch-morning-hard-03',
     titleDa: 'Morgen: present 5 min',
-    bodyDa: 'Present-position (hænder bag nakke, bryst frem) i 5 minutter. Timer. Stop kun ved nødstop.',
+    bodyDa: 'Present-position (hænder bag nakke, bryst frem) i 5 minutter. Timer. Stop hvis noget føles forkert.',
     tags: ['morgen', 'do', 'hard', 'protokol'],
     themes: ['bdsm'],
     intensity: ['hard'],

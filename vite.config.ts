@@ -22,15 +22,15 @@ export default defineConfig({
         id: 'frida-kontrolpanel',
         name: 'Frida',
         short_name: 'Frida',
-        description: 'Frida control panel (18+)',
+        description: 'Frida Diary — personal adult diary (18+)',
         lang: 'en',
         dir: 'ltr',
         start_url: '.',
         scope: '.',
         display: 'standalone',
         orientation: 'portrait-primary',
-        background_color: '#0e1018',
-        theme_color: '#0e1018',
+        background_color: '#17141f',
+        theme_color: '#241e2c',
         categories: ['lifestyle'],
         icons: [
           {
