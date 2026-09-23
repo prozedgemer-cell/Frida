@@ -1,7 +1,5 @@
 import { getUnderwearById } from '../engines/underwearEngine';
-import { WEIGHT_FORMULA_DA } from '../engines/weightBlend';
 import { OutfitHero } from './OutfitHero';
-import { OutfitLayers } from './OutfitLayers';
 import { CalendarInfluenceNote } from './CalendarInfluenceNote';
 import { ImageGallery } from './ImageGallery';
 import { ChallengesPanel } from './ChallengesPanel';
@@ -35,6 +33,18 @@ const IRL: { value: IrlStatus; label: string }[] = [
   { value: 'work', label: 'Work' },
   { value: 'public', label: 'Public' },
 ];
+
+function shortClothing(underwear: UnderwearPick, itemName?: string): { line1: string; line2?: string } {
+  const uwLayer = underwear.layers?.find((l) => l.layer === 'underwear');
+  const line1 =
+    (itemName && itemName.trim()) ||
+    underwear.lookNameDa?.trim() ||
+    uwLayer?.nameDa?.trim() ||
+    'Today\'s look';
+  const role = underwear.roleNameDa?.trim();
+  const line2 = role && role !== line1 ? role : undefined;
+  return { line1, line2 };
+}
 
 type Props = {
   underwear: UnderwearPick | null;
@@ -133,6 +143,7 @@ export function HomePanel({
   onResolveMorning,
 }: Props) {
   const item = underwear ? getUnderwearById(underwear.itemId) : undefined;
+  const clothing = underwear ? shortClothing(underwear, item?.nameDa) : null;
   const morningLeft =
     morningTrio?.challenges.filter((c) => c.status === 'active').length ?? 0;
   const nextLines = buildNextLines({
@@ -176,9 +187,9 @@ export function HomePanel({
       <div className="dash-cards">
         <button type="button" className="dash-card dash-card--today" onClick={onGoCalendar}>
           <span className="dash-card__k">Today</span>
-          <strong>{underwear?.roleNameDa ?? underwear?.lookNameDa ?? 'Outfit'}</strong>
+          <strong>{clothing?.line1 ?? 'Outfit'}</strong>
           <span>
-            {clock} · {greetDate}
+            {clothing?.line2 ? `${clothing.line2} · ` : ''}{clock}
           </span>
         </button>
         {sexPending || sexDue.due ? (
@@ -205,29 +216,23 @@ export function HomePanel({
       <section className="panel panel--command panel--home-order">
         <div className="panel__head">
           <div>
-            <p className="eyebrow">Today&apos;s look</p>
-            <h2>{underwear?.roleNameDa ? underwear.roleNameDa : 'On you now'}</h2>
+            <p className="eyebrow">Today&apos;s clothes</p>
+            <h2 className="diary-clothes__heading">Wear</h2>
           </div>
         </div>
 
         {!underwear && <p className="muted">No outfit order yet…</p>}
 
-        {underwear && (
+        {underwear && clothing && (
           <>
             <OutfitHero
               imageFile={underwear.imageFile}
-              captionDa={underwear.lookNameDa ?? underwear.roleNameDa}
-              altDa={underwear.lookNameDa ?? underwear.roleNameDa ?? "Today's outfit"}
+              altDa={clothing.line1}
             />
-            <p className="command-line command-line--xl">{underwear.orderTextDa}</p>
-            <OutfitLayers layers={underwear.layers} />
-            {item && !underwear.layers?.length && (
-              <p className="home-item-meta">
-                <strong>{item.nameDa}</strong>
-                <span className="muted"> · {item.category}</span>
-              </p>
-            )}
-            <p className="tiny muted">{WEIGHT_FORMULA_DA}</p>
+            <p className="diary-clothes__name">{clothing.line1}</p>
+            {clothing.line2 ? (
+              <p className="diary-clothes__meta muted tiny">{clothing.line2}</p>
+            ) : null}
           </>
         )}
 

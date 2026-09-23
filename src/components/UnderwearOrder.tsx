@@ -2,7 +2,6 @@ import { getUnderwearById } from '../engines/underwearEngine';
 import type { UnderwearPick } from '../types';
 import { ImageGallery } from './ImageGallery';
 import { OutfitHero } from './OutfitHero';
-import { OutfitLayers } from './OutfitLayers';
 
 type Props = {
   pick: UnderwearPick | null;
@@ -10,36 +9,33 @@ type Props = {
   onReroll: () => void;
 };
 
+function shortName(pick: UnderwearPick, itemName?: string): string {
+  const uw = pick.layers?.find((l) => l.layer === 'underwear');
+  return (
+    (itemName && itemName.trim()) ||
+    pick.lookNameDa?.trim() ||
+    uw?.nameDa?.trim() ||
+    "Today's look"
+  );
+}
+
 export function UnderwearOrder({ pick, paused, onReroll }: Props) {
   const item = pick ? getUnderwearById(pick.itemId) : undefined;
+  const name = pick ? shortName(pick, item?.nameDa) : null;
 
   return (
     <section className="panel panel--command">
-      <p className="eyebrow">Hverdag · fuld outfit</p>
-      <h2>Dagens uniform</h2>
+      <p className="eyebrow">Today&apos;s clothes</p>
+      <h2>Wear</h2>
       {paused && <p className="banner banner--warn">Paused</p>}
-      {!pick && <p className="muted">Ingen beording endnu…</p>}
-      {pick && (
+      {!pick && <p className="muted">No outfit yet…</p>}
+      {pick && name && (
         <>
-          <OutfitHero
-            imageFile={pick.imageFile}
-            captionDa={pick.lookNameDa}
-            altDa={pick.lookNameDa ?? 'Dagens outfit'}
-          />
-          <p className="command-line">{pick.orderTextDa}</p>
-          <OutfitLayers layers={pick.layers} />
-          {item && !pick.layers?.length && (
-            <dl className="meta-grid">
-              <div>
-                <dt>Undertøj</dt>
-                <dd>{item.nameDa}</dd>
-              </div>
-            </dl>
-          )}
-          <p className="tiny muted">{pick.reasonDa}</p>
-          {pick.performanceInfluenceDa && (
-            <p className="influence-note">{pick.performanceInfluenceDa}</p>
-          )}
+          <OutfitHero imageFile={pick.imageFile} altDa={name} />
+          <p className="diary-clothes__name">{name}</p>
+          {pick.roleNameDa && pick.roleNameDa !== name ? (
+            <p className="diary-clothes__meta muted tiny">{pick.roleNameDa}</p>
+          ) : null}
           <button
             type="button"
             className="btn btn--secondary"
@@ -52,8 +48,8 @@ export function UnderwearOrder({ pick, paused, onReroll }: Props) {
       )}
       <ImageGallery
         slot="outfit"
-        titleDa="Outfit-referencer"
-        hintDa="Egne fotos af fulde looks (undertøj + ydre lag). Lokalt file-pick — ingen server."
+        titleDa="Your outfit photos"
+        hintDa="Upload looks from your phone — stored locally only."
       />
     </section>
   );
