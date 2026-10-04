@@ -23,6 +23,6 @@
     "noFallthroughCasesInSwitch": true
   },
   "include": ["src"],
-  "exclude": ["src/data/outfitLooksMega.ts"]
+  "exclude": []
 }
 
