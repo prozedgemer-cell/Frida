@@ -2,7 +2,9 @@ import {
   BONUSES, BOTTOMS, BRAS, CHALLENGES, CLOSERS, CUPS, EXTRAS, FORM_LINES, FORMS, LEGWEAR, LOC_LINES, LOCATIONS,
   MAKEUP, OPENERS, PANTIES, PENALTIES, PLUG_FORMS, PUNISHMENTS, REWARDS, SHOES, TOPS, WIGS, formLabel,
   type CTemplate, type Item,
-} from './data/content';
+} from './content';
+
+const CLAMP_FORMS: FormId[] = ['nipples', 'bondage', 'chastity', 'milking'];
 import type {
   Challenge, ChallengeKind, DayPlan, DayRecord, FormId, Game, GameLog, Intensity, OutfitPlan, SexPlan, Star,
 } from './types';
@@ -89,7 +91,9 @@ function buildOutfit(r: R, star: Star, cup: string, intensity: Intensity, form: 
   const makeup = styled(r, MAKEUP, star);
   const wig = styled(r, WIGS, star);
   // cage only on chastity days; plug always present on plug-based days
-  const pool = EXTRAS.filter((e) => (e.s.includes(star.style) || e.s.includes('any')) && !e.t.includes('chastity'));
+  const pool = EXTRAS.filter((e) => (e.s.includes(star.style) || e.s.includes('any'))
+    && !e.t.includes('chastity') && !e.t.includes('plug')
+    && (!e.t.includes('clamps') || CLAMP_FORMS.includes(form)));
   const count = intensity === 'hard' ? 3 : 2;
   const extras: string[] = [];
   if (form === 'chastity') extras.push('chastity cage');

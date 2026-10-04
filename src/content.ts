@@ -1,4 +1,4 @@
-import type { ChallengeKind, FormId, Style, Tone } from '../types';
+import type { ChallengeKind, FormId, Style, Tone } from './types';
 
 export const STYLES: Style[] = ['sweet', 'classy', 'latex', 'goth', 'anime', 'fantasy', 'office', 'nurse', 'sporty', 'bimbo', 'retro', 'cyber'];
 export const CUPS = ['A', 'B', 'C', 'D', 'DD', 'E', 'F', 'G'];

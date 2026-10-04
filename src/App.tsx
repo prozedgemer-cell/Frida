@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { CUPS, FORMS, STYLES } from './data/content';
+import { CUPS, FORMS, STYLES } from './content';
 import {
   GAMES, MAX_CHALLENGES, effectivePlan, generateDay, pickStarId, scoreGame, starShort, todayKey,
   type Mood,
@@ -273,16 +273,6 @@ function SettingsView({ data, setData, today }: { data: AppData; setData: (fn: (
           </select>
         </label>
         <p className="muted small">Each star nudges the cup up or down from this.</p>
-        <button className="btn ghost" onClick={() => {
-          if (!confirm('Re-roll today with the current stars? Today\u2019s checkmarks reset.')) return;
-          setData((d) => {
-            const { [today]: _old, ...rest } = d.days;
-            void _old;
-            const nd = ensureDay({ ...d, days: rest }, today);
-            const games = d.days[today]?.games ?? [];
-            return { ...nd, days: { ...nd.days, [today]: { ...nd.days[today], games } } };
-          });
-        }}>Re-roll today</button>
       </section>
 
       <section className="card">

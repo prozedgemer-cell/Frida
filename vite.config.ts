@@ -1,60 +1,35 @@
-import react from '@vitejs/plugin-react'
-import { defineConfig } from 'vite'
-import { VitePWA } from 'vite-plugin-pwa'
-
-const base = process.env.BASE_PATH || '/'
+import react from '@vitejs/plugin-react';
+import { defineConfig } from 'vite';
+import { VitePWA } from 'vite-plugin-pwa';
 
 export default defineConfig({
-  base,
+  base: process.env.BASE_PATH || '/',
   plugins: [
     react(),
     VitePWA({
       registerType: 'autoUpdate',
       injectRegister: false,
-      includeAssets: [
-        'favicon.svg',
-        'icons/icon-192.png',
-        'icons/icon-512.png',
-        'icons/icon-512-maskable.png',
-        'icons/apple-touch-icon.png',
-      ],
+      includeAssets: ['favicon.svg', 'icons/apple-touch-icon.png'],
       manifest: {
-        id: 'frida-kontrolpanel',
+        id: 'frida-v3',
         name: 'Frida',
         short_name: 'Frida',
-        description: 'Frida Diary — personal adult diary (18+)',
+        description: 'Frida diary (18+)',
         lang: 'en',
-        dir: 'ltr',
         start_url: '.',
         scope: '.',
         display: 'standalone',
-        orientation: 'portrait-primary',
+        orientation: 'portrait',
         background_color: '#17141f',
         theme_color: '#241e2c',
-        categories: ['lifestyle'],
         icons: [
-          {
-            src: 'icons/icon-192.png',
-            sizes: '192x192',
-            type: 'image/png',
-            purpose: 'any',
-          },
-          {
-            src: 'icons/icon-512.png',
-            sizes: '512x512',
-            type: 'image/png',
-            purpose: 'any',
-          },
-          {
-            src: 'icons/icon-512-maskable.png',
-            sizes: '512x512',
-            type: 'image/png',
-            purpose: 'maskable',
-          },
+          { src: 'icons/icon-192.png', sizes: '192x192', type: 'image/png', purpose: 'any' },
+          { src: 'icons/icon-512.png', sizes: '512x512', type: 'image/png', purpose: 'any' },
+          { src: 'icons/icon-maskable-512.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' },
         ],
       },
       workbox: {
-        globPatterns: ['**/*.{js,css,html,ico,png,svg,webmanifest,jpg,jpeg,webp,md}'],
+        globPatterns: ['**/*.{js,css,html,png,svg,webmanifest}'],
         navigateFallback: 'index.html',
         cleanupOutdatedCaches: true,
         clientsClaim: true,
@@ -62,4 +37,4 @@ export default defineConfig({
       },
     }),
   ],
-})
+});

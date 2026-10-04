@@ -1,8 +1,7 @@
-# Frida Diary v2
+# Frida
 
-Personal 18+ PWA (fictional roleplay). React + TS + Vite + vite-plugin-pwa.
+Personal 18+ diary PWA (fictional roleplay only). React + TypeScript + Vite + vite-plugin-pwa.
 
-- `npm run dev` / `npm test` (engine selftest)
-- `BASE_PATH=/Frida/ npm run build`, deploy `dist/` to `gh-pages` with `.nojekyll`.
-- Data lives in localStorage key `frida-v2`.
-- v1 backups: branches `backup-v1-2026-10-04`, `backup-gh-pages-v1-2026-10-04`.
+- `npm install`, `npm run dev`, `npm test` (120-day simulation)
+- Deploy: `BASE_PATH=/Frida/ npm run build`, publish `dist/` to `gh-pages` (with `.nojekyll`).
+- Data: localStorage key `frida-v3` (device only).

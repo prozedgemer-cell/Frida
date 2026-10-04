@@ -1,11 +1,12 @@
 {
   "name": "frida",
   "private": true,
-  "version": "2.1.0",
+  "version": "3.0.0",
   "type": "module",
+  "description": "Frida - personal 18+ diary PWA (fictional roleplay)",
   "scripts": {
     "dev": "vite",
-    "build": "tsc -b && vite build",
+    "build": "tsc --noEmit && vite build",
     "preview": "vite preview",
     "test": "tsx scripts/selftest.ts"
   },
@@ -22,6 +23,5 @@
     "typescript": "~6.0.2",
     "vite": "^8.3.0",
     "vite-plugin-pwa": "^1.3.0"
-  },
-  "description": "Frida Diary 18+ personal PWA (v2)"
+  }
 }

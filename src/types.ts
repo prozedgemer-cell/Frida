@@ -96,7 +96,7 @@ export interface DayRecord {
 }
 
 export interface AppData {
-  version: 3;
+  version: 1;
   defaultCup: string;
   stars: Star[];
   days: Record<string, DayRecord>;

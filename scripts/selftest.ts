@@ -1,15 +1,16 @@
 import { readFileSync, readdirSync } from 'node:fs';
-import { FORMS } from '../src/data/content';
-import { DEFAULT_STARS } from '../src/data/stars';
+import { FORMS } from '../src/content';
+import { DEFAULT_STARS } from '../src/stars';
 import { addDays, effectivePlan, generateDay, pickStarId, scoreGame } from '../src/engine';
 import type { DayRecord } from '../src/types';
 
 const BAD_VAG = /vagin|pussy|clit|labia|cunni/i;
 const EDG = /edg/i;
 // source scan
-for (const dir of ['src', 'src/data']) for (const f of readdirSync(dir).filter((x) => /\.tsx?$/.test(x))) {
+for (const dir of ['src']) for (const f of readdirSync(dir).filter((x) => /\.tsx?$/.test(x))) {
   const t = readFileSync(`${dir}/${f}`, 'utf8');
   if (EDG.test(t)) throw new Error(`'edg' in ${dir}/${f}`);
+  if (/kontrol|frida-v2|migrat/i.test(t)) throw new Error(`old leftover in ${dir}/${f}`);
   if (BAD_VAG.test(t.replace(/BAD_VAG.*/g, ''))) throw new Error(`vaginal term in ${dir}/${f}`);
 }
 const stars = DEFAULT_STARS.map((s) => ({ ...s }));

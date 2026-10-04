@@ -1,4 +1,4 @@
-import type { FormId, Leaning, Star, Style, Tone } from '../types';
+import type { FormId, Leaning, Star, Style, Tone } from './types';
 
 // All personas are entirely fictional, invented names.
 function s(
