@@ -10,8 +10,12 @@ export interface StyleDef {
   cupShift: number; // Frida's forms relative to the star's own cup
   signature: string; // accessory added to Frida's outfit
   line: string; // style flavor line in the scene
-  wardrobes: string[]; // signature wardrobe ideas (for generated stars)
+  wardrobes: string[]; // signature wardrobe ideas
+  own?: OwnPieces; // style-specific pieces that make it distinct from others sharing its look
 }
+
+export type Slot = 'panties' | 'bra' | 'top' | 'bottom' | 'legwear' | 'shoes';
+export type OwnPieces = Partial<Record<Slot, string[]>>;
 
 const d = (
   id: KnownFor, label: string, look: Style, forms: FormId[], leaning: Leaning, cupShift: number,
@@ -75,13 +79,44 @@ export const STYLE_DEFS: StyleDef[] = [
     'I conquer what I want, and today I want you.', ['fur cloak and leather', 'chainmail bikini', 'braided leather armor'], 'stern'),
   d('librarian', 'Shy librarian', 'office', ['mirror', 'plug', 'photo-tease'], 'soft', 0, 'round glasses',
     'Shh, be very quiet, I have a naughty little story to act out with you.', ['cardigan and pleated skirt', 'high-neck blouse and pencil skirt', 'knit dress'], 'sweet'),
-  d('punk', 'Punk', 'goth', ['pegging', 'dildo-ride', 'chastity'], 'hard', 0, 'safety-pin collar',
+  d('punk', 'Punk', 'punk', ['pegging', 'dildo-ride', 'chastity'], 'hard', 0, 'safety-pin collar',
     'Loud music, ripped fishnets and zero mercy, let\u2019s go.', ['ripped fishnets and leather jacket', 'band tee and plaid skirt', 'studded corset'], 'playful'),
   d('catgirl', 'Catgirl', 'anime', ['plug', 'dildo-ride', 'nipples'], 'mixed', 1, 'cat ears and bell collar',
     'Nya, pet me properly or I will scratch, and you will wear a tail too.', ['collar and striped thigh-highs', 'cat-ear hoodie dress', 'black bodysuit with tail'], 'playful'),
   d('tantric', 'Tantric guru', 'sporty', ['milking', 'nipples', 'striptease'], 'soft', 0, 'mala beads',
     'Breathe with me, Frida, slow and deep, every sensation counts.', ['sage-green yoga set', 'silk wrap and oils', 'flowing linen dress'], 'sweet'),
 ];
+
+/** Distinct pieces per style (used before the shared look pools). */
+const OWN: Partial<Record<KnownFor, OwnPieces>> = {
+  'latex-domme': { top: ['glossy latex corset', 'latex long-sleeve bodysuit'], bottom: ['latex pencil skirt', 'latex leggings'], shoes: ['thigh-high latex boots'] },
+  'strapon-queen': { top: ['leather harness top', 'open-cup leather bodice'], bottom: ['leather hot pants', 'wet-look mini skirt'], shoes: ['patent stilettos'] },
+  police: { top: ['tight blue uniform shirt', 'PVC uniform top with badge'], bottom: ['PVC uniform mini skirt', 'navy pencil skirt'], shoes: ['black patrol boots'] },
+  milf: { top: ['low-cut silk camisole', 'wrap blouse'], bottom: ['tight satin midi skirt', 'pencil skirt'], legwear: ['sheer black stockings'] },
+  'sugar-mommy': { top: ['champagne satin slip top', 'cashmere crop with pearls'], bottom: ['satin slip skirt', 'designer mini skirt'], shoes: ['red-sole heels'] },
+  ballet: { top: ['black ballet leotard', 'wrap cardigan over leotard'], bottom: ['chiffon wrap skirt', 'short tulle tutu'], legwear: ['pink ballet tights'], shoes: ['satin ballet flats'] },
+  goth: { top: ['black lace corset top', 'mesh long-sleeve'], bottom: ['layered black lace skirt'], shoes: ['buckled platform boots'] },
+  succubus: { top: ['red satin corset', 'black bustier with heart cut-out'], bottom: ['slit red satin skirt', 'black micro skirt'], shoes: ['red stilettos'] },
+  vampire: { top: ['red velvet corset', 'black ruffled blouse'], bottom: ['long black velvet skirt', 'crimson lace skirt'], legwear: ['black lace stockings'] },
+  witch: { top: ['black lace off-shoulder dress top', 'velvet bodice'], bottom: ['long tattered black skirt', 'purple velvet mini skirt'], legwear: ['striped witch stockings'] },
+  anime: { top: ['frilly pastel blouse', 'sailor blouse'], bottom: ['pleated pastel skirt'] },
+  hentai: { top: ['skin-tight cut-out bodysuit', 'tiny shrine-maiden top'], bottom: ['micro pleated skirt', 'red hakama mini skirt'], legwear: ['white thigh-highs with garters'] },
+  'schoolgirl-cosplay': { top: ['white tied cosplay blouse', 'cosplay blazer over blouse'], bottom: ['tartan cosplay skirt'], legwear: ['knee socks'], shoes: ['loafers'] },
+  'gamer-girl': { top: ['oversized gamer hoodie', 'cropped jersey tee'], bottom: ['gaming shorts', 'pleated mini skirt'], legwear: ['striped thigh socks'] },
+  catgirl: { top: ['cat-ear hoodie crop', 'black bodysuit'], bottom: ['fluffy-trim mini skirt'], legwear: ['paw-print thigh-highs'] },
+  'fantasy-queen': { top: ['jeweled corset bodice', 'gold-trimmed velvet bodice'], bottom: ['velvet gown skirt with slit'], shoes: ['gilded heels'] },
+  elf: { top: ['leaf-embroidered silk top', 'sheer green tunic'], bottom: ['flowing green silk skirt'], shoes: ['soft laced sandals'] },
+  siren: { top: ['seashell bra top', 'sequined scale top'], bottom: ['sheer sea-green sarong', 'sequined mermaid skirt'], shoes: ['barefoot with anklets'] },
+  viking: { top: ['leather bodice with fur trim', 'chainmail-look top'], bottom: ['leather war skirt', 'fur-trimmed mini skirt'], shoes: ['laced fur boots'] },
+  'office-boss': { top: ['crisp white blouse', 'fitted blazer, nothing under'], bottom: ['grey pencil skirt'], shoes: ['pointed pumps'] },
+  librarian: { top: ['buttoned cardigan', 'high-neck blouse'], bottom: ['pleated midi skirt', 'tweed pencil skirt'], legwear: ['nude pantyhose'], shoes: ['Mary Jane heels'] },
+  gym: { top: ['sports bra', 'cropped racerback tank'], bottom: ['tight yoga leggings', 'booty shorts'], shoes: ['training sneakers'] },
+  tantric: { top: ['silk wrap top', 'sage yoga bra'], bottom: ['flowing linen pants', 'silk sarong'], shoes: ['barefoot'] },
+  pinup: { top: ['polka-dot halter top', 'off-shoulder gingham blouse'], bottom: ['high-waist swing skirt', 'high-waist sailor shorts'], legwear: ['seamed stockings'] },
+  maid: { top: ['black satin maid bodice with white collar'], bottom: ['satin maid skirt with apron'], legwear: ['white lace stockings'], shoes: ['black Mary Janes'] },
+  punk: { top: ['ripped band tee', 'cropped band tee with safety pins'], bottom: ['red plaid mini skirt', 'tartan bondage skirt with straps'], legwear: ['ripped fishnets'], shoes: ['combat boots'] },
+};
+for (const s of STYLE_DEFS) s.own = OWN[s.id];
 
 export const STYLE_BY_ID = Object.fromEntries(STYLE_DEFS.map((s) => [s.id, s])) as Record<KnownFor, StyleDef>;
 export const styleLabel = (id: KnownFor) => STYLE_BY_ID[id]?.label ?? id;

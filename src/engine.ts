@@ -4,9 +4,9 @@ import {
   type CTemplate, type Item,
 } from './content';
 
-import { STYLE_BY_ID, type StyleDef } from './looks';
+import { STYLE_BY_ID, type Slot, type StyleDef } from './looks';
 import type {
-  Challenge, ChallengeKind, DayPlan, DayRecord, FormId, Game, GameLog, Intensity, KnownFor, OutfitPlan, SexPlan, Star, Style,
+  AppData, Challenge, ChallengeKind, DayPlan, DayRecord, FormId, Game, GameLog, Intensity, KnownFor, OutfitPlan, SexPlan, Star, Style,
 } from './types';
 
 const CLAMP_FORMS: FormId[] = ['nipples', 'bondage', 'chastity', 'milking'];
@@ -87,12 +87,17 @@ export function cupFor(star: Star, style: StyleDef, defaultCup: string, r: R): s
 }
 function buildOutfit(r: R, star: Star, style: StyleDef, cup: string, intensity: Intensity, form: FormId): OutfitPlan {
   const look = style.look;
-  const panties = styled(r, PANTIES, look);
-  const bra = styled(r, BRAS, look);
-  const top = styled(r, TOPS, look);
-  const bottom = styled(r, BOTTOMS, look);
-  const legwear = styled(r, LEGWEAR, look);
-  const shoes = styled(r, SHOES, look);
+  // style-specific pieces first (top/bottom always, others most of the time), else the shared look pool
+  const slot = (k: Slot, items: Item[], always: boolean) => {
+    const own = style.own?.[k];
+    return own && (always || r() < 0.65) ? pick(r, own) : styled(r, items, look);
+  };
+  const panties = slot('panties', PANTIES, false);
+  const bra = slot('bra', BRAS, false);
+  const top = slot('top', TOPS, true);
+  const bottom = slot('bottom', BOTTOMS, true);
+  const legwear = slot('legwear', LEGWEAR, false);
+  const shoes = slot('shoes', SHOES, false);
   const makeup = styled(r, MAKEUP, look);
   const wig = styled(r, WIGS, look);
   // style signature first; cage only on chastity days; plug only on plug-based days
@@ -285,3 +290,21 @@ export function effectivePlan(rec: DayRecord, now: Date = new Date()): { plan: D
     missedIds,
   };
 }
+
+/** Makes sure today has a plan. If today's star was renamed since, today's plan is rebuilt with the new name (checkmarks and games kept). */
+export function ensureDay(d: AppData, date: string): AppData {
+  const existing = d.days[date];
+  if (existing) {
+    const star = d.stars.find((s) => s.id === existing.plan.starId);
+    if (!star || star.name === existing.plan.starName) return d;
+    const { [date]: _today, ...rest } = d.days;
+    void _today;
+    const plan = generateDay(date, star, d.defaultCup, rest);
+    return { ...d, days: { ...d.days, [date]: { ...existing, plan } } };
+  }
+  const id = pickStarId(date, d.stars, d.days);
+  const star = d.stars.find((s) => s.id === id) ?? d.stars[0];
+  const rec: DayRecord = { plan: generateDay(date, star, d.defaultCup, d.days), games: [], status: {}, sexDone: false };
+  return { ...d, days: { ...d.days, [date]: rec } };
+}
+

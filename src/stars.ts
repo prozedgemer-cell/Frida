@@ -1,155 +1,262 @@
-import { STYLE_BY_ID, STYLE_DEFS } from './looks';
 import type { KnownFor, Star, Tone } from './types';
 
-// Every persona here is entirely fictional, with invented names.
+// 250 entirely fictional personas with invented, ordinary-sounding names.
+// Names are checked against scripts/name-blocklist.json (real performers and celebrities) by `npm test`.
 
 const h = (
   id: string, name: string, hair: string, body: string, cup: string, wardrobe: string,
   personality: string, tone: Tone, knownFor: KnownFor[],
 ): Star => ({ id, name, hair, body, cup, wardrobe, personality, tone, knownFor, enabled: true });
 
-const HANDMADE: Star[] = [
-  h('margaux', 'Margaux Vellichor', 'Honey-blonde waves', 'Curvy, soft hips', 'D', 'Silk wrap dress and pearls', 'Warm, confident, loves to praise and to take charge.', 'sultry', ['milf', 'sugar-mommy', 'strapon-queen']),
-  h('seraphine', 'Seraphine Kael', 'Jet-black sleek ponytail', 'Tall, athletic', 'C', 'Black latex catsuit, thigh boots', 'Icy, precise, never raises her voice.', 'cold', ['latex-domme', 'strapon-queen', 'police']),
-  h('pippa', 'Pippa Lumen', 'Strawberry curls with bows', 'Petite, freckled', 'B', 'Pastel skirt and knee socks', 'Giggly, affectionate, teases until you beg.', 'sweet', ['sweet-tease', 'anime', 'pinup']),
-  h('nyx', 'Nyx Ravenmoor', 'Black bob with blunt bangs', 'Pale, slim, tattooed', 'B', 'Mesh top, PVC skirt, platforms', 'Dry humor, dark tastes, quietly cruel.', 'cold', ['goth', 'punk', 'witch']),
-  h('kiko', 'Kiko Hanabira', 'Pink twin tails', 'Small, bouncy', 'C', 'Sailor-style uniform', 'Hyper, cute, says "senpai" a lot.', 'playful', ['anime', 'schoolgirl-cosplay', 'catgirl']),
-  h('tenko', 'Tenko Mizuchi', 'Long silver hair, fox ears', 'Exaggerated curves', 'H', 'Tiny shrine-maiden robe', 'Mischievous trickster, loves over-the-top scenarios.', 'sultry', ['hentai', 'anime', 'succubus']),
-  h('ysolde', 'Queen Ysolde Thornveil', 'Crimson braids under a crown', 'Regal, tall', 'D', 'Gold-trimmed velvet gown', 'Commanding, expects bowing and gratitude.', 'stern', ['fantasy-queen', 'strapon-queen', 'viking']),
-  h('corinna', 'Corinna Vossbeck', 'Tight chestnut bun, glasses', 'Slim, sharp', 'C', 'Pencil skirt suit, heels', 'Efficient, demanding, rewards performance.', 'stern', ['office-boss', 'latex-domme', 'librarian']),
-  h('odile', 'Nurse Odile Marchbank', 'Auburn hair, nurse cap', 'Soft, curvy', 'DD', 'White latex nurse dress', 'Caring but clinical; checks you thoroughly.', 'sweet', ['nurse', 'milf', 'latex-domme']),
-  h('tamsin', 'Tamsin Brawnley', 'Blonde high ponytail', 'Muscular, toned', 'C', 'Sports bra and leggings', 'Competitive coach energy, counts your reps.', 'playful', ['gym', 'strapon-queen', 'cowgirl']),
-  h('lilitha', 'Lilitha Embervane', 'Wine-red hair, small horns', 'Hourglass', 'E', 'Black corset and tail', 'Hungry, seductive, feeds on your frustration.', 'sultry', ['succubus', 'vampire', 'latex-domme']),
-  h('sylwen', 'Sylwen Aetheris', 'Platinum hair, pointed ears', 'Slender, graceful', 'B', 'Flowing green silk', 'Gentle, patient, loves rituals.', 'sweet', ['elf', 'tantric', 'siren']),
-  h('honey', 'Honey Larkspur', 'Platinum blonde extensions', 'Big curves', 'G', 'Pink micro dress', 'Bubbly, shameless, wants you extra girly.', 'playful', ['bimbo', 'pinup', 'sugar-mommy']),
-  h('ravella', 'Mistress Ravella Grimsby', 'Raven-black waves', 'Strong, tall', 'D', 'Leather corset, gloves', 'Strict, ritualized, punishes small mistakes.', 'stern', ['latex-domme', 'strapon-queen', 'vampire']),
-  h('bunny', 'Bunny Plushwick', 'White bob, bunny ears', 'Petite, round', 'D', 'Satin bunny suit', 'Playful, a little bratty, loves costumes.', 'playful', ['anime', 'catgirl', 'bimbo']),
-  h('imelda', 'Professor Imelda Quill', 'Grey-streaked bun', 'Elegant, mature', 'C', 'Tweed skirt, silk blouse', 'Lectures, grades, detention.', 'stern', ['office-boss', 'librarian', 'milf']),
-  h('vex', 'Vex Chromatica', 'Neon blue undercut', 'Lean, chrome tattoos', 'C', 'Holographic vinyl jacket', 'Techy, detached, runs you like a program.', 'cold', ['cyberpunk', 'latex-domme', 'gamer-girl']),
-  h('beatrix', 'Lady Beatrix Ashcombe', 'Pinned dark curls', 'Corseted, slim', 'B', 'Lace high-neck gown', 'Proper, cutting, expects perfect manners.', 'cold', ['ballet', 'vampire', 'maid']),
-  h('dolly', 'Dolly Fizzwhistle', 'Red victory rolls', 'Curvy', 'DD', 'Polka-dot swing dress', 'Cheery, flirty, loves dressing you up.', 'sweet', ['pinup', 'maid', 'sweet-tease']),
-  h('saoirse', 'Saoirse Bramblewood', 'Wild copper hair', 'Curvy, freckled', 'D', 'Black lace dress and hat', 'Mischievous, casts "spells" on you.', 'playful', ['witch', 'goth', 'elf']),
-  h('ziva', 'Ziva Nightglass', 'Long black hair, red streak', 'Pale, slender', 'C', 'Red velvet corset gown', 'Ancient, possessive, slow and hungry.', 'sultry', ['vampire', 'goth', 'succubus']),
-  h('rhea', 'Captain Rhea Solvane', 'Short silver crop', 'Fit, tall', 'C', 'White fitted uniform', 'Military precision, gives orders.', 'stern', ['cyberpunk', 'police', 'gym']),
-  h('coco', 'Coco Velourette', 'Dark bob, white headband', 'Petite, curvy', 'D', 'Black satin maid dress', 'Bossy, sassy, makes YOU the maid.', 'playful', ['maid', 'pinup', 'strapon-queen']),
-  h('juno', 'Juno Brassheart', 'Pink mohawk', 'Wiry, pierced', 'B', 'Ripped fishnets, leather jacket', 'Loud, rough, laughs at you.', 'playful', ['punk', 'strapon-queen', 'goth']),
-  h('mirelle', 'Mirelle Opaline', 'Sea-green long waves', 'Smooth, curvy', 'DD', 'Shell bra and sheer sarong', 'Hypnotic, sings you into obedience.', 'sultry', ['siren', 'elf', 'tantric']),
-  h('kitty', 'Kitty Purrsworth', 'Lilac hair, cat ears', 'Petite, flexible', 'C', 'Collar and striped thigh-highs', 'Lazy, bratty, demands attention.', 'playful', ['catgirl', 'gamer-girl', 'anime']),
-  h('selin', 'Selin Marrowgate', 'Dark braid', 'Lithe, flexible', 'B', 'Sage-green yoga set', 'Calm, breath-focused, loves long slow teasing.', 'sweet', ['tantric', 'gym', 'elf']),
-  h('marit', 'Officer Marit Kestrel', 'Blonde braid under cap', 'Athletic', 'C', 'PVC uniform, handcuffs', 'By-the-book, enjoys "searches".', 'stern', ['police', 'latex-domme', 'cowgirl']),
-  h('aurelia', 'Aurelia Goldvane', 'Glossy caramel blowout', 'Lush, tanned', 'E', 'Designer satin and diamonds', 'Generous, spoiling, buys you lingerie.', 'sultry', ['sugar-mommy', 'milf', 'bimbo']),
-  h('rin', 'Rin Akagami', 'Red hair, cat headset', 'Slim', 'B', 'Oversized hoodie, thigh socks', 'Trash-talks, judges your K/D harshly.', 'playful', ['gamer-girl', 'anime', 'punk']),
-  h('valka', 'Valka Frostmane', 'Ice-blonde warrior braids', 'Tall, powerful', 'D', 'Fur cloak and leather', 'Fierce, takes what she wants.', 'stern', ['viking', 'strapon-queen', 'fantasy-queen']),
-  h('pearl', 'Pearl Dewberry', 'Mousy bun, round glasses', 'Soft, petite', 'C', 'Cardigan and pleated skirt', 'Shy but secretly very kinky.', 'sweet', ['librarian', 'sweet-tease', 'schoolgirl-cosplay']),
-  h('dasha', 'Dasha Kornblume', 'Severe blonde bun', 'Lean, flexible', 'B', 'Black leotard and wrap skirt', 'Perfectionist, counts in French.', 'cold', ['ballet', 'latex-domme', 'office-boss']),
-  h('glimmer', 'Glimmer Vane', 'Glossy pink wig', 'Doll-like curves', 'F', 'Pink latex dress', 'Wants you as her perfect plastic doll.', 'cold', ['bimbo', 'latex-domme', 'cyberpunk']),
+export const DEFAULT_STARS: Star[] = [
+  h('margaux', 'Ashley Talbot', 'Honey-blonde waves', 'Curvy, soft hips', 'D', 'Silk wrap dress and pearls', 'Warm, confident, loves to praise and to take charge.', 'sultry', ['milf', 'sugar-mommy', 'strapon-queen']),
+  h('seraphine', 'Layla Abbott', 'Jet-black sleek ponytail', 'Tall, athletic', 'C', 'Black latex catsuit, thigh boots', 'Icy, precise, never raises her voice.', 'cold', ['latex-domme', 'strapon-queen', 'police']),
+  h('pippa', 'Carmen Mendez', 'Strawberry curls with bows', 'Petite, freckled', 'B', 'Pastel skirt and knee socks', 'Giggly, affectionate, teases until you beg.', 'sweet', ['sweet-tease', 'anime', 'pinup']),
+  h('nyx', 'Camila Shaw', 'Black bob with blunt bangs', 'Pale, slim, tattooed', 'B', 'Mesh top, PVC skirt, platforms', 'Dry humor, dark tastes, quietly cruel.', 'cold', ['goth', 'punk', 'witch']),
+  h('kiko', 'Jasmine Bishop', 'Pink twin tails', 'Small, bouncy', 'C', 'Sailor-style uniform', 'Hyper, cute, says "senpai" a lot.', 'playful', ['anime', 'schoolgirl-cosplay', 'catgirl']),
+  h('tenko', 'Amanda Lyons', 'Long silver hair, fox ears', 'Exaggerated curves', 'H', 'Tiny shrine-maiden robe', 'Mischievous trickster, loves over-the-top scenarios.', 'sultry', ['hentai', 'anime', 'succubus']),
+  h('ysolde', 'Nina Whitlock', 'Crimson braids under a crown', 'Regal, tall', 'D', 'Gold-trimmed velvet gown', 'Commanding, expects bowing and gratitude.', 'stern', ['fantasy-queen', 'strapon-queen', 'viking']),
+  h('corinna', 'Hannah Gates', 'Tight chestnut bun, glasses', 'Slim, sharp', 'C', 'Pencil skirt suit, heels', 'Efficient, demanding, rewards performance.', 'stern', ['office-boss', 'latex-domme', 'librarian']),
+  h('odile', 'Nadia Marsh', 'Auburn hair, nurse cap', 'Soft, curvy', 'DD', 'White latex nurse dress', 'Caring but clinical; checks you thoroughly.', 'sweet', ['nurse', 'milf', 'latex-domme']),
+  h('tamsin', 'Luna Nakamura', 'Blonde high ponytail', 'Muscular, toned', 'C', 'Sports bra and leggings', 'Competitive coach energy, counts your reps.', 'playful', ['gym', 'strapon-queen', 'cowgirl']),
+  h('lilitha', 'Bella Moreau', 'Wine-red hair, small horns', 'Hourglass', 'E', 'Black corset and tail', 'Hungry, seductive, feeds on your frustration.', 'sultry', ['succubus', 'vampire', 'latex-domme']),
+  h('sylwen', 'Tessa Pace', 'Platinum hair, pointed ears', 'Slender, graceful', 'B', 'Flowing green silk', 'Gentle, patient, loves rituals.', 'sweet', ['elf', 'tantric', 'siren']),
+  h('honey', 'Julia Gibbs', 'Platinum blonde extensions', 'Big curves', 'G', 'Pink micro dress', 'Bubbly, shameless, wants you extra girly.', 'playful', ['bimbo', 'pinup', 'sugar-mommy']),
+  h('ravella', 'Hailey Cooper', 'Raven-black waves', 'Strong, tall', 'D', 'Leather corset, gloves', 'Strict, ritualized, punishes small mistakes.', 'stern', ['latex-domme', 'strapon-queen', 'vampire']),
+  h('bunny', 'Mackenzie Owens', 'White bob, bunny ears', 'Petite, round', 'D', 'Satin bunny suit', 'Playful, a little bratty, loves costumes.', 'playful', ['anime', 'catgirl', 'bimbo']),
+  h('imelda', 'Carly Holm', 'Grey-streaked bun', 'Elegant, mature', 'C', 'Tweed skirt, silk blouse', 'Lectures, grades, detention.', 'stern', ['office-boss', 'librarian', 'milf']),
+  h('vex', 'Simone Joyner', 'Neon blue undercut', 'Lean, chrome tattoos', 'C', 'Holographic vinyl jacket', 'Techy, detached, runs you like a program.', 'cold', ['cyberpunk', 'latex-domme', 'gamer-girl']),
+  h('beatrix', 'Eden Gallagher', 'Pinned dark curls', 'Corseted, slim', 'B', 'Lace high-neck gown', 'Proper, cutting, expects perfect manners.', 'cold', ['ballet', 'vampire', 'maid']),
+  h('dolly', 'Lena Ramsey', 'Red victory rolls', 'Curvy', 'DD', 'Polka-dot swing dress', 'Cheery, flirty, loves dressing you up.', 'sweet', ['pinup', 'maid', 'sweet-tease']),
+  h('saoirse', 'Rosa Lambert', 'Wild copper hair', 'Curvy, freckled', 'D', 'Black lace dress and hat', 'Mischievous, casts "spells" on you.', 'playful', ['witch', 'goth', 'elf']),
+  h('ziva', 'Kayla Keating', 'Long black hair, red streak', 'Pale, slender', 'C', 'Red velvet corset gown', 'Ancient, possessive, slow and hungry.', 'sultry', ['vampire', 'goth', 'succubus']),
+  h('rhea', 'Allison Porter', 'Short silver crop', 'Fit, tall', 'C', 'White fitted uniform', 'Military precision, gives orders.', 'stern', ['cyberpunk', 'police', 'gym']),
+  h('coco', 'Marisol Fields', 'Dark bob, white headband', 'Petite, curvy', 'D', 'Black satin maid dress', 'Bossy, sassy, makes YOU the maid.', 'playful', ['maid', 'pinup', 'strapon-queen']),
+  h('juno', 'Emily Weaver', 'Pink mohawk', 'Wiry, pierced', 'B', 'Ripped fishnets, leather jacket', 'Loud, rough, laughs at you.', 'playful', ['punk', 'strapon-queen', 'goth']),
+  h('mirelle', 'Sarah Holloway', 'Sea-green long waves', 'Smooth, curvy', 'DD', 'Shell bra and sheer sarong', 'Hypnotic, sings you into obedience.', 'sultry', ['siren', 'elf', 'tantric']),
+  h('kitty', 'Jessica Dorsey', 'Lilac hair, cat ears', 'Petite, flexible', 'C', 'Collar and striped thigh-highs', 'Lazy, bratty, demands attention.', 'playful', ['catgirl', 'gamer-girl', 'anime']),
+  h('selin', 'Alexis Hammond', 'Dark braid', 'Lithe, flexible', 'B', 'Sage-green yoga set', 'Calm, breath-focused, loves long slow teasing.', 'sweet', ['tantric', 'gym', 'elf']),
+  h('marit', 'Ruby Marino', 'Blonde braid under cap', 'Athletic', 'C', 'PVC uniform, handcuffs', 'By-the-book, enjoys "searches".', 'stern', ['police', 'latex-domme', 'cowgirl']),
+  h('aurelia', 'Claire Langley', 'Glossy caramel blowout', 'Lush, tanned', 'E', 'Designer satin and diamonds', 'Generous, spoiling, buys you lingerie.', 'sultry', ['sugar-mommy', 'milf', 'bimbo']),
+  h('rin', 'Daisy Sheridan', 'Red hair, cat headset', 'Slim', 'B', 'Oversized hoodie, thigh socks', 'Trash-talks, judges your K/D harshly.', 'playful', ['gamer-girl', 'anime', 'punk']),
+  h('valka', 'Samantha Fischer', 'Ice-blonde warrior braids', 'Tall, powerful', 'D', 'Fur cloak and leather', 'Fierce, takes what she wants.', 'stern', ['viking', 'strapon-queen', 'fantasy-queen']),
+  h('pearl', 'Sabrina Tanaka', 'Mousy bun, round glasses', 'Soft, petite', 'C', 'Cardigan and pleated skirt', 'Shy but secretly very kinky.', 'sweet', ['librarian', 'sweet-tease', 'schoolgirl-cosplay']),
+  h('dasha', 'Alexa Walsh', 'Severe blonde bun', 'Lean, flexible', 'B', 'Black leotard and wrap skirt', 'Perfectionist, counts in French.', 'cold', ['ballet', 'latex-domme', 'office-boss']),
+  h('glimmer', 'Elena Warren', 'Glossy pink wig', 'Doll-like curves', 'F', 'Pink latex dress', 'Wants you as her perfect plastic doll.', 'cold', ['bimbo', 'latex-domme', 'cyberpunk']),
+  h('g001', 'Astrid Wade', 'Lilac space buns', 'Petite and busty', 'D', 'crop tee and shorts', 'Cheeky and competitive; keeps you guessing.', 'playful', ['gamer-girl', 'bimbo', 'librarian', 'sweet-tease']),
+  h('g002', 'Tiffany Harmon', 'Neon blue long waves', 'Petite and busty', 'C', 'Victorian mourning dress', 'Smoky-voiced and teasing; judges your gaming harshly.', 'sultry', ['vampire', 'siren', 'elf', 'succubus']),
+  h('g003', 'Monica Conley', 'Chestnut high ponytail', 'Tall and leggy', 'E', 'nurse uniform and stockings', 'Disciplined and exacting; laughs when you squirm.', 'stern', ['nurse', 'ballet']),
+  h('g004', 'Kimberly Newell', 'Wine-red shoulder-length curls', 'Soft and voluptuous', 'B', 'fringed suede and boots', 'Giggly and wicked; spoils you afterwards.', 'playful', ['cowgirl', 'office-boss']),
+  h('g005', 'Alyssa Gordon', 'Caramel space buns', 'Statuesque', 'E', 'pink lace sundress', 'Shy but secretly kinky; never repeats herself.', 'sweet', ['sweet-tease', 'catgirl']),
+  h('g006', 'Jade Kerr', 'Copper space buns', 'Curvy', 'D', 'jeweled corset and cape', 'Demanding but fair; rewards obedience with praise.', 'stern', ['fantasy-queen', 'vampire', 'gamer-girl', 'elf']),
+  h('g007', 'Veronica Moreno', 'Wine-red victory rolls', 'Tall and leggy', 'B', 'silk blouse and tight trousers', 'Demanding but fair; makes you say thank you.', 'stern', ['office-boss', 'milf', 'hentai', 'librarian']),
+  h('g008', 'Diana Lindgren', 'Raven braided crown', 'Curvy', 'D', 'Victorian mourning dress', 'Warm and affectionate; adores slow undressing.', 'sweet', ['vampire', 'goth', 'fantasy-queen', 'bimbo']),
+  h('g009', 'Elise Shepherd', 'Chocolate high ponytail', 'Muscular', 'H', 'red velvet corset gown', 'Warm and affectionate; never repeats herself.', 'sweet', ['vampire', 'viking', 'siren', 'elf']),
+  h('g010', 'Mila Parsons', 'Copper blunt bob', 'Slim', 'F', 'micro bikini under a coat', 'Bubbly and caring; rewards obedience with praise.', 'sweet', ['hentai', 'siren', 'punk', 'anime']),
+  h('g011', 'Skylar Osborne', 'Auburn high ponytail', 'Pear-shaped', 'DD', 'cardigan and pleated skirt', 'Shy but secretly kinky; spoils you afterwards.', 'sweet', ['librarian', 'strapon-queen', 'maid', 'sugar-mommy']),
+  h('g012', 'Paige Ashford', 'Ash-blonde side-swept bangs', 'Toned', 'B', 'black leotard and wrap skirt', 'Calm and merciless; spoils you afterwards.', 'cold', ['ballet', 'librarian', 'nurse']),
+  h('g013', 'Ines Lindqvist', 'Caramel messy bun', 'Thick-thighed', 'B', 'PVC uniform', 'Commanding and proud; adores slow undressing.', 'stern', ['police', 'cyberpunk', 'strapon-queen', 'librarian']),
+  h('g014', 'Grace Finch', 'Copper pixie cut', 'Pear-shaped', 'F', 'thigh boots and a strap-on harness', 'Strict and precise; whispers instead of shouting.', 'stern', ['strapon-queen', 'bimbo', 'nurse', 'gym']),
+  h('g015', 'Danielle Novak', 'Neon blue long waves', 'Athletic', 'B', 'sheer red gown', 'Slow and seductive; loves photos of you.', 'sultry', ['succubus', 'librarian', 'siren']),
+  h('g016', 'Isabella Whitaker', 'Ash-blonde braided crown', 'Slim', 'F', 'silk wrap and oils', 'Warm and affectionate; talks you through every step.', 'sweet', ['tantric', 'strapon-queen', 'witch']),
+  h('g017', 'Violet Kincaid', 'Silver high ponytail', 'Petite', 'B', 'corset and torn tights', 'Calm and merciless; insists on eye contact.', 'cold', ['goth', 'office-boss', 'cyberpunk']),
+  h('g018', 'Dakota Vaughn', 'Pastel pink braided crown', 'Toned', 'C', 'braided leather armor', 'Disciplined and exacting; counts everything out loud.', 'stern', ['viking', 'witch', 'bimbo', 'elf']),
+  h('g019', 'Crystal Laurent', 'Silver pixie cut', 'Tall and leggy', 'C', 'techwear harness set', 'Aloof and elegant; talks you through every step.', 'cold', ['cyberpunk', 'succubus']),
+  h('g020', 'Harper Yates', 'Raven sleek ponytail', 'Thick-thighed', 'E', 'chainmail bikini', 'Demanding but fair; loves making you blush.', 'stern', ['viking', 'bimbo', 'strapon-queen', 'gym']),
+  h('g021', 'Brianna Reyes', 'Honey-blonde sleek ponytail', 'Willowy', 'B', 'ripped fishnets and leather jacket', 'Giggly and wicked; laughs when you squirm.', 'playful', ['punk', 'bimbo', 'cowgirl']),
+  h('g022', 'Sophia Walton', 'Teal pixie cut', 'Athletic', 'DD', 'cardigan and pleated skirt', 'Warm and affectionate; spoils you afterwards.', 'sweet', ['librarian', 'sugar-mommy', 'pinup', 'succubus']),
+  h('g023', 'Sydney Nash', 'Lilac shoulder-length curls', 'Curvy', 'B', 'leather chaps and bikini top', 'Giggly and wicked; loves making you blush.', 'playful', ['cowgirl', 'punk']),
+  h('g024', 'Jenny Emerson', 'Silver sleek ponytail', 'Athletic', 'D', 'black lace dress and platforms', 'Bubbly and caring; makes you curtsy.', 'sweet', ['goth', 'cowgirl', 'vampire']),
+  h('g025', 'Peyton Haskins', 'Wine-red messy bun', 'Curvy', 'DD', 'white latex nurse dress', 'Warm and affectionate; hates excuses.', 'sweet', ['nurse', 'ballet', 'police']),
+  h('g026', 'Amber Patton', 'Auburn long straight hair', 'Hourglass', 'D', 'tight one-piece gym suit', 'Bratty and mischievous; plans everything to the minute.', 'playful', ['gym', 'tantric', 'punk', 'viking']),
+  h('g027', 'Stephanie McBride', 'Emerald undercut', 'Slim', 'G', 'pink latex dress', 'Bubbly and caring; laughs when you squirm.', 'sweet', ['bimbo', 'gym', 'strapon-queen']),
+  h('g028', 'Valerie Delgado', 'Platinum long waves', 'Soft and voluptuous', 'C', 'polka-dot swing dress', 'Bubbly and caring; counts everything out loud.', 'sweet', ['pinup', 'librarian', 'catgirl']),
+  h('g029', 'Nicole Doyle', 'Lilac curly mane', 'Soft and voluptuous', 'DD', 'silk gown and crown', 'Demanding but fair; makes you say thank you.', 'stern', ['fantasy-queen', 'elf']),
+  h('g030', 'Mia Foley', 'Ash-blonde pixie cut', 'Toned', 'F', 'chainmail bikini', 'Loud and teasing; talks you through every step.', 'playful', ['viking', 'tantric', 'strapon-queen']),
+  h('g031', 'Hazel Radcliffe', 'Auburn twin tails', 'Thick-thighed', 'D', 'sage-green yoga set', 'Bubbly and caring; laughs when you squirm.', 'sweet', ['tantric', 'pinup']),
+  h('g032', 'Morgan Pemberton', 'Chestnut blunt bob', 'Athletic', 'D', 'black latex catsuit', 'Aloof and elegant; insists on eye contact.', 'cold', ['latex-domme', 'succubus', 'police', 'librarian']),
+  h('g033', 'Heather Archer', 'Lilac long waves', 'Pear-shaped', 'E', 'PVC uniform', 'Disciplined and exacting; whispers instead of shouting.', 'stern', ['police', 'latex-domme', 'goth']),
+  h('g034', 'Holly Kirby', 'Caramel shoulder-length curls', 'Willowy', 'C', 'holographic vinyl jacket', 'Aloof and elegant; loves your forms on display.', 'cold', ['cyberpunk', 'latex-domme', 'sugar-mommy']),
+  h('g035', 'Tara Hayward', 'Pastel pink braided crown', 'Petite and busty', 'D', 'designer satin and diamonds', 'Smoky-voiced and teasing; collects pretty lingerie for you.', 'sultry', ['sugar-mommy', 'maid', 'gamer-girl']),
+  h('g036', 'Lorena Carver', 'Honey-blonde shoulder-length curls', 'Pear-shaped', 'DD', 'sports bra and leggings', 'Disciplined and exacting; spoils you afterwards.', 'stern', ['gym', 'cowgirl']),
+  h('g037', 'Taylor Medina', 'Raven space buns', 'Thick-thighed', 'D', 'black bodysuit with tail', 'Loud and teasing; judges your gaming harshly.', 'playful', ['catgirl', 'schoolgirl-cosplay', 'pinup']),
+  h('g038', 'Riley Payne', 'Chocolate braided crown', 'Thick-thighed', 'H', 'thigh boots and a strap-on harness', 'Icy and detached; loves photos of you.', 'cold', ['strapon-queen', 'bimbo', 'tantric']),
+  h('g039', 'Anna Ellison', 'Rose-gold space buns', 'Thick-thighed', 'H', 'Victorian mourning dress', 'Lazy and sensual; judges your gaming harshly.', 'sultry', ['vampire', 'punk', 'strapon-queen', 'nurse']),
+  h('g040', 'Vanessa Brandt', 'Rose-gold blunt bob', 'Petite and busty', 'DD', 'braided leather armor', 'Icy and detached; insists on eye contact.', 'cold', ['viking', 'tantric', 'bimbo']),
+  h('g041', 'Hana Chambers', 'Snow-white messy bun', 'Toned', 'C', 'black corset and tail', 'Hungry and possessive; insists on eye contact.', 'sultry', ['succubus', 'strapon-queen', 'siren', 'cyberpunk']),
+  h('g042', 'Abigail Dixon', 'Chocolate long waves', 'Muscular', 'G', 'pink latex dress', 'Warm and affectionate; adores slow undressing.', 'sweet', ['bimbo', 'fantasy-queen', 'gym', 'pinup']),
+  h('g043', 'Leah Ashby', 'Honey-blonde high ponytail', 'Tall and leggy', 'E', 'neon bodysuit', 'Quietly cruel; makes you say thank you.', 'cold', ['cyberpunk', 'punk']),
+  h('g044', 'Sienna Prescott', 'Silver curly mane', 'Muscular', 'B', 'PVC uniform', 'Disciplined and exacting; adores slow undressing.', 'stern', ['police', 'punk', 'strapon-queen']),
+  h('g045', 'Lucia Hayes', 'Raven side-swept bangs', 'Slim', 'F', 'tiny shrine-maiden robe', 'Smoky-voiced and teasing; never repeats herself.', 'sultry', ['hentai', 'sweet-tease']),
+  h('g046', 'Chloe Holt', 'Raven braided crown', 'Muscular', 'F', 'pink latex dress', 'Cheeky and competitive; loves making you blush.', 'playful', ['bimbo', 'cowgirl', 'anime']),
+  h('g047', 'Gabriella Delaney', 'Rose-gold high ponytail', 'Willowy', 'B', 'tutu and tights', 'Icy and detached; loves photos of you.', 'cold', ['ballet', 'nurse']),
+  h('g048', 'Alina Boone', 'Raven curly mane', 'Slim', 'D', 'sage-green yoga set', 'Lazy and sensual; makes you curtsy.', 'sultry', ['tantric', 'punk', 'viking']),
+  h('g049', 'Aria Stanton', 'Auburn braided crown', 'Willowy', 'D', 'apron over lingerie', 'Disciplined and exacting; whispers instead of shouting.', 'stern', ['maid', 'cowgirl', 'librarian']),
+  h('g050', 'Kylie Garner', 'Strawberry-blonde undercut', 'Athletic', 'D', 'black lace cape dress', 'Smoky-voiced and teasing; plans everything to the minute.', 'sultry', ['vampire', 'cyberpunk', 'latex-domme']),
+  h('g051', 'Valentina Park', 'Jet-black braided crown', 'Petite', 'G', 'black satin maid dress', 'Giggly and wicked; never repeats herself.', 'playful', ['maid', 'librarian', 'nurse']),
+  h('g052', 'Molly Nolan', 'Ash-blonde messy bun', 'Slim', 'B', 'black lace dress and hat', 'Cheeky and competitive; rewards obedience with praise.', 'playful', ['witch', 'siren', 'cyberpunk']),
+  h('g053', 'Kelly Donovan', 'Teal long straight hair', 'Willowy', 'DD', 'velvet robe', 'Gentle and patient; makes you curtsy.', 'sweet', ['witch', 'goth', 'latex-domme', 'succubus']),
+  h('g054', 'Brooke Becker', 'Auburn high ponytail', 'Willowy', 'D', 'velvet robe', 'Cheeky and competitive; plans everything to the minute.', 'playful', ['witch', 'cyberpunk', 'latex-domme']),
+  h('g055', 'Lauren Benson', 'Neon blue pixie cut', 'Willowy', 'C', 'silk wrap dress and pearls', 'Giggly and wicked; never repeats herself.', 'playful', ['milf', 'nurse', 'cyberpunk']),
+  h('g056', 'Erica Ingram', 'Honey-blonde long waves', 'Willowy', 'D', 'Victorian mourning dress', 'Slow and seductive; counts everything out loud.', 'sultry', ['vampire', 'cyberpunk', 'maid', 'police']),
+  h('g057', 'Victoria Lawson', 'Platinum curly mane', 'Willowy', 'B', 'black corset and tail', 'Lazy and sensual; loves making you blush.', 'sultry', ['succubus', 'schoolgirl-cosplay']),
+  h('g058', 'Bailey Brennan', 'Ash-blonde space buns', 'Soft and voluptuous', 'B', 'leather harness over a bodysuit', 'Icy and detached; loves making you blush.', 'cold', ['strapon-queen', 'librarian']),
+  h('g059', 'Savannah Pruitt', 'Raven blunt bob', 'Hourglass', 'E', 'leaf-embroidered tunic', 'Lazy and sensual; never repeats herself.', 'sultry', ['elf', 'witch']),
+  h('g060', 'Freya Ochoa', 'Chestnut space buns', 'Toned', 'D', 'polka-dot swing dress', 'Gentle and patient; makes you say thank you.', 'sweet', ['pinup', 'librarian', 'catgirl', 'siren']),
+  h('g061', 'Brittany Dawson', 'Emerald undercut', 'Tall and leggy', 'H', 'denim shorts and plaid shirt', 'Demanding but fair; loves your forms on display.', 'stern', ['cowgirl', 'strapon-queen', 'tantric']),
+  h('g062', 'Kira Sullivan', 'Jet-black shoulder-length curls', 'Petite', 'D', 'Victorian mourning dress', 'Lazy and sensual; judges your gaming harshly.', 'sultry', ['vampire', 'goth', 'police', 'punk']),
+  h('g063', 'Scarlett Jennings', 'Snow-white side-swept bangs', 'Slim', 'E', 'crop top and booty shorts', 'Cheeky and competitive; talks you through every step.', 'playful', ['gym', 'latex-domme', 'viking']),
+  h('g064', 'Emma Macias', 'Pastel pink braided crown', 'Thick-thighed', 'DD', 'black corset and tail', 'Slow and seductive; laughs when you squirm.', 'sultry', ['succubus', 'siren', 'elf', 'witch']),
+  h('g065', 'Paola Hendricks', 'Chocolate victory rolls', 'Muscular', 'D', 'cardigan and pleated skirt', 'Bubbly and caring; judges your gaming harshly.', 'sweet', ['librarian', 'nurse', 'schoolgirl-cosplay', 'anime']),
+  h('g066', 'Jenna Keller', 'Honey-blonde blunt bob', 'Muscular', 'B', 'fluffy cardigan and mini skirt', 'Bratty and mischievous; makes you say thank you.', 'playful', ['sweet-tease', 'maid', 'schoolgirl-cosplay']),
+  h('g067', 'Daria Maddox', 'Chestnut long straight hair', 'Slim', 'E', 'fur cloak and leather', 'Cheeky and competitive; laughs when you squirm.', 'playful', ['viking', 'siren']),
+  h('g068', 'Kelsey Quintero', 'Wine-red high ponytail', 'Athletic', 'H', 'skin-tight bodysuit', 'Giggly and wicked; loves making you blush.', 'playful', ['hentai', 'sugar-mommy', 'siren', 'librarian']),
+  h('g069', 'Kristen Kemp', 'Lilac curly mane', 'Soft and voluptuous', 'G', 'fluffy cardigan and mini skirt', 'Shy but secretly kinky; collects pretty lingerie for you.', 'sweet', ['sweet-tease', 'hentai', 'gamer-girl']),
+  h('g070', 'Haley Lindgren', 'Neon blue sleek ponytail', 'Petite and busty', 'B', 'white latex nurse dress', 'Calm and merciless; loves photos of you.', 'cold', ['nurse', 'maid', 'ballet', 'sugar-mommy']),
+  h('g071', 'Rachel Hull', 'Auburn messy bun', 'Slim', 'G', 'pink latex dress', 'Bubbly and caring; writes rules on your mirror.', 'sweet', ['bimbo', 'witch', 'strapon-queen']),
+  h('g072', 'Zoe Wheeler', 'Strawberry-blonde pixie cut', 'Thick-thighed', 'E', 'sheer red gown', 'Lazy and sensual; judges your gaming harshly.', 'sultry', ['succubus', 'witch']),
+  h('g073', 'Lily Pearson', 'Platinum braided crown', 'Petite and busty', 'E', 'sage-green yoga set', 'Bubbly and caring; hates excuses.', 'sweet', ['tantric', 'viking', 'pinup']),
+  h('g074', 'Kendra Chen', 'Caramel braided crown', 'Toned', 'B', 'band tee and plaid skirt', 'Disciplined and exacting; whispers instead of shouting.', 'stern', ['punk', 'cowgirl']),
+  h('g075', 'Naomi Tucker', 'Snow-white braided crown', 'Pear-shaped', 'DD', 'techwear harness set', 'Icy and detached; writes rules on your mirror.', 'cold', ['cyberpunk', 'strapon-queen', 'bimbo', 'punk']),
+  h('g076', 'Becca Bradley', 'Pastel pink sleek ponytail', 'Tall and leggy', 'H', 'tiny shrine-maiden robe', 'Bubbly and caring; spoils you afterwards.', 'sweet', ['hentai', 'siren']),
+  h('g077', 'Olivia Norris', 'Copper long waves', 'Slim', 'D', 'black corset and tail', 'Loud and teasing; collects pretty lingerie for you.', 'playful', ['succubus', 'strapon-queen', 'fantasy-queen']),
+  h('g078', 'Candice Ibarra', 'Copper curly mane', 'Petite', 'D', 'white latex nurse dress', 'Cheeky and competitive; writes rules on your mirror.', 'playful', ['nurse', 'office-boss']),
+  h('g079', 'Madison Lowry', 'Copper long waves', 'Petite and busty', 'G', 'high-waist bikini', 'Bubbly and caring; writes rules on your mirror.', 'sweet', ['pinup', 'sweet-tease', 'schoolgirl-cosplay', 'librarian']),
+  h('g080', 'Stella Whitlock', 'Chestnut undercut', 'Curvy', 'F', 'pastel skirt and knee socks', 'Disciplined and exacting; loves your forms on display.', 'stern', ['sweet-tease', 'gamer-girl']),
+  h('g081', 'Gianna Vance', 'Caramel shoulder-length curls', 'Soft and voluptuous', 'G', 'sheer red gown', 'Lazy and sensual; talks you through every step.', 'sultry', ['succubus', 'punk', 'fantasy-queen']),
+  h('g082', 'Audrey Farley', 'Honey-blonde long straight hair', 'Muscular', 'C', 'Victorian mourning dress', 'Lazy and sensual; insists on eye contact.', 'sultry', ['vampire', 'sweet-tease']),
+  h('g083', 'Maya Griffin', 'Rose-gold high ponytail', 'Petite', 'DD', 'fur cloak and leather', 'Loud and teasing; keeps you guessing.', 'playful', ['viking', 'bimbo', 'hentai']),
+  h('g084', 'Natalie Larsen', 'Copper long waves', 'Slim', 'H', 'holographic vinyl jacket', 'Icy and detached; makes you curtsy.', 'cold', ['cyberpunk', 'succubus']),
+  h('g085', 'Natasha Townsend', 'Snow-white curly mane', 'Soft and voluptuous', 'DD', 'pink lace sundress', 'Gentle and patient; insists on eye contact.', 'sweet', ['sweet-tease', 'sugar-mommy', 'schoolgirl-cosplay']),
+  h('g086', 'Courtney Berg', 'Raven sleek ponytail', 'Statuesque', 'B', 'tartan skirt and tied blouse', 'Gentle and patient; laughs when you squirm.', 'sweet', ['schoolgirl-cosplay', 'bimbo', 'anime']),
+  h('g087', 'Katie Dunn', 'Honey-blonde pixie cut', 'Soft and voluptuous', 'B', 'ballet wrap cardigan', 'Shy but secretly kinky; plans everything to the minute.', 'sweet', ['ballet', 'office-boss', 'strapon-queen', 'milf']),
+  h('g088', 'Melissa Grant', 'Teal pixie cut', 'Petite and busty', 'E', 'leather bodysuit with wings', 'Commanding and proud; makes you curtsy.', 'stern', ['succubus', 'vampire', 'hentai']),
+  h('g089', 'Kate Duval', 'Teal blunt bob', 'Petite', 'E', 'black lace dress and hat', 'Giggly and wicked; keeps you guessing.', 'playful', ['witch', 'punk']),
+  h('g090', 'Megan Garrison', 'Emerald side-swept bangs', 'Petite and busty', 'G', 'pencil dress and seamed stockings', 'Calm and merciless; plans everything to the minute.', 'cold', ['pinup', 'bimbo']),
+  h('g091', 'Ava Barlow', 'Chestnut shoulder-length curls', 'Hourglass', 'E', 'gold-trimmed velvet gown', 'Commanding and proud; hates excuses.', 'stern', ['fantasy-queen', 'siren', 'punk', 'viking']),
+  h('g092', 'Ashley Sandoval', 'Jet-black long waves', 'Petite', 'H', 'red latex corset dress', 'Aloof and elegant; adores slow undressing.', 'cold', ['latex-domme', 'punk', 'strapon-queen', 'police']),
+  h('g093', 'Layla Owens', 'Caramel messy bun', 'Curvy', 'B', 'ripped fishnets and leather jacket', 'Loud and teasing; writes rules on your mirror.', 'playful', ['punk', 'office-boss', 'siren', 'bimbo']),
+  h('g094', 'Carmen Holm', 'Teal sleek ponytail', 'Athletic', 'C', 'tight one-piece gym suit', 'Strict and precise; loves photos of you.', 'stern', ['gym', 'catgirl', 'viking']),
+  h('g095', 'Camila Joyner', 'Snow-white shoulder-length curls', 'Statuesque', 'G', 'skin-tight bodysuit', 'Bratty and mischievous; loves your forms on display.', 'playful', ['hentai', 'schoolgirl-cosplay', 'librarian']),
+  h('g096', 'Jasmine Gallagher', 'Wine-red victory rolls', 'Toned', 'DD', 'sports bra and leggings', 'Demanding but fair; talks you through every step.', 'stern', ['gym', 'cowgirl']),
+  h('g097', 'Amanda Ramsey', 'Teal long straight hair', 'Statuesque', 'C', 'thigh boots and a strap-on harness', 'Smoky-voiced and teasing; whispers instead of shouting.', 'sultry', ['strapon-queen', 'milf', 'office-boss']),
+  h('g098', 'Nina Lambert', 'Strawberry-blonde long straight hair', 'Slim', 'DD', 'flowing green silk', 'Calm and merciless; makes you say thank you.', 'cold', ['elf', 'siren', 'fantasy-queen']),
+  h('g099', 'Hannah Keating', 'Ash-blonde long straight hair', 'Athletic', 'DD', 'tight pencil dress', 'Hungry and possessive; hates excuses.', 'sultry', ['milf', 'sugar-mommy']),
+  h('g100', 'Nadia Porter', 'Lilac victory rolls', 'Slim', 'B', 'tutu and tights', 'Quietly cruel; talks you through every step.', 'cold', ['ballet', 'maid', 'office-boss', 'milf']),
+  h('g101', 'Luna Fields', 'Chestnut undercut', 'Toned', 'B', 'band tee and plaid skirt', 'Loud and teasing; loves photos of you.', 'playful', ['punk', 'gamer-girl', 'cowgirl']),
+  h('g102', 'Bella Weaver', 'Emerald braided crown', 'Soft and voluptuous', 'B', 'Victorian mourning dress', 'Aloof and elegant; whispers instead of shouting.', 'cold', ['vampire', 'succubus', 'viking', 'siren']),
+  h('g103', 'Tessa Holloway', 'Silver long waves', 'Statuesque', 'C', 'Victorian mourning dress', 'Demanding but fair; insists on eye contact.', 'stern', ['vampire', 'strapon-queen']),
+  h('g104', 'Julia Dorsey', 'Strawberry-blonde pixie cut', 'Curvy', 'E', 'ripped fishnets and leather jacket', 'Cheeky and competitive; insists on eye contact.', 'playful', ['punk', 'tantric', 'schoolgirl-cosplay', 'pinup']),
+  h('g105', 'Hailey Hammond', 'Snow-white long straight hair', 'Athletic', 'B', 'collar and striped thigh-highs', 'Aloof and elegant; loves your forms on display.', 'cold', ['catgirl', 'hentai', 'librarian', 'schoolgirl-cosplay']),
+  h('g106', 'Mackenzie Marino', 'Ash-blonde undercut', 'Statuesque', 'DD', 'silk wrap dress and pearls', 'Giggly and wicked; hates excuses.', 'playful', ['milf', 'maid', 'librarian']),
+  h('g107', 'Carly Langley', 'Lilac space buns', 'Muscular', 'C', 'black lace dress and hat', 'Bratty and mischievous; loves your forms on display.', 'playful', ['witch', 'siren']),
+  h('g108', 'Simone Sheridan', 'Rose-gold space buns', 'Slim', 'E', 'silk gown and crown', 'Icy and detached; loves your forms on display.', 'cold', ['fantasy-queen', 'tantric', 'elf', 'vampire']),
+  h('g109', 'Eden Fischer', 'Chocolate space buns', 'Muscular', 'B', 'knit dress', 'Shy but secretly kinky; rewards obedience with praise.', 'sweet', ['librarian', 'anime', 'latex-domme', 'vampire']),
+  h('g110', 'Lena Tanaka', 'Honey-blonde pixie cut', 'Thick-thighed', 'B', 'gold-trimmed velvet gown', 'Strict and precise; plans everything to the minute.', 'stern', ['fantasy-queen', 'succubus', 'cyberpunk']),
+  h('g111', 'Rosa Walsh', 'Raven braided crown', 'Curvy', 'D', 'denim shorts and plaid shirt', 'Cheeky and competitive; judges your gaming harshly.', 'playful', ['cowgirl', 'maid']),
+  h('g112', 'Kayla Warren', 'Chestnut undercut', 'Slim', 'D', 'band tee and plaid skirt', 'Cheeky and competitive; loves making you blush.', 'playful', ['punk', 'cowgirl', 'witch']),
+  h('g113', 'Allison Wade', 'Silver messy bun', 'Hourglass', 'C', 'holographic vinyl jacket', 'Aloof and elegant; whispers instead of shouting.', 'cold', ['cyberpunk', 'witch']),
+  h('g114', 'Marisol Harmon', 'Strawberry-blonde space buns', 'Tall and leggy', 'C', 'sheer white gown', 'Demanding but fair; never repeats herself.', 'stern', ['elf', 'viking']),
+  h('g115', 'Emily Conley', 'Teal sleek ponytail', 'Athletic', 'DD', 'silk gown and crown', 'Cheeky and competitive; insists on eye contact.', 'playful', ['fantasy-queen', 'vampire', 'latex-domme']),
+  h('g116', 'Sarah Newell', 'Silver messy bun', 'Soft and voluptuous', 'DD', 'sheer white gown', 'Cheeky and competitive; writes rules on your mirror.', 'playful', ['elf', 'succubus']),
+  h('g117', 'Jessica Gordon', 'Rose-gold curly mane', 'Athletic', 'DD', 'black satin maid dress', 'Calm and merciless; laughs when you squirm.', 'cold', ['maid', 'milf', 'sugar-mommy']),
+  h('g118', 'Alexis Kerr', 'Chestnut long waves', 'Toned', 'H', 'skin-tight bodysuit', 'Hungry and possessive; talks you through every step.', 'sultry', ['hentai', 'sweet-tease']),
+  h('g119', 'Ruby Moreno', 'Auburn sleek ponytail', 'Toned', 'C', 'black lace dress and platforms', 'Aloof and elegant; rewards obedience with praise.', 'cold', ['goth', 'cyberpunk', 'maid']),
+  h('g120', 'Claire Rossi', 'Honey-blonde sleek ponytail', 'Willowy', 'C', 'satin robe over lingerie', 'Smoky-voiced and teasing; makes you say thank you.', 'sultry', ['milf', 'nurse', 'office-boss', 'sugar-mommy']),
+  h('g121', 'Daisy Shepherd', 'Neon blue curly mane', 'Petite', 'DD', 'latex maid uniform', 'Loud and teasing; whispers instead of shouting.', 'playful', ['maid', 'ballet', 'sweet-tease']),
+  h('g122', 'Samantha Parsons', 'Ash-blonde space buns', 'Toned', 'E', 'thigh boots and a strap-on harness', 'Loud and teasing; loves photos of you.', 'playful', ['strapon-queen', 'cyberpunk', 'witch', 'succubus']),
+  h('g123', 'Sabrina Osborne', 'Raven messy bun', 'Statuesque', 'B', 'latex leggings and opera gloves', 'Quietly cruel; insists on eye contact.', 'cold', ['latex-domme', 'strapon-queen', 'cyberpunk', 'goth']),
+  h('g124', 'Alexa Ashford', 'Rose-gold messy bun', 'Thick-thighed', 'C', 'white latex nurse dress', 'Cheeky and competitive; spoils you afterwards.', 'playful', ['nurse', 'maid', 'strapon-queen', 'milf']),
+  h('g125', 'Elena Lindqvist', 'Neon blue victory rolls', 'Petite and busty', 'DD', 'cat-ear hoodie dress', 'Loud and teasing; whispers instead of shouting.', 'playful', ['catgirl', 'pinup', 'hentai', 'tantric']),
+  h('g126', 'Astrid Finch', 'Caramel long straight hair', 'Curvy', 'D', 'knit dress', 'Gentle and patient; rewards obedience with praise.', 'sweet', ['librarian', 'milf', 'pinup', 'maid']),
+  h('g127', 'Tiffany Novak', 'Ash-blonde braided crown', 'Muscular', 'C', 'tight scrubs', 'Lazy and sensual; spoils you afterwards.', 'sultry', ['nurse', 'latex-domme']),
+  h('g128', 'Monica Whitaker', 'Copper braided crown', 'Willowy', 'B', 'designer satin and diamonds', 'Smoky-voiced and teasing; never repeats herself.', 'sultry', ['sugar-mommy', 'gamer-girl']),
+  h('g129', 'Kimberly Kincaid', 'Caramel pixie cut', 'Petite and busty', 'E', 'PVC uniform', 'Demanding but fair; counts everything out loud.', 'stern', ['police', 'goth', 'elf']),
+  h('g130', 'Alyssa Vaughn', 'Strawberry-blonde curly mane', 'Pear-shaped', 'B', 'black lingerie and harness', 'Gentle and patient; counts everything out loud.', 'sweet', ['strapon-queen', 'sugar-mommy', 'office-boss', 'ballet']),
+  h('g131', 'Jade Laurent', 'Silver space buns', 'Pear-shaped', 'D', 'black lace dress and hat', 'Loud and teasing; whispers instead of shouting.', 'playful', ['witch', 'siren', 'nurse']),
+  h('g132', 'Veronica Yates', 'Platinum long straight hair', 'Petite', 'D', 'leather bodysuit with wings', 'Commanding and proud; adores slow undressing.', 'stern', ['succubus', 'cyberpunk']),
+  h('g133', 'Diana Reyes', 'Teal long straight hair', 'Muscular', 'F', 'flowing linen dress', 'Warm and affectionate; adores slow undressing.', 'sweet', ['tantric', 'viking']),
+  h('g134', 'Elise Walton', 'Raven high ponytail', 'Muscular', 'C', 'latex maid uniform', 'Loud and teasing; rewards obedience with praise.', 'playful', ['maid', 'nurse']),
+  h('g135', 'Mila Nash', 'Raven curly mane', 'Curvy', 'F', 'jeweled corset and cape', 'Warm and affectionate; insists on eye contact.', 'sweet', ['fantasy-queen', 'viking']),
+  h('g136', 'Skylar Emerson', 'Jet-black long straight hair', 'Petite', 'C', 'streamer cosplay set', 'Cheeky and competitive; laughs when you squirm.', 'playful', ['gamer-girl', 'bimbo']),
+  h('g137', 'Paige Haskins', 'Caramel twin tails', 'Petite', 'F', 'black bodysuit with tail', 'Cheeky and competitive; writes rules on your mirror.', 'playful', ['catgirl', 'schoolgirl-cosplay', 'sweet-tease']),
+  h('g138', 'Ines Patton', 'Auburn high ponytail', 'Petite and busty', 'F', 'sailor uniform', 'Quietly cruel; loves your forms on display.', 'cold', ['anime', 'pinup', 'gamer-girl', 'succubus']),
+  h('g139', 'Grace McBride', 'Strawberry-blonde long waves', 'Statuesque', 'H', 'fur cloak and leather', 'Hungry and possessive; adores slow undressing.', 'sultry', ['viking', 'punk', 'bimbo']),
+  h('g140', 'Danielle Delgado', 'Wine-red twin tails', 'Statuesque', 'D', 'band tee and plaid skirt', 'Bratty and mischievous; loves making you blush.', 'playful', ['punk', 'milf']),
+  h('g141', 'Isabella Doyle', 'Chestnut long straight hair', 'Tall and leggy', 'D', 'nurse uniform and stockings', 'Calm and merciless; loves photos of you.', 'cold', ['nurse', 'latex-domme', 'office-boss', 'hentai']),
+  h('g142', 'Violet Foley', 'Snow-white blunt bob', 'Petite', 'DD', 'black lace cape dress', 'Hungry and possessive; rewards obedience with praise.', 'sultry', ['vampire', 'viking', 'witch']),
+  h('g143', 'Dakota Radcliffe', 'Silver high ponytail', 'Toned', 'D', 'black satin maid dress', 'Cheeky and competitive; rewards obedience with praise.', 'playful', ['maid', 'strapon-queen']),
+  h('g144', 'Crystal Pemberton', 'Chocolate side-swept bangs', 'Pear-shaped', 'B', 'leather chaps and bikini top', 'Cheeky and competitive; collects pretty lingerie for you.', 'playful', ['cowgirl', 'viking']),
+  h('g145', 'Harper Archer', 'Ash-blonde braided crown', 'Tall and leggy', 'C', 'pencil dress and seamed stockings', 'Calm and merciless; rewards obedience with praise.', 'cold', ['pinup', 'sweet-tease', 'bimbo']),
+  h('g146', 'Brianna Kirby', 'Chocolate long straight hair', 'Slim', 'B', 'latex leggings and opera gloves', 'Quietly cruel; rewards obedience with praise.', 'cold', ['latex-domme', 'police', 'vampire', 'punk']),
+  h('g147', 'Sophia Hayward', 'Honey-blonde pixie cut', 'Willowy', 'F', 'high-waist bikini', 'Shy but secretly kinky; judges your gaming harshly.', 'sweet', ['pinup', 'librarian']),
+  h('g148', 'Sydney Carver', 'Copper victory rolls', 'Tall and leggy', 'G', 'micro bikini under a coat', 'Disciplined and exacting; keeps you guessing.', 'stern', ['hentai', 'siren', 'vampire', 'elf']),
+  h('g149', 'Jenny Medina', 'Raven pixie cut', 'Hourglass', 'B', 'silk wrap and oils', 'Aloof and elegant; loves making you blush.', 'cold', ['tantric', 'strapon-queen', 'bimbo']),
+  h('g150', 'Peyton Payne', 'Teal long straight hair', 'Tall and leggy', 'H', 'black lace dress and platforms', 'Aloof and elegant; keeps you guessing.', 'cold', ['goth', 'hentai']),
+  h('g151', 'Amber Ellison', 'Raven long straight hair', 'Soft and voluptuous', 'B', 'frilly magical-girl dress', 'Bratty and mischievous; laughs when you squirm.', 'playful', ['anime', 'catgirl']),
+  h('g152', 'Stephanie Brandt', 'Emerald twin tails', 'Slim', 'DD', 'thigh boots and a strap-on harness', 'Hungry and possessive; spoils you afterwards.', 'sultry', ['strapon-queen', 'cowgirl', 'sugar-mommy']),
+  h('g153', 'Valerie Chambers', 'Wine-red twin tails', 'Willowy', 'F', 'white latex nurse dress', 'Smoky-voiced and teasing; plans everything to the minute.', 'sultry', ['nurse', 'sugar-mommy', 'elf']),
+  h('g154', 'Nicole Dixon', 'Strawberry-blonde shoulder-length curls', 'Pear-shaped', 'B', 'pencil skirt suit and heels', 'Strict and precise; collects pretty lingerie for you.', 'stern', ['office-boss', 'ballet']),
+  h('g155', 'Mia Ashby', 'Ash-blonde long straight hair', 'Hourglass', 'D', 'wet-look swimsuit', 'Slow and seductive; loves your forms on display.', 'sultry', ['siren', 'gym', 'pinup']),
+  h('g156', 'Hazel Prescott', 'Honey-blonde space buns', 'Slim', 'F', 'tartan skirt and tied blouse', 'Demanding but fair; adores slow undressing.', 'stern', ['schoolgirl-cosplay', 'pinup', 'maid']),
+  h('g157', 'Morgan Hayes', 'Lilac braided crown', 'Tall and leggy', 'B', 'leather harness over a bodysuit', 'Slow and seductive; writes rules on your mirror.', 'sultry', ['strapon-queen', 'witch']),
+  h('g158', 'Heather Holt', 'Platinum victory rolls', 'Slim', 'C', 'velvet robe', 'Loud and teasing; never repeats herself.', 'playful', ['witch', 'goth', 'police', 'strapon-queen']),
+  h('g159', 'Holly Delaney', 'Wine-red shoulder-length curls', 'Hourglass', 'G', 'pink micro dress', 'Cheeky and competitive; laughs when you squirm.', 'playful', ['bimbo', 'gym', 'pinup']),
+  h('g160', 'Tara Boone', 'Rose-gold pixie cut', 'Statuesque', 'E', 'cardigan and pleated skirt', 'Smoky-voiced and teasing; makes you say thank you.', 'sultry', ['librarian', 'bimbo', 'hentai', 'witch']),
+  h('g161', 'Lorena Stanton', 'Chocolate long waves', 'Statuesque', 'B', 'cat-ear hoodie dress', 'Giggly and wicked; laughs when you squirm.', 'playful', ['catgirl', 'librarian']),
+  h('g162', 'Taylor Garner', 'Pastel pink sleek ponytail', 'Muscular', 'D', 'black lace dress and hat', 'Quietly cruel; rewards obedience with praise.', 'cold', ['witch', 'viking', 'gamer-girl']),
+  h('g163', 'Riley Park', 'Snow-white victory rolls', 'Petite and busty', 'D', 'black lace dress and hat', 'Giggly and wicked; loves your forms on display.', 'playful', ['witch', 'siren']),
+  h('g164', 'Anna Nolan', 'Honey-blonde side-swept bangs', 'Soft and voluptuous', 'E', 'sailor cosplay', 'Strict and precise; hates excuses.', 'stern', ['schoolgirl-cosplay', 'fantasy-queen']),
+  h('g165', 'Vanessa Donovan', 'Platinum braided crown', 'Petite and busty', 'F', 'leather harness over a bodysuit', 'Gentle and patient; counts everything out loud.', 'sweet', ['strapon-queen', 'fantasy-queen', 'punk', 'gym']),
+  h('g166', 'Hana Becker', 'Teal high ponytail', 'Soft and voluptuous', 'B', 'collar and striped thigh-highs', 'Bratty and mischievous; rewards obedience with praise.', 'playful', ['catgirl', 'police']),
+  h('g167', 'Abigail Benson', 'Auburn sleek ponytail', 'Curvy', 'H', 'studded corset', 'Giggly and wicked; counts everything out loud.', 'playful', ['punk', 'witch', 'latex-domme', 'strapon-queen']),
+  h('g168', 'Leah Ingram', 'Neon blue sleek ponytail', 'Petite', 'F', 'pink latex dress', 'Demanding but fair; plans everything to the minute.', 'stern', ['bimbo', 'vampire']),
+  h('g169', 'Sienna Lawson', 'Neon blue sleek ponytail', 'Statuesque', 'C', 'black lingerie and harness', 'Calm and merciless; spoils you afterwards.', 'cold', ['strapon-queen', 'succubus', 'punk', 'gym']),
+  h('g170', 'Lucia Brennan', 'Raven side-swept bangs', 'Pear-shaped', 'C', 'leather harness over a bodysuit', 'Commanding and proud; whispers instead of shouting.', 'stern', ['strapon-queen', 'milf']),
+  h('g171', 'Chloe Pruitt', 'Lilac long straight hair', 'Slim', 'C', 'crop top and booty shorts', 'Strict and precise; never repeats herself.', 'stern', ['gym', 'strapon-queen']),
+  h('g172', 'Gabriella Ochoa', 'Emerald victory rolls', 'Toned', 'D', 'fur cloak and leather', 'Commanding and proud; counts everything out loud.', 'stern', ['viking', 'succubus']),
+  h('g173', 'Alina Dawson', 'Platinum sleek ponytail', 'Statuesque', 'B', 'knit dress', 'Bubbly and caring; makes you curtsy.', 'sweet', ['librarian', 'schoolgirl-cosplay', 'catgirl']),
+  h('g174', 'Aria Sullivan', 'Chocolate undercut', 'Slim', 'D', 'frilly magical-girl dress', 'Cheeky and competitive; loves photos of you.', 'playful', ['anime', 'gamer-girl']),
+  h('g175', 'Kylie Jennings', 'Ash-blonde curly mane', 'Tall and leggy', 'E', 'braided leather armor', 'Slow and seductive; whispers instead of shouting.', 'sultry', ['viking', 'siren']),
+  h('g176', 'Valentina Macias', 'Pastel pink victory rolls', 'Thick-thighed', 'E', 'frilly magical-girl dress', 'Loud and teasing; counts everything out loud.', 'playful', ['anime', 'fantasy-queen', 'librarian', 'catgirl']),
+  h('g177', 'Molly Hendricks', 'Pastel pink shoulder-length curls', 'Petite and busty', 'E', 'apron over lingerie', 'Lazy and sensual; collects pretty lingerie for you.', 'sultry', ['maid', 'milf', 'strapon-queen']),
+  h('g178', 'Kelly Keller', 'Caramel messy bun', 'Toned', 'C', 'fur cloak and leather', 'Disciplined and exacting; talks you through every step.', 'stern', ['viking', 'fantasy-queen']),
+  h('g179', 'Brooke Maddox', 'Rose-gold blunt bob', 'Muscular', 'DD', 'fur cloak and leather', 'Bubbly and caring; rewards obedience with praise.', 'sweet', ['viking', 'vampire', 'bimbo', 'strapon-queen']),
+  h('g180', 'Lauren Quintero', 'Rose-gold messy bun', 'Pear-shaped', 'B', 'denim shorts and plaid shirt', 'Bratty and mischievous; whispers instead of shouting.', 'playful', ['cowgirl', 'hentai']),
+  h('g181', 'Erica Kemp', 'Snow-white space buns', 'Petite and busty', 'B', 'corset and long skirt', 'Icy and detached; hates excuses.', 'cold', ['witch', 'police', 'sweet-tease']),
+  h('g182', 'Victoria Lindgren', 'Copper long waves', 'Statuesque', 'E', 'high-waist bikini', 'Shy but secretly kinky; adores slow undressing.', 'sweet', ['pinup', 'catgirl', 'gamer-girl']),
+  h('g183', 'Bailey Hull', 'Silver victory rolls', 'Willowy', 'C', 'Victorian mourning dress', 'Demanding but fair; talks you through every step.', 'stern', ['vampire', 'hentai']),
+  h('g184', 'Savannah Wheeler', 'Raven high ponytail', 'Muscular', 'B', 'jeweled corset and cape', 'Strict and precise; laughs when you squirm.', 'stern', ['fantasy-queen', 'witch', 'cowgirl']),
+  h('g185', 'Freya Pearson', 'Pastel pink space buns', 'Statuesque', 'C', 'tight one-piece gym suit', 'Loud and teasing; insists on eye contact.', 'playful', ['gym', 'punk']),
+  h('g186', 'Brittany Chen', 'Strawberry-blonde twin tails', 'Muscular', 'D', 'nurse uniform and stockings', 'Bubbly and caring; hates excuses.', 'sweet', ['nurse', 'librarian']),
+  h('g187', 'Kira Tucker', 'Wine-red braided crown', 'Willowy', 'F', 'black bodysuit with tail', 'Loud and teasing; talks you through every step.', 'playful', ['catgirl', 'pinup']),
+  h('g188', 'Scarlett Bradley', 'Strawberry-blonde long waves', 'Soft and voluptuous', 'D', 'black lingerie and harness', 'Disciplined and exacting; spoils you afterwards.', 'stern', ['strapon-queen', 'viking']),
+  h('g189', 'Emma Hoffman', 'Snow-white curly mane', 'Slim', 'F', 'velvet robe', 'Bratty and mischievous; insists on eye contact.', 'playful', ['witch', 'gamer-girl', 'nurse', 'succubus']),
+  h('g190', 'Paola Ibarra', 'Copper twin tails', 'Soft and voluptuous', 'B', 'shell bra and sheer sarong', 'Lazy and sensual; adores slow undressing.', 'sultry', ['siren', 'vampire']),
+  h('g191', 'Jenna Lowry', 'Raven twin tails', 'Pear-shaped', 'D', 'leather harness over a bodysuit', 'Slow and seductive; counts everything out loud.', 'sultry', ['strapon-queen', 'schoolgirl-cosplay', 'milf', 'sugar-mommy']),
+  h('g192', 'Daria Whitlock', 'Copper space buns', 'Petite', 'G', 'black lace cape dress', 'Smoky-voiced and teasing; hates excuses.', 'sultry', ['vampire', 'schoolgirl-cosplay', 'punk']),
+  h('g193', 'Kelsey Vance', 'Emerald pixie cut', 'Petite and busty', 'C', 'black lingerie and harness', 'Quietly cruel; makes you curtsy.', 'cold', ['strapon-queen', 'cyberpunk']),
+  h('g194', 'Kristen Farley', 'Teal messy bun', 'Petite', 'E', 'crop top and booty shorts', 'Giggly and wicked; makes you curtsy.', 'playful', ['gym', 'strapon-queen', 'bimbo', 'viking']),
+  h('g195', 'Haley Griffin', 'Silver messy bun', 'Curvy', 'D', 'black corset and tail', 'Lazy and sensual; collects pretty lingerie for you.', 'sultry', ['succubus', 'viking']),
+  h('g196', 'Rachel Larsen', 'Wine-red shoulder-length curls', 'Soft and voluptuous', 'H', 'holographic vinyl jacket', 'Icy and detached; spoils you afterwards.', 'cold', ['cyberpunk', 'vampire']),
+  h('g197', 'Zoe Townsend', 'Caramel undercut', 'Curvy', 'B', 'tutu and tights', 'Cheeky and competitive; writes rules on your mirror.', 'playful', ['ballet', 'nurse', 'office-boss', 'strapon-queen']),
+  h('g198', 'Lily Berg', 'Chocolate long straight hair', 'Thick-thighed', 'B', 'black leotard and wrap skirt', 'Calm and merciless; collects pretty lingerie for you.', 'cold', ['ballet', 'maid', 'milf', 'nurse']),
+  h('g199', 'Kendra Dunn', 'Teal blunt bob', 'Toned', 'F', 'band tee and plaid skirt', 'Giggly and wicked; spoils you afterwards.', 'playful', ['punk', 'tantric', 'gym', 'goth']),
+  h('g200', 'Naomi Grant', 'Chestnut long waves', 'Statuesque', 'D', 'studded corset', 'Disciplined and exacting; talks you through every step.', 'stern', ['punk', 'cowgirl']),
+  h('g201', 'Becca Duval', 'Lilac side-swept bangs', 'Statuesque', 'D', 'black corset and tail', 'Strict and precise; whispers instead of shouting.', 'stern', ['succubus', 'cowgirl']),
+  h('g202', 'Olivia Garrison', 'Wine-red victory rolls', 'Muscular', 'E', 'tartan skirt and tied blouse', 'Strict and precise; plans everything to the minute.', 'stern', ['schoolgirl-cosplay', 'gamer-girl']),
+  h('g203', 'Candice Barlow', 'Pastel pink space buns', 'Willowy', 'F', 'velvet robe', 'Loud and teasing; counts everything out loud.', 'playful', ['witch', 'sweet-tease', 'fantasy-queen']),
+  h('g204', 'Madison Easton', 'Snow-white pixie cut', 'Statuesque', 'C', 'knit dress', 'Bubbly and caring; loves making you blush.', 'sweet', ['librarian', 'elf', 'gamer-girl', 'bimbo']),
+  h('g205', 'Stella Dalton', 'Honey-blonde twin tails', 'Petite', 'DD', 'black lace dress and hat', 'Loud and teasing; whispers instead of shouting.', 'playful', ['witch', 'fantasy-queen', 'ballet', 'cowgirl']),
+  h('g206', 'Gianna Nguyen', 'Lilac curly mane', 'Muscular', 'C', 'gold-trimmed velvet gown', 'Disciplined and exacting; writes rules on your mirror.', 'stern', ['fantasy-queen', 'vampire']),
+  h('g207', 'Audrey Everett', 'Snow-white high ponytail', 'Toned', 'B', 'black leotard and wrap skirt', 'Aloof and elegant; judges your gaming harshly.', 'cold', ['ballet', 'office-boss', 'nurse', 'sugar-mommy']),
+  h('g208', 'Maya Vargas', 'Caramel undercut', 'Petite', 'DD', 'red velvet corset gown', 'Calm and merciless; loves making you blush.', 'cold', ['vampire', 'witch']),
+  h('g209', 'Natalie Jarvis', 'Neon blue messy bun', 'Pear-shaped', 'G', 'black latex catsuit', 'Icy and detached; never repeats herself.', 'cold', ['latex-domme', 'strapon-queen', 'succubus']),
+  h('g210', 'Natasha Sutton', 'Silver victory rolls', 'Willowy', 'E', 'oversized hoodie and thigh-highs', 'Giggly and wicked; counts everything out loud.', 'playful', ['anime', 'elf', 'bimbo', 'sweet-tease']),
+  h('g211', 'Courtney Lloyd', 'Pastel pink sleek ponytail', 'Soft and voluptuous', 'E', 'Victorian mourning dress', 'Smoky-voiced and teasing; whispers instead of shouting.', 'sultry', ['vampire', 'office-boss', 'viking', 'elf']),
+  h('g212', 'Katie Mercer', 'Caramel long waves', 'Slim', 'G', 'fringed suede and boots', 'Calm and merciless; hates excuses.', 'cold', ['cowgirl', 'viking']),
+  h('g213', 'Melissa Whitman', 'Pastel pink long straight hair', 'Tall and leggy', 'DD', 'chainmail bikini', 'Demanding but fair; loves making you blush.', 'stern', ['viking', 'fantasy-queen', 'vampire', 'witch']),
+  h('g214', 'Kate Mason', 'Auburn messy bun', 'Curvy', 'B', 'thigh boots and a strap-on harness', 'Hungry and possessive; adores slow undressing.', 'sultry', ['strapon-queen', 'bimbo']),
+  h('g215', 'Megan Callahan', 'Emerald victory rolls', 'Toned', 'B', 'black bodysuit with tail', 'Warm and affectionate; loves your forms on display.', 'sweet', ['catgirl', 'succubus', 'bimbo', 'anime']),
+  h('g216', 'Ava Thornton', 'Pastel pink long waves', 'Athletic', 'E', 'satin robe over lingerie', 'Bratty and mischievous; laughs when you squirm.', 'playful', ['milf', 'ballet', 'fantasy-queen']),
 ];
-
-// ---------- generated roster ----------
-const FIRST = (
-  'Aelith Albreda Alcyone Amarante Anwen Arabeth Ardith Aubrielle Avelina Azura Belisande Benedetta Berenike Brisane ' +
-  'Briseis Caelia Calantha Camberly Carys Cassiel Celestine Ceridwen Clemence Coralie Corisande Cosima Cressida Damaris ' +
-  'Delphia Domenica Drusilla Elowen Elspeth Emberly Eirlys Esmerine Estrid Eulalie Evadne Fenella Fianna Fiorella Florimel ' +
-  'Gwenllian Gisela Gloriana Guinevra Halcyon Hesper Honorine Idonea Ilsabet Isaura Iolanthe Jessamy Jocasta Kerensa ' +
-  'Kestra Lavinia Leocadia Liora Lisandra Lucasta Lysandra Maelis Marisela Melisande Merewyn Mireille Morwenna Nerys Nimue ' +
-  'Noelani Oriel Orsola Ottoline Perpetua Primrose Quenby Romilly Rosalind Rowena Sabeline Sapphira Severine Sidonie ' +
-  'Solenne Sorcha Sunniva Talwyn Thessaly Tindra Ulrika Valmai Verity Wilhelmina Winifred Xanthe Yseult Zinnia Zuleika ' +
-  'Amabel Anouk Aurore Belphoebe Blodwen Briony Calla Carmela Celandine Cerise Columbine Dagny Edda Eira Fable Galatea ' +
-  'Germaine Greer Hedda Henrietta Hollis Isadora Jacinta Kalinda Kirsi Larkin Leontyne Linnea Lorelei Lucienne Lumi ' +
-  'Magnolia Malvina Marguerite Melusine Minerva Mirabel Odessa Ondine Ophelia Orla Paloma Pandora Petronella Quilla ' +
-  'Renata Rosamund Saffron Salome Saskia Senna Sigrid Solveig Tabitha Tallulah Temperance Theodora Tova Ursa Vashti ' +
-  'Wren Yara Ysabel Zephyrine Zosia Ambrosia Anthea Asteria Bryony Cleona Dorothea Eglantine Giselle Hyacinth Isobel ' +
-  'Junia Kalista Leticia Lilou Maelle Marjolaine Nolwenn Oona Prisca Rosalba Thisbe Undine Violaine Wynne Xenia Yvaine ' +
-  'Liesel Malin Nanette Ottilie Philomena Romaine Sylvaine Ilse Gudrun Ragna Brynja Thyra Signe Freja Svana Runa Embla ' +
-  'Ylva Ebba Idun Kaija Aino Tuuli Mirja Riikka Mayuri Hotaru Suzume Chiyoko Kanade Mitsuki Yuzuha Rinne Kohana Sayoko ' +
-  'Tsubaki Ayame Kaede Shion Momiji Esperanza Graciela Luzmila Rocio Soledad Ximena Bozena Dragana Ludmila Miroslava ' +
-  'Radka Svetla Zlata Jarmila Ksenia Zdenka Oksana Vesna Ilaria Ornella Fiametta Annunziata Bellatrix Clotilde Ermengarde'
-).split(' ');
-
-const SUR_A = ['Ash', 'Bram', 'Cinder', 'Dusk', 'Ember', 'Fen', 'Gloom', 'Hazel', 'Ivory', 'Lark', 'Moon', 'Night', 'Opal', 'Pine',
-  'Quill', 'Raven', 'Silver', 'Thorn', 'Velvet', 'Wild', 'Winter', 'Rose', 'Storm', 'Frost', 'Ever', 'Mist', 'Briar', 'Copper',
-  'Hollow', 'Lace', 'Plum', 'Sable', 'Willow', 'Amber', 'Crimson', 'Satin', 'Wisp', 'Vesper', 'Myrtle', 'Glimmer'];
-const SUR_B = ['vale', 'mere', 'crest', 'bourne', 'hart', 'ridge', 'light', 'song', 'whisper', 'bloom', 'fall', 'grove',
-  'thorne', 'wick', 'shade', 'haven', 'veil', 'ling', 'sworth', 'mantle', 'kiss', 'spire', 'ford', 'lowe'];
-
-const HAIR_COLOR = ['Jet-black', 'Raven', 'Platinum', 'Honey-blonde', 'Strawberry-blonde', 'Copper', 'Auburn', 'Chestnut',
-  'Chocolate', 'Silver', 'Lilac', 'Pastel pink', 'Neon blue', 'Emerald', 'Wine-red', 'Ash-blonde', 'Caramel', 'Snow-white', 'Teal', 'Rose-gold'];
-const HAIR_STYLE = ['long waves', 'sleek ponytail', 'blunt bob', 'pixie cut', 'twin tails', 'messy bun', 'braided crown', 'curly mane',
-  'high ponytail', 'side-swept bangs', 'undercut', 'victory rolls', 'long straight hair', 'shoulder-length curls', 'space buns'];
-const BODY = ['Petite', 'Slim', 'Athletic', 'Curvy', 'Hourglass', 'Tall and leggy', 'Soft and voluptuous', 'Toned', 'Thick-thighed',
-  'Willowy', 'Muscular', 'Pear-shaped', 'Petite and busty', 'Statuesque'];
-const TRAITS: Record<Tone, string[]> = {
-  sweet: ['Warm and affectionate', 'Gentle and patient', 'Bubbly and caring', 'Shy but secretly kinky'],
-  stern: ['Strict and precise', 'Commanding and proud', 'Demanding but fair', 'Disciplined and exacting'],
-  playful: ['Bratty and mischievous', 'Loud and teasing', 'Giggly and wicked', 'Cheeky and competitive'],
-  cold: ['Icy and detached', 'Quietly cruel', 'Aloof and elegant', 'Calm and merciless'],
-  sultry: ['Slow and seductive', 'Hungry and possessive', 'Smoky-voiced and teasing', 'Lazy and sensual'],
-};
-const QUIRKS = ['loves making you blush', 'counts everything out loud', 'rewards obedience with praise', 'hates excuses',
-  'collects pretty lingerie for you', 'talks you through every step', 'laughs when you squirm', 'insists on eye contact',
-  'loves your forms on display', 'makes you say thank you', 'keeps you guessing', 'writes rules on your mirror',
-  'loves photos of you', 'never repeats herself', 'adores slow undressing', 'judges your gaming harshly',
-  'plans everything to the minute', 'spoils you afterwards', 'whispers instead of shouting', 'makes you curtsy'];
-const GROUPS: KnownFor[][] = [
-  ['latex-domme', 'strapon-queen', 'goth', 'vampire', 'succubus', 'police', 'punk', 'witch', 'cyberpunk'],
-  ['sweet-tease', 'anime', 'catgirl', 'schoolgirl-cosplay', 'gamer-girl', 'pinup', 'librarian', 'bimbo', 'hentai'],
-  ['milf', 'office-boss', 'sugar-mommy', 'nurse', 'ballet', 'maid', 'librarian', 'strapon-queen'],
-  ['fantasy-queen', 'elf', 'siren', 'succubus', 'vampire', 'witch', 'viking', 'hentai'],
-  ['gym', 'cowgirl', 'tantric', 'viking', 'bimbo', 'strapon-queen', 'punk'],
-];
-const CUP_POOL = ['B', 'B', 'C', 'C', 'C', 'D', 'D', 'D', 'DD', 'DD', 'E', 'E', 'F', 'G', 'H'];
-const TONES: Tone[] = ['sweet', 'stern', 'playful', 'cold', 'sultry'];
-
-function seeded(n: number) {
-  let a = (n * 2654435761) >>> 0;
-  return () => {
-    a = (a + 0x6d2b79f5) | 0;
-    let t = Math.imul(a ^ (a >>> 15), 1 | a);
-    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
-    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
-  };
-}
-
-export const ROSTER_SIZE = 250;
-
-function generate(count: number, taken: Set<string>): Star[] {
-  const out: Star[] = [];
-  const firsts = FIRST.filter((f, i) => FIRST.indexOf(f) === i && !taken.has(f));
-  const usedSur = new Set<string>();
-  for (let i = 0; out.length < count && i < firsts.length; i++) {
-    const r = seeded(i + 1);
-    const pk = <T,>(a: T[]) => a[Math.floor(r() * a.length)];
-    let sur = '';
-    for (let tries = 0; tries < 50 && (!sur || usedSur.has(sur)); tries++) sur = pk(SUR_A) + pk(SUR_B);
-    usedSur.add(sur);
-    const group = pk(GROUPS);
-    const primary = pk(group);
-    const n = 2 + Math.floor(r() * 3); // 2-4 styles
-    const known: KnownFor[] = [primary];
-    while (known.length < n) {
-      const c = r() < 0.7 ? pk(group) : pk(STYLE_DEFS).id;
-      if (!known.includes(c)) known.push(c);
-    }
-    const def = STYLE_BY_ID[primary];
-    const tone = def.tone && r() < 0.6 ? def.tone : pk(TONES);
-    let cup = pk(CUP_POOL);
-    if (primary === 'bimbo' || primary === 'hentai') cup = pk(['F', 'G', 'H']);
-    if (primary === 'ballet') cup = 'B';
-    out.push({
-      id: `g${String(i + 1).padStart(3, '0')}`,
-      name: `${firsts[i]} ${sur}`,
-      hair: `${pk(HAIR_COLOR)} ${pk(HAIR_STYLE)}`,
-      body: pk(BODY),
-      cup,
-      wardrobe: pk(def.wardrobes),
-      personality: `${pk(TRAITS[tone])}; ${pk(QUIRKS)}.`,
-      tone,
-      knownFor: known,
-      enabled: true,
-    });
-  }
-  return out;
-}
-
-const takenFirst = new Set(HANDMADE.map((s) => s.name.split(' ').find((p) => !['Queen', 'Mistress', 'Nurse', 'Professor', 'Lady', 'Captain', 'Officer'].includes(p))!));
-export const DEFAULT_STARS: Star[] = [...HANDMADE, ...generate(ROSTER_SIZE - HANDMADE.length, takenFirst)];

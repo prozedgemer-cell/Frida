@@ -21,31 +21,23 @@ const stars = DEFAULT_STARS.map((s) => ({ ...s }));
 if (stars.length !== 250) fail(`roster size ${stars.length}`);
 if (new Set(stars.map((s) => s.id)).size !== stars.length) fail('duplicate ids');
 if (new Set(stars.map((s) => s.name.toLowerCase())).size !== stars.length) fail('duplicate names');
-const firstNames = stars.map((s) => s.name.split(' ').filter((p) => !['Queen', 'Mistress', 'Nurse', 'Professor', 'Lady', 'Captain', 'Officer'].includes(p))[0]);
-if (new Set(firstNames).size !== firstNames.length) fail('duplicate first names');
+for (const s of stars) if (!/^[A-Z][a-z]+ (Mc)?[A-Z][a-z]+$/.test(s.name)) fail(`not a plain First Last name: ${s.name}`);
 for (const s of stars) {
   if (s.knownFor.length < 2 || s.knownFor.length > 4) fail(`${s.name} knownFor ${s.knownFor.length}`);
   if (s.knownFor.some((k) => !STYLE_BY_ID[k])) fail(`${s.name} unknown style`);
   if (!/^(B|C|D|DD|E|F|G|H)$/.test(s.cup)) fail(`${s.name} cup ${s.cup}`);
 }
-// famous adult-performer / celebrity names that must never appear (full names and stage first names)
-const FAMOUS_FULL = ['riley reid', 'mia khalifa', 'lana rhoades', 'sasha grey', 'jenna jameson', 'asa akira', 'abella danger',
-  'angela white', 'lisa ann', 'tori black', 'dani daniels', 'brandi love', 'cherie deville', 'julia ann', 'alexis texas',
-  'bree olson', 'belle delphine', 'eva elfie', 'lena paul', 'kagney linn karter', 'jesse jane', 'gianna dior', 'emily willis',
-  'violet myers', 'valentina nappi', 'elsa jean', 'adriana chechik', 'nicole aniston', 'madison ivy', 'romi rain', 'kali roses',
-  'vina sky', 'mia malkova', 'skye blue', 'ivy wolfe', 'eva lovia', 'jynx maze', 'joanna angel', 'bonnie rotten', 'luna star',
-  'stormy daniels', 'tera patrick', 'sunny leone', 'jenna haze', 'kendra lust', 'nikki benz', 'ava addams', 'phoenix marie',
-  'lexi belle', 'kimmy granger', 'aidra fox', 'remy lacroix', 'anissa kate', 'little caprice', 'sophie dee', 'kayden kross',
-  'lela star', 'august ames', 'dillion harper', 'blake blossom', 'savannah bond', 'autumn falls', 'coco austin'];
-const FAMOUS_FIRST = ['riley', 'mia', 'lana', 'sasha', 'jenna', 'asa', 'abella', 'angela', 'lisa', 'tori', 'dani', 'brandi', 'cherie',
-  'alexis', 'bree', 'belle', 'eva', 'lena', 'kagney', 'gianna', 'emily', 'violet', 'valentina', 'elsa', 'adriana', 'nicole', 'madison',
-  'romi', 'kali', 'vina', 'skye', 'ivy', 'jynx', 'joanna', 'bonnie', 'luna', 'stormy', 'tera', 'sunny', 'kendra', 'nikki', 'ava',
-  'phoenix', 'lexi', 'kimmy', 'aidra', 'remy', 'anissa', 'sophie', 'kayden', 'lela', 'august', 'dillion', 'blake', 'savannah', 'autumn'];
-for (const s of stars) {
-  const n = s.name.toLowerCase();
-  if (FAMOUS_FULL.some((f) => n.includes(f))) fail(`famous name: ${s.name}`);
+// real adult performers / celebrities that must never be used (scripts/name-blocklist.json)
+const BLOCK: string[] = JSON.parse(readFileSync('scripts/name-blocklist.json', 'utf8'));
+for (const s of stars) if (BLOCK.includes(s.name.toLowerCase())) fail(`blocklisted name: ${s.name}`);
+// old fantasy-style names must be gone
+for (const old of ['Quilla', 'Seraphine', 'Ermengarde', 'Margaux', 'Silverford', 'Vellichor']) if (stars.some((s) => s.name.includes(old))) fail(`old name left: ${old}`);
+// styles that share a look must still have their own distinct tops
+for (const a of STYLE_DEFS) for (const b of STYLE_DEFS) if (a.id < b.id && a.look === b.look) {
+  const ta = new Set(a.own?.top ?? []), tb = b.own?.top ?? [];
+  if (!a.own?.top || !b.own?.top) fail(`${a.id}/${b.id} share look '${a.look}' without own tops`);
+  if (tb.some((t) => ta.has(t))) fail(`${a.id}/${b.id} share a top`);
 }
-for (const f of firstNames) if (FAMOUS_FIRST.includes(f.toLowerCase())) fail(`famous stage first name: ${f}`);
 
 // --- 400-day simulation ---
 const DAYS = 400;
@@ -54,6 +46,7 @@ const start = '2026-10-04';
 const lastSeen: Record<string, { date: string; style: string }> = {};
 let edg = 0, vag = 0, maxCh = 0, checked = 0, rotations = 0;
 const styleCount: Record<string, number> = {};
+let punkDays = 0;
 const recent: string[] = [];
 for (let n = 0; n < DAYS; n++) {
   const d = addDays(start, n);
@@ -68,6 +61,12 @@ for (let n = 0; n < DAYS; n++) {
   if (prev) { rotations++; if (prev.style === plan.styleId) fail(`${star.name} same style twice (${prev.date} / ${d})`); }
   lastSeen[id] = { date: d, style: plan.styleId };
   styleCount[plan.styleId] = (styleCount[plan.styleId] ?? 0) + 1;
+  if (plan.styleId === 'punk') {
+    punkDays++;
+    const o = plan.outfit;
+    if (!STYLE_BY_ID.punk.own!.top!.includes(o.top) || !STYLE_BY_ID.punk.own!.bottom!.includes(o.bottom)) fail(`punk outfit not punk: ${o.top} / ${o.bottom}`);
+    if (/velvet|lace corset|maxi/i.test(JSON.stringify(o))) fail(`goth piece on punk day: ${o.summary}`);
+  }
   const rec: DayRecord = { plan, games: [], status: {}, sexDone: false };
   for (const sc of [null, 5, 35, 95]) for (const st of ['none', 'done', 'failed', 'mixed'] as const) {
     const r: DayRecord = structuredClone(rec);
@@ -101,6 +100,19 @@ for (let n = 0; n < 30; n++) {
   lastS = p.styleId; rot[d] = { plan: p, games: [], status: {}, sexDone: false };
 }
 
+// keep-today check: rename today's star, saved checkmarks and games survive
+import('../src/engine').then(({ ensureDay }) => {
+  const base = { version: 2 as const, defaultCup: 'C', stars: stars.map((x) => ({ ...x })), days: {} as Record<string, DayRecord> };
+  const d1 = ensureDay(base, start);
+  const rec = d1.days[start];
+  rec.status[rec.plan.challenges[0].id] = 'done';
+  rec.games.push({ id: 'g', game: 'CS2', kills: 10, deaths: 5, assists: 2, win: true, score: 70, at: 0 });
+  const renamed = { ...d1, stars: d1.stars.map((x) => (x.id === rec.plan.starId ? { ...x, name: 'Test Renamed' } : x)) };
+  const d2 = ensureDay(renamed, start);
+  if (d2.days[start].plan.starName !== 'Test Renamed' || d2.days[start].games.length !== 1 || !Object.keys(d2.days[start].status).length) fail('rename lost today data');
+  console.log('keep-today on rename: ok');
+});
+console.log(`punk days: ${punkDays}, all with punk pieces`);
 console.log(`roster: ${stars.length} stars, ${STYLE_DEFS.length} styles, ${FORMS.length} sex forms, names unique, famous-name check passed`);
 console.log(`${DAYS} days, ${checked} effective-plan variants: 'edg' ${edg} | vaginal ${vag} | max challenges ${maxCh}`);
 console.log(`style rotation: ${rotations} repeat appearances, all with a new style; forced 30x rotation ok; styles used ${Object.keys(styleCount).length}/${STYLE_DEFS.length}`);

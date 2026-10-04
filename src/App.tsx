@@ -2,21 +2,13 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { CUPS } from './content';
 import { STYLE_DEFS, styleLabel } from './looks';
 import {
-  GAMES, MAX_CHALLENGES, effectivePlan, generateDay, pickStarId, scoreGame, starShort, todayKey,
+  GAMES, MAX_CHALLENGES, effectivePlan, ensureDay, scoreGame, starShort, todayKey,
   type Mood,
 } from './engine';
 import { freshData, loadData, saveData } from './storage';
 import type { AppData, ChallengeStatus, DayRecord, Game, GameLog, KnownFor, Star, Tone } from './types';
 
 type Tab = 'today' | 'history' | 'settings';
-
-function ensureDay(d: AppData, date: string): AppData {
-  if (d.days[date]) return d;
-  const id = pickStarId(date, d.stars, d.days);
-  const star = d.stars.find((s) => s.id === id) ?? d.stars[0];
-  const rec: DayRecord = { plan: generateDay(date, star, d.defaultCup, d.days), games: [], status: {}, sexDone: false };
-  return { ...d, days: { ...d.days, [date]: rec } };
-}
 
 export default function App() {
   const [today, setToday] = useState(todayKey());
@@ -77,7 +69,7 @@ function TodayView({ rec, star, update }: { rec: DayRecord; star?: Star; update:
   useEffect(() => { const t = window.setInterval(() => setNow(new Date()), 60_000); return () => window.clearInterval(t); }, []);
   const { plan, fx, missedIds } = useMemo(() => effectivePlan(rec, now), [rec, now]);
   const o = plan.outfit;
-  const short = starShort({ name: plan.starName });
+  const short = starShort({ name: star?.name ?? plan.starName });
   const setStatus = (id: string, st: ChallengeStatus) =>
     update((r) => {
       const status = { ...(r.status ?? {}) };
@@ -89,7 +81,7 @@ function TodayView({ rec, star, update }: { rec: DayRecord; star?: Star; update:
     <>
       <section className="card star">
         <div className="kicker">Today you belong to</div>
-        <h1>{plan.starName}</h1>
+        <h1>{star?.name ?? plan.starName}</h1>
         {star && (
           <>
             <p className="todaystyle">Today: {plan.styleLabel}</p>
@@ -232,7 +224,7 @@ function HistoryView({ data, today }: { data: AppData; today: string }) {
         return (
           <section className="card hist" key={key}>
             <div className="kicker">{key === today ? 'Today' : new Date(key + 'T12:00').toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' })}</div>
-            <h3>{plan.starName} <span className="muted small">· {plan.styleLabel}</span></h3>
+            <h3>{data.stars.find((x) => x.id === plan.starId)?.name ?? plan.starName} <span className="muted small">· {plan.styleLabel}</span></h3>
             <p className="small">{plan.outfit.summary}</p>
             <p className="small">{rec.sexDone ? '\u2713' : '\u25cb'} {plan.sex.formLabel} · {plan.sex.minutes} min · {plan.sex.intensity}</p>
             <p className="small muted">{fx.line}{fx.score !== null ? ` · Game score ${fx.score}` : ''}</p>
@@ -274,7 +266,7 @@ function SettingsView({ data, setData, today }: { data: AppData; setData: (fn: (
     if (!s.name.trim() || s.knownFor.length === 0) return;
     setData((d) => {
       const exists = d.stars.some((x) => x.id === s.id);
-      return { ...d, stars: exists ? d.stars.map((x) => (x.id === s.id ? s : x)) : [s, ...d.stars] };
+      return ensureDay({ ...d, stars: exists ? d.stars.map((x) => (x.id === s.id ? s : x)) : [s, ...d.stars] }, today);
     });
     setEditing(null);
   };

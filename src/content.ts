@@ -6,6 +6,8 @@ export interface Item { t: string; s: (Style | 'any')[]; }
 const i = (t: string, ...s: (Style | 'any')[]): Item => ({ t, s });
 
 export const PANTIES: Item[] = [
+  i('black panties with pink skull print', 'punk'),
+  i('tartan cheeky panties', 'punk'),
   i('denim-blue lace cheeky panties', 'western'),
   i('red gingham panties', 'western', 'retro'),
   i('pink lace panties', 'sweet', 'bimbo', 'anime'),
@@ -23,6 +25,8 @@ export const PANTIES: Item[] = [
 ];
 
 export const BRAS: Item[] = [
+  i('black bralette with safety pins', 'punk'),
+  i('studded vinyl bra', 'punk'),
   i('gingham push-up bra', 'western'),
   i('pink padded push-up bra', 'sweet', 'bimbo'),
   i('black lace balconette', 'classy', 'goth', 'office'),
@@ -38,6 +42,9 @@ export const BRAS: Item[] = [
 ];
 
 export const TOPS: Item[] = [
+  i('ripped band tee', 'punk'),
+  i('cropped band tee with safety pins', 'punk'),
+  i('sleeveless studded tank', 'punk'),
   i('knotted plaid shirt', 'western'),
   i('fringed suede crop top', 'western'),
   i('cropped pink cardigan', 'sweet', 'anime'),
@@ -56,6 +63,9 @@ export const TOPS: Item[] = [
 ];
 
 export const BOTTOMS: Item[] = [
+  i('red plaid mini skirt', 'punk'),
+  i('ripped denim mini skirt', 'punk'),
+  i('tartan bondage skirt with straps', 'punk'),
   i('denim cut-off shorts', 'western'),
   i('fringed suede mini skirt', 'western'),
   i('pleated pastel skirt', 'sweet', 'anime'),
@@ -73,6 +83,8 @@ export const BOTTOMS: Item[] = [
 ];
 
 export const LEGWEAR: Item[] = [
+  i('ripped fishnets', 'punk'),
+  i('torn black tights', 'punk'),
   i('sheer tan stockings', 'western', 'office'),
   i('white thigh-high socks', 'sweet', 'anime', 'nurse'),
   i('black seamed stockings', 'retro', 'classy', 'office'),
@@ -87,6 +99,8 @@ export const LEGWEAR: Item[] = [
 ];
 
 export const SHOES: Item[] = [
+  i('combat boots', 'punk'),
+  i('platform creepers', 'punk'),
   i('cowboy boots', 'western'),
   i('pink Mary Janes', 'sweet', 'anime'),
   i('black stilettos', 'classy', 'office', 'latex'),
@@ -101,6 +115,7 @@ export const SHOES: Item[] = [
 ];
 
 export const MAKEUP: Item[] = [
+  i('smudged black liner and dark lips', 'punk'),
   i('sun-kissed bronzer and gloss', 'western', 'sporty'),
   i('soft pink gloss and blush', 'sweet', 'anime'),
   i('red lips and winged liner', 'classy', 'retro', 'office'),
@@ -112,6 +127,8 @@ export const MAKEUP: Item[] = [
 ];
 
 export const WIGS: Item[] = [
+  i('bleached choppy wig', 'punk'),
+  i('half-shaved hot pink wig', 'punk'),
   i('long honey braids wig', 'western', 'fantasy'),
   i('long blonde wig', 'bimbo', 'classy', 'retro'),
   i('pink twin-tail wig', 'anime', 'sweet'),
@@ -126,6 +143,8 @@ export const WIGS: Item[] = [
 export interface Extra { t: string; s: (Style | 'any')[]; hard?: boolean; }
 const x = (t: string, hard: boolean, ...s: (Style | 'any')[]): Extra => ({ t, s, hard });
 export const EXTRAS: Extra[] = [
+  x('studded belt', false, 'punk'),
+  x('spiked wristband', false, 'punk'),
   x('pink heart choker', false, 'sweet', 'anime', 'bimbo'),
   x('leather collar with ring', true, 'latex', 'goth', 'any'),
   x('small butt plug', false, 'any'),

@@ -1,6 +1,6 @@
 export type Style =
   | 'sweet' | 'classy' | 'latex' | 'goth' | 'anime' | 'fantasy'
-  | 'office' | 'nurse' | 'sporty' | 'bimbo' | 'retro' | 'cyber' | 'western';
+  | 'office' | 'nurse' | 'sporty' | 'bimbo' | 'retro' | 'cyber' | 'western' | 'punk';
 
 /** A 'known for' style a star can bring on a given day. */
 export type KnownFor =
@@ -103,6 +103,7 @@ export interface DayRecord {
 
 export interface AppData {
   version: 2;
+  rosterVersion?: number;
   defaultCup: string;
   stars: Star[];
   days: Record<string, DayRecord>;
