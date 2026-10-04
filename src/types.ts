@@ -7,8 +7,8 @@ export type Leaning = 'soft' | 'mixed' | 'hard';
 export type Intensity = 'soft' | 'hard';
 
 export type FormId =
-  | 'strapon-oral' | 'pegging' | 'dildo-ride' | 'edging' | 'chastity'
-  | 'nipples' | 'milking' | 'bondage' | 'ruined' | 'mirror' | 'plug';
+  | 'strapon-oral' | 'pegging' | 'dildo-ride' | 'chastity' | 'nipples' | 'milking'
+  | 'bondage' | 'mirror' | 'plug' | 'striptease' | 'strapon-tease' | 'photo-tease';
 
 export interface Star {
   id: string;
@@ -53,10 +53,13 @@ export interface SexPlan {
 
 export type ChallengeKind = 'wear' | 'tease' | 'task' | 'gaming' | 'punishment' | 'reward';
 
+export type ChallengeStatus = 'done' | 'failed';
+
 export interface Challenge {
   id: string;
   kind: ChallengeKind;
   text: string;
+  link: string; // how it ties into today's sex
 }
 
 export interface DayPlan {
@@ -67,6 +70,8 @@ export interface DayPlan {
   sex: SexPlan;
   challenges: Challenge[];
   spare: { punishment: Challenge; reward: Challenge };
+  bonus: string; // detail when all 3 challenges are done
+  penalty: string; // detail when 2+ challenges failed
 }
 
 export type Game = 'CS2' | 'WARDOGS' | 'LoL' | 'Diablo IV' | 'Fortnite';
@@ -86,12 +91,12 @@ export interface GameLog {
 export interface DayRecord {
   plan: DayPlan;
   games: GameLog[];
-  done: Record<string, boolean>;
+  status: Record<string, ChallengeStatus>;
   sexDone: boolean;
 }
 
 export interface AppData {
-  version: 2;
+  version: 3;
   defaultCup: string;
   stars: Star[];
   days: Record<string, DayRecord>;

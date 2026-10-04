@@ -140,16 +140,20 @@ export const FORMS: Form[] = [
   { id: 'strapon-oral', label: 'Oral on her strap-on', soft: [10, 15], hard: [15, 25] },
   { id: 'pegging', label: 'Pegging (strap-on anal)', soft: [10, 20], hard: [20, 40] },
   { id: 'dildo-ride', label: 'Riding a dildo (anal)', soft: [10, 15], hard: [15, 30] },
-  { id: 'edging', label: 'Edging session', soft: [10, 20], hard: [25, 45] },
   { id: 'chastity', label: 'Chastity tease', soft: [15, 30], hard: [30, 60] },
-  { id: 'nipples', label: 'Breast & nipple play', soft: [10, 15], hard: [15, 25] },
+  { id: 'nipples', label: 'Breast & nipple tease', soft: [10, 15], hard: [15, 25] },
   { id: 'milking', label: 'Prostate milking (collect it)', soft: [15, 20], hard: [20, 40] },
   { id: 'bondage', label: 'Bondage tease', soft: [15, 20], hard: [25, 45] },
-  { id: 'ruined', label: 'Ruined orgasm', soft: [10, 15], hard: [15, 30] },
-  { id: 'mirror', label: 'Mirror tease in your forms', soft: [10, 15], hard: [15, 20] },
-  { id: 'plug', label: 'Plug training', soft: [20, 30], hard: [40, 90] },
+  { id: 'mirror', label: 'Mirror tease in your forms', soft: [10, 15], hard: [15, 25] },
+  { id: 'plug', label: 'Plug tease', soft: [20, 30], hard: [40, 90] },
+  { id: 'striptease', label: 'Lingerie strip-tease for her', soft: [10, 15], hard: [15, 25] },
+  { id: 'strapon-tease', label: 'Strap-on tease', soft: [10, 20], hard: [20, 30] },
+  { id: 'photo-tease', label: 'Photo & pose tease', soft: [10, 15], hard: [15, 25] },
 ];
 export const formLabel = (id: FormId) => FORMS.find((f) => f.id === id)?.label ?? id;
+export const PLUG_FORMS: FormId[] = ['pegging', 'dildo-ride', 'plug', 'milking'];
+export const LOOK_FORMS: FormId[] = ['mirror', 'photo-tease', 'striptease', 'nipples'];
+export const STRAP_FORMS: FormId[] = ['strapon-oral', 'strapon-tease', 'pegging'];
 
 export const LOCATIONS = [
   'the bedroom, lights dimmed', 'in front of the full-length mirror', 'the bathroom, by the mirror',
@@ -170,14 +174,15 @@ export const FORM_LINES: Record<FormId, string[]> = {
   'strapon-oral': ['You will kneel in your {item} and worship my strap-on with your glossy lips.', 'Slow and deep, eyes up at me, until I say you are a good girl.'],
   pegging: ['I will bend you over, lube you up, and take you with my strap-on.', 'Your {cup}-cup forms will bounce with every stroke while you thank me.'],
   'dildo-ride': ['You will ride your dildo for me, slowly at first, then faster.', 'Hands on your {cup}-cup breasts while you bounce, and you do not stop until I say.'],
-  edging: ['I want you right at the edge, again and again, and never over it.', 'Every time you get close you stop, breathe, and say thank you.'],
   chastity: ['Your cage stays locked while I tease your breasts and whisper in your ear.', 'You can squirm and beg, but the key stays with me.'],
   nipples: ['I will play with your {cup}-cup forms and pinch your nipples until you whimper.', 'Slow circles first, then clamps, and you will moan my name.'],
-  milking: ['I will milk you from behind, slowly, until you leak without any release.', 'Every drop gets collected in a little glass, and you know what happens next.'],
+  milking: ['I will milk you from behind, slowly and steadily, until you leak for me.', 'Every drop gets collected in a little glass, and you know what happens next.'],
   bondage: ['Wrists tied, ankles tied, and you only get to wait for my touch.', 'I tease you everywhere in your {item} and you cannot do a thing.'],
-  ruined: ['I will bring you all the way up and then take my hand away at the last second.', 'You will twitch, ruined and frustrated, and say thank you.'],
   mirror: ['You will pose in the mirror in your {item} and touch your {cup}-cup breasts for me.', 'Look at yourself, Frida, look how pretty and needy you are.'],
-  plug: ['Your plug goes in and stays in, and you go about your tasks with it.', 'Every few minutes you clench, and every time you think of me.'],
+  plug: ['Your plug goes in and stays in, and I tap it and twist it whenever I walk by.', 'Every time you clench, you think of me and blush.'],
+  striptease: ['Put on a song and strip for me, slowly, one piece of lingerie at a time.', 'Leave the {item} for last, and show off those {cup}-cup forms while you dance.'],
+  'strapon-tease': ['I will rub my strap-on over your {item} and along your thighs, slow and teasing.', 'You may kiss it and beg for it, but I decide when and how much.'],
+  'photo-tease': ['You will pose for me like a pin-up: arched back, pouty lips, {cup}-cup forms pushed together.', 'Every photo you take, I want you a little more undressed and a little more shameless.'],
 };
 
 export const LOC_LINES = ['We do it in {loc}, {min} minutes, no rushing.', 'Meet me in {loc}. You have {min} minutes of being mine.', 'Location: {loc}. Timer: {min} minutes. No excuses.'];
@@ -190,52 +195,86 @@ export const CLOSERS: Record<Tone, string[]> = {
   sultry: ['I will be watching you the whole time.', 'Mmm, I can hardly wait.'],
 };
 
-export interface CTemplate { kind: ChallengeKind; text: string; hard?: boolean; }
-const c = (kind: ChallengeKind, text: string, hard = false): CTemplate => ({ kind, text, hard });
-// Placeholders: {cup} {star} {panties} {legwear} {shoes}
+/** forms: only valid for these sex forms (undefined = any). link: how it ties to today's sex. */
+export interface CTemplate { kind: ChallengeKind; text: string; link: string; hard?: boolean; forms?: FormId[]; }
+const c = (kind: ChallengeKind, text: string, link: string, opts: { hard?: boolean; forms?: FormId[]; not?: FormId[] } = {}): CTemplate => ({
+  kind, text, link, hard: opts.hard,
+  forms: opts.forms ?? (opts.not ? ALL_FORMS.filter((f) => !opts.not!.includes(f)) : undefined),
+});
+const ALL_FORMS: FormId[] = ['strapon-oral', 'pegging', 'dildo-ride', 'chastity', 'nipples', 'milking', 'bondage', 'mirror', 'plug', 'striptease', 'strapon-tease', 'photo-tease'];
+
+// Placeholders: {cup} {star} {panties} {legwear} {shoes} {loc} {form}
 export const CHALLENGES: CTemplate[] = [
-  c('wear', 'Wear your {cup}-cup forms for at least 4 hours.'),
-  c('wear', 'Keep the {panties} on all day, even to bed.'),
-  c('wear', 'Wear the {legwear} for 3 hours at home.'),
-  c('wear', 'Walk in your {shoes} for 15 minutes total.'),
-  c('wear', 'Sleep tonight in your bra and forms.'),
-  c('wear', 'Wear lipstick until bedtime. Reapply when it fades.'),
-  c('wear', 'Wear your plug for 1 hour while doing chores.', true),
-  c('wear', 'Stay locked in chastity until evening.', true),
-  c('wear', 'Wear the full outfit for 2 hours straight.', true),
-  c('tease', 'Edge 3 times today. No release.'),
-  c('tease', '10 minutes of nipple play in the mirror, forms on.'),
-  c('tease', 'Rub lotion into your legs slowly, then touch your breasts for 5 min.'),
-  c('tease', 'Edge 6 times, a 2 minute break between each.', true),
-  c('tease', 'Wear nipple clamps for 10 minutes.', true),
-  c('tease', 'Edge once every hour for the evening.', true),
-  c('task', 'Write 3 lines in your diary about how {star} makes you feel.'),
-  c('task', 'Take 3 mirror photos of today\u2019s outfit (just for you).'),
-  c('task', 'Paint your toenails a pretty color.'),
-  c('task', 'Shave your legs smooth.'),
-  c('task', 'Practice a ladylike walk in heels for 10 minutes.'),
-  c('task', 'Say "Thank you, {star}" out loud 10 times, kneeling.', true),
-  c('task', 'Clean the bathroom wearing only the {panties} and heels.', true),
-  c('gaming', 'Play one match in panties and stockings.'),
-  c('gaming', 'Win one game before any release today.'),
-  c('gaming', 'Every death in your next match = 1 minute of edging after.', true),
-  c('gaming', 'Get a positive K/D in one match, or wear the plug for the next.', true),
-  c('gaming', 'Wear your forms during your whole gaming session.'),
+  // wear
+  c('wear', 'Wear your {cup}-cup forms for at least 4 hours.', 'Your forms stay on for the {form}.'),
+  c('wear', 'Keep the {panties} on all day.', 'She wants them warm for the {form}.'),
+  c('wear', 'Wear the {legwear} for 3 hours at home.', 'They stay on during the {form}.'),
+  c('wear', 'Walk in your {shoes} for 15 minutes total.', 'You wear them for the {form}.'),
+  c('wear', 'Wear lipstick until the scene. Reapply when it fades.', 'Fresh lips for her strap-on.', { forms: STRAP_FORMS }),
+  c('wear', 'Wear your plug for 1 hour this afternoon.', 'Opens you up for the {form}.', { hard: true, forms: PLUG_FORMS }),
+  c('wear', 'Wear a small plug for 30 minutes while doing chores.', 'A warm-up for the {form}.', { forms: PLUG_FORMS }),
+  c('wear', 'Lock your cage this morning and keep it on until the scene.', 'You go into the chastity tease already locked.', { forms: ['chastity'] }),
+  c('wear', 'Wear wrist cuffs for 1 hour at home.', 'Get used to them before she ties you.', { forms: ['bondage'] }),
+  c('wear', 'Wear every outfit layer for 2 hours.', 'Every piece comes off for her later.', { forms: ['striptease'] }),
+  c('wear', 'Wear the full outfit for 2 hours straight.', 'You stay dressed up for the {form}.', { hard: true, forms: LOOK_FORMS }),
+  c('wear', 'Wear the bra and forms under a hoodie all afternoon.', 'She unwraps them during the {form}.', { forms: ['nipples', 'striptease', 'chastity', 'milking'] }),
+  // tease
+  c('tease', 'Practice slow kisses on your dildo for 5 minutes, lipstick on.', 'Warm-up for her strap-on.', { forms: STRAP_FORMS }),
+  c('tease', 'Rub her strap-on (or your dildo) over your panties for 3 minutes.', 'A preview of the {form}.', { forms: ['strapon-tease', 'pegging', 'dildo-ride'] }),
+  c('tease', 'Tease yourself with a lubed finger or small toy for 5 minutes.', 'Gets you ready for the {form}.', { forms: PLUG_FORMS }),
+  c('tease', 'Clench your plug 20 times while doing chores.', 'Trains you for the {form}.', { hard: true, forms: ['plug', 'pegging', 'dildo-ride'] }),
+  c('tease', '10 minutes of nipple tease in the mirror, forms on.', 'Makes them sensitive for the {form}.', { forms: ['nipples', 'mirror', 'photo-tease', 'striptease', 'chastity'] }),
+  c('tease', 'Wear nipple clamps for 10 minutes.', 'Sensitive nipples for the {form}.', { hard: true, forms: ['nipples', 'bondage', 'chastity', 'milking'] }),
+  c('tease', 'Stroke your breasts through the bra for 5 minutes while locked.', 'Warms you up for the chastity tease.', { forms: ['chastity'] }),
+  c('tease', 'Kneel 5 minutes, hands behind your back, imagining her rope.', 'Gets your head ready for the bondage.', { forms: ['bondage'] }),
+  c('tease', 'Practice a slow lingerie strip in the mirror, one song.', 'Rehearsal for the {form}.', { forms: ['striptease', 'mirror', 'photo-tease'] }),
+  c('tease', 'Pose for 5 cute photos (just for you), arching your back.', 'Practice for the {form}.', { forms: ['photo-tease', 'mirror', 'striptease'] }),
+  c('tease', 'Rub lotion into your legs slowly, then caress your forms for 5 min.', 'Soft skin for the {form}.'),
+  c('tease', 'Blow her a kiss in the mirror every time you pass it today.', 'Puts you in the mood for the {form}.', { forms: LOOK_FORMS }),
+  c('tease', 'Spend 5 minutes on all fours, hips up, in your panties.', 'Your position for the {form}.', { forms: ['pegging', 'milking', 'strapon-tease'] }),
+  // task
+  c('task', 'Write 3 lines in your diary about how {star} makes you feel.', 'She reads them before the {form}.'),
+  c('task', 'Take 3 mirror photos of today\u2019s outfit (just for you).', 'Pick your best pose for the {form}.'),
+  c('task', 'Paint your toenails a pretty color.', 'She checks them during the {form}.'),
+  c('task', 'Shave your legs smooth.', 'Smooth for the {form}.'),
+  c('task', 'Set up {loc}: towel, lube and toys laid out.', 'Ready for the {form}.'),
+  c('task', 'Prep and clean up properly before the scene.', 'Needed for the {form}.', { forms: PLUG_FORMS }),
+  c('task', 'Pick a sexy song for your strip-tease.', 'You strip to it later.', { forms: ['striptease'] }),
+  c('task', 'Lay out rope or cuffs where she can see them.', 'For the bondage tease.', { forms: ['bondage'] }),
+  c('task', 'Put the cage key in an envelope and write her name on it.', 'She keeps it during the chastity tease.', { forms: ['chastity'] }),
+  c('task', 'Set out a little glass and a towel.', 'For collecting during the milking.', { forms: ['milking'] }),
+  c('task', 'Practice a ladylike walk in heels for 10 minutes.', 'You walk to her like that before the {form}.'),
+  c('task', 'Say "Thank you, {star}" out loud 10 times, kneeling.', 'Your greeting before the {form}.', { hard: true }),
+  c('task', 'Clean the bathroom wearing only the {panties} and heels.', 'She inspects it before the {form}.', { hard: true }),
+  // gaming
+  c('gaming', 'Play one match in panties and stockings.', 'Stay in them for the {form}.'),
+  c('gaming', 'Every death in your next match = +1 minute of the {form}.', 'Adds directly to tonight.', { hard: true }),
+  c('gaming', 'Get a positive K/D in one match, or wear the plug for the next.', 'A plugged warm-up for the {form}.', { hard: true, forms: PLUG_FORMS }),
+  c('gaming', 'Wear your forms during your whole gaming session.', 'Keep them on for the {form}.'),
+  c('gaming', 'Win one game before the scene, or she adds 10 minutes.', 'Decides how long the {form} lasts.'),
+  c('gaming', 'Game with your cage on, no matter what.', 'You stay locked into the chastity tease.', { forms: ['chastity'] }),
 ];
 
-export const PUNISHMENTS: string[] = [
-  'Punishment: bad games. Plug in for 30 minutes, and no release today.',
-  'Punishment: stay locked in chastity until tomorrow morning.',
-  'Punishment: write "I play badly, so I obey" 20 times.',
-  'Punishment: 6 edges, no finish, then thank {star}.',
-  'Punishment: kneel for 10 minutes in your forms, hands behind your back.',
+export const PUNISHMENTS: CTemplate[] = [
+  c('punishment', 'Punishment: bad games. Plug in for 30 minutes before the scene.', 'Then the {form} starts harder.'),
+  c('punishment', 'Punishment: stay locked in chastity until tomorrow morning.', 'Locked through the {form} and beyond.', { not: ['milking'] }),
+  c('punishment', 'Punishment: write "I play badly, so I obey" 20 times.', 'She reads it out during the {form}.'),
+  c('punishment', 'Punishment: kneel 10 minutes in your forms, hands behind your back.', 'Right before the {form} starts.'),
 ];
 
-export const REWARDS: string[] = [
-  'Reward: great games! You may finish at the end of today\u2019s scene.',
-  'Reward: swap into comfy panties for the evening.',
-  'Reward: 15 minutes of slow nipple play just for pleasure.',
-  'Reward: pick tomorrow\u2019s lipstick yourself.',
-  'Reward: skip one edge today, {star} is proud of you.',
+export const REWARDS: CTemplate[] = [
+  c('reward', 'Reward: great games! You may finish at the end of the {form}.', 'A happy ending tonight.', { not: ['chastity'] }),
+  c('reward', 'Reward: swap into comfy panties after the scene.', 'Comfort after the {form}.'),
+  c('reward', 'Reward: you pick the music for the {form}.', 'Your choice tonight.'),
+  c('reward', 'Reward: she ends the {form} with cuddles and praise.', 'A soft finish tonight.'),
 ];
 
+export const BONUSES = [
+  'Bonus: she ends with cuddles and praise.', 'Bonus: you choose the position.', 'Bonus: she goes slow and gentle.',
+  'Bonus: you pick the music and the lighting.', 'Bonus: she kisses your forms all over at the end.',
+];
+export const PENALTIES = [
+  'Penalty: hands stay behind your back the whole time.', 'Penalty: you thank her on your knees every 5 minutes.',
+  'Penalty: a bigger plug stays in for the whole scene.', 'Penalty: nipple clamps on for the whole scene.',
+  'Penalty: you count every minute out loud.',
+];

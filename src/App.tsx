@@ -5,7 +5,7 @@ import {
   type Mood,
 } from './engine';
 import { freshData, loadData, saveData } from './storage';
-import type { AppData, DayRecord, FormId, Game, GameLog, Leaning, Star, Style, Tone } from './types';
+import type { AppData, ChallengeStatus, DayRecord, FormId, Game, GameLog, Leaning, Star, Style, Tone } from './types';
 
 type Tab = 'today' | 'history' | 'settings';
 
@@ -13,7 +13,7 @@ function ensureDay(d: AppData, date: string): AppData {
   if (d.days[date]) return d;
   const id = pickStarId(date, d.stars, d.days);
   const star = d.stars.find((s) => s.id === id) ?? d.stars[0];
-  const rec: DayRecord = { plan: generateDay(date, star, d.defaultCup), games: [], done: {}, sexDone: false };
+  const rec: DayRecord = { plan: generateDay(date, star, d.defaultCup), games: [], status: {}, sexDone: false };
   return { ...d, days: { ...d.days, [date]: rec } };
 }
 
@@ -72,10 +72,18 @@ const MOOD_TEXT: Record<Mood, string> = {
 };
 
 function TodayView({ rec, star, update }: { rec: DayRecord; star?: Star; update: (fn: (r: DayRecord) => DayRecord) => void }) {
-  const { plan, mood, score } = useMemo(() => effectivePlan(rec), [rec]);
+  const [now, setNow] = useState(() => new Date());
+  useEffect(() => { const t = window.setInterval(() => setNow(new Date()), 60_000); return () => window.clearInterval(t); }, []);
+  const { plan, fx, missedIds } = useMemo(() => effectivePlan(rec, now), [rec, now]);
   const o = plan.outfit;
   const short = starShort({ name: plan.starName });
-  const doneCount = plan.challenges.filter((c) => rec.done[c.id]).length;
+  const setStatus = (id: string, st: ChallengeStatus) =>
+    update((r) => {
+      const status = { ...(r.status ?? {}) };
+      if (status[id] === st) delete status[id]; else status[id] = st;
+      return { ...r, status };
+    });
+  const softer = fx.chalDelta < 0, harder = fx.chalDelta > 0;
   return (
     <>
       <section className="card star">
@@ -91,8 +99,8 @@ function TodayView({ rec, star, update }: { rec: DayRecord; star?: Star; update:
         )}
       </section>
 
-      {mood !== 'none' && (
-        <section className={`banner ${mood}`}>Game score {score}/100 · {MOOD_TEXT[mood]}</section>
+      {fx.mood !== 'none' && (
+        <section className={`banner ${fx.mood}`}>Game score {fx.score}/100 · {MOOD_TEXT[fx.mood]}</section>
       )}
 
       <section className="card">
@@ -115,10 +123,17 @@ function TodayView({ rec, star, update }: { rec: DayRecord; star?: Star; update:
         <h2>Today&rsquo;s sex</h2>
         <div className="chips">
           <span className="chip">{plan.sex.formLabel}</span>
-          <span className="chip">{plan.sex.minutes} min</span>
+          <span className={`chip ${softer ? 'soft' : harder ? 'hard' : ''}`}>{plan.sex.minutes} min</span>
           <span className={`chip ${plan.sex.intensity}`}>{plan.sex.intensity}</span>
         </div>
-        <p className="muted small">Where: {plan.sex.location}</p>
+        <p className={`fxline ${softer ? 'soft' : harder ? 'hard' : ''}`}>{fx.line}</p>
+        <p className="muted small">
+          Base {fx.baseMinutes} min
+          {fx.gameDelta !== 0 && ` · games ${fx.gameDelta > 0 ? '+' : '\u2212'}${Math.abs(fx.gameDelta)}`}
+          {fx.chalDelta !== 0 && ` · challenges ${fx.chalDelta > 0 ? '+' : '\u2212'}${Math.abs(fx.chalDelta)}`}
+          {' '}· Where: {plan.sex.location}
+        </p>
+        {fx.detail && <p className={`fxline ${fx.done === MAX_CHALLENGES ? 'soft' : 'hard'}`}>{fx.detail}</p>}
         <blockquote>&ldquo;{plan.sex.scene}&rdquo;<cite>— {short}</cite></blockquote>
         <button className={`btn ${rec.sexDone ? 'done' : ''}`} onClick={() => update((r) => ({ ...r, sexDone: !r.sexDone }))}>
           {rec.sexDone ? '\u2713 Done' : 'Mark done'}
@@ -126,15 +141,25 @@ function TodayView({ rec, star, update }: { rec: DayRecord; star?: Star; update:
       </section>
 
       <section className="card">
-        <h2>Challenges <span className="count">{doneCount}/{MAX_CHALLENGES}</span></h2>
+        <h2>Challenges <span className="count">{fx.done}/{MAX_CHALLENGES}</span></h2>
+        <p className="muted small">Done: {'\u2212'}5 min each, all 3 = soft + bonus. Failed: +10 min each, 2 failed = hard. Unchecked after 21:00 counts as failed.</p>
         <ul className="challenges">
-          {plan.challenges.slice(0, MAX_CHALLENGES).map((c) => (
-            <li key={c.id} className={`${rec.done[c.id] ? 'done' : ''} ${c.kind}`}
-              onClick={() => update((r) => ({ ...r, done: { ...r.done, [c.id]: !r.done[c.id] } }))}>
-              <span className="box">{rec.done[c.id] ? '\u2713' : ''}</span>
-              <span><b className="kind">{c.kind}</b>{c.text}</span>
-            </li>
-          ))}
+          {plan.challenges.slice(0, MAX_CHALLENGES).map((c) => {
+            const st: string = rec.status?.[c.id] ?? (missedIds.has(c.id) ? 'missed' : '');
+            return (
+              <li key={c.id} className={`${st} ${c.kind}`}>
+                <button className="box" aria-label="Done" onClick={() => setStatus(c.id, 'done')}>
+                  {st === 'done' ? '\u2713' : st === 'failed' || st === 'missed' ? '\u2715' : ''}
+                </button>
+                <span className="ctext" onClick={() => setStatus(c.id, 'done')}>
+                  <b className="kind">{c.kind}{st === 'missed' ? ' · missed' : ''}</b>
+                  {c.text}
+                  <span className="clink">{'\u21b3'} {c.link}</span>
+                </span>
+                <button className={`failbtn ${st === 'failed' ? 'on' : ''}`} onClick={() => setStatus(c.id, 'failed')}>Failed</button>
+              </li>
+            );
+          })}
         </ul>
       </section>
 
@@ -201,15 +226,14 @@ function HistoryView({ data, today }: { data: AppData; today: string }) {
     <>
       {keys.map((key) => {
         const rec = data.days[key];
-        const { plan, score } = effectivePlan(rec);
-        const done = plan.challenges.filter((c) => rec.done[c.id]).length;
+        const { plan, fx } = effectivePlan(rec);
         return (
           <section className="card hist" key={key}>
             <div className="kicker">{key === today ? 'Today' : new Date(key + 'T12:00').toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' })}</div>
             <h3>{plan.starName}</h3>
             <p className="small">{plan.outfit.summary}</p>
             <p className="small">{rec.sexDone ? '\u2713' : '\u25cb'} {plan.sex.formLabel} · {plan.sex.minutes} min · {plan.sex.intensity}</p>
-            <p className="small muted">Challenges {done}/{MAX_CHALLENGES}{score !== null ? ` · Game score ${score}` : ''}</p>
+            <p className="small muted">{fx.line}{fx.score !== null ? ` · Game score ${fx.score}` : ''}</p>
           </section>
         );
       })}
@@ -223,7 +247,7 @@ const LEANS: Leaning[] = ['soft', 'mixed', 'hard'];
 function blankStar(): Star {
   return {
     id: 'c' + Date.now().toString(36), name: '', archetype: '', style: 'sweet', tone: 'sweet', leaning: 'mixed', cupBias: 0,
-    hair: '', body: '', outfit: '', personality: '', likes: '', favForms: ['edging'], enabled: true, custom: true,
+    hair: '', body: '', outfit: '', personality: '', likes: '', favForms: ['striptease'], enabled: true, custom: true,
   };
 }
 
