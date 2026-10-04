@@ -1,12 +1,13 @@
 import type { ChallengeKind, FormId, Style, Tone } from './types';
 
-export const STYLES: Style[] = ['sweet', 'classy', 'latex', 'goth', 'anime', 'fantasy', 'office', 'nurse', 'sporty', 'bimbo', 'retro', 'cyber'];
-export const CUPS = ['A', 'B', 'C', 'D', 'DD', 'E', 'F', 'G'];
+export const CUPS = ['A', 'B', 'C', 'D', 'DD', 'E', 'F', 'G', 'H'];
 
 export interface Item { t: string; s: (Style | 'any')[]; }
 const i = (t: string, ...s: (Style | 'any')[]): Item => ({ t, s });
 
 export const PANTIES: Item[] = [
+  i('denim-blue lace cheeky panties', 'western'),
+  i('red gingham panties', 'western', 'retro'),
   i('pink lace panties', 'sweet', 'bimbo', 'anime'),
   i('white cotton panties with a bow', 'sweet', 'anime', 'nurse'),
   i('black silk thong', 'classy', 'office', 'goth'),
@@ -22,6 +23,7 @@ export const PANTIES: Item[] = [
 ];
 
 export const BRAS: Item[] = [
+  i('gingham push-up bra', 'western'),
   i('pink padded push-up bra', 'sweet', 'bimbo'),
   i('black lace balconette', 'classy', 'goth', 'office'),
   i('red satin balconette', 'retro', 'classy', 'fantasy'),
@@ -36,6 +38,8 @@ export const BRAS: Item[] = [
 ];
 
 export const TOPS: Item[] = [
+  i('knotted plaid shirt', 'western'),
+  i('fringed suede crop top', 'western'),
   i('cropped pink cardigan', 'sweet', 'anime'),
   i('fitted silk blouse', 'office', 'classy'),
   i('black mesh long-sleeve', 'goth', 'cyber'),
@@ -52,6 +56,8 @@ export const TOPS: Item[] = [
 ];
 
 export const BOTTOMS: Item[] = [
+  i('denim cut-off shorts', 'western'),
+  i('fringed suede mini skirt', 'western'),
   i('pleated pastel skirt', 'sweet', 'anime'),
   i('black pencil skirt', 'office', 'classy'),
   i('PVC mini skirt', 'goth', 'latex', 'cyber'),
@@ -67,6 +73,7 @@ export const BOTTOMS: Item[] = [
 ];
 
 export const LEGWEAR: Item[] = [
+  i('sheer tan stockings', 'western', 'office'),
   i('white thigh-high socks', 'sweet', 'anime', 'nurse'),
   i('black seamed stockings', 'retro', 'classy', 'office'),
   i('fishnet tights', 'goth', 'bimbo', 'cyber'),
@@ -80,6 +87,7 @@ export const LEGWEAR: Item[] = [
 ];
 
 export const SHOES: Item[] = [
+  i('cowboy boots', 'western'),
   i('pink Mary Janes', 'sweet', 'anime'),
   i('black stilettos', 'classy', 'office', 'latex'),
   i('platform boots', 'goth', 'cyber'),
@@ -93,6 +101,7 @@ export const SHOES: Item[] = [
 ];
 
 export const MAKEUP: Item[] = [
+  i('sun-kissed bronzer and gloss', 'western', 'sporty'),
   i('soft pink gloss and blush', 'sweet', 'anime'),
   i('red lips and winged liner', 'classy', 'retro', 'office'),
   i('black lipstick, smoky eyes', 'goth', 'latex'),
@@ -103,6 +112,7 @@ export const MAKEUP: Item[] = [
 ];
 
 export const WIGS: Item[] = [
+  i('long honey braids wig', 'western', 'fantasy'),
   i('long blonde wig', 'bimbo', 'classy', 'retro'),
   i('pink twin-tail wig', 'anime', 'sweet'),
   i('sleek black bob wig', 'goth', 'latex', 'office'),
@@ -164,9 +174,9 @@ export const LOCATIONS = [
 // Scene building blocks. Placeholders: {cup} {item} {loc} {min}
 export const OPENERS: Record<Tone, string[]> = {
   sweet: ['Good morning, Frida darling, today you are all mine.', 'Hi pretty girl, I picked something special for you today.', 'Come here, sweetheart, let me look at you.'],
-  stern: ['Frida. Stand up straight, today you answer to me.', 'You belong to me today, Frida, and you will follow my rules.', 'Listen carefully, girl. I will not repeat myself.'],
-  playful: ['Hehe, guess who owns you today, Frida?', 'Oh Frida, you are going to be so much fun today.', 'Ready to play, cutie? I sure am.'],
-  cold: ['Frida. You are mine today. Do not waste my time.', 'I have decided how your day goes, Frida. Obey.', 'Quiet, Frida. Today you are my property.'],
+  stern: ['Stand up straight, Frida, today you answer to me.', 'You belong to me today, Frida, and you will follow my rules.', 'Listen carefully, girl, I will not repeat myself.'],
+  playful: ['Hehe, guess who owns you today, Frida?', 'Oh Frida, you are going to be so much fun today.', 'Ready to play, cutie? I sure am!'],
+  cold: ['You are mine today, Frida, so do not waste my time.', 'I have decided how your day goes, Frida, so obey.', 'Quiet, Frida, today you are my property.'],
   sultry: ['Mmm, Frida, I have been thinking about you all night.', 'Come closer, Frida, let me whisper what I want.', 'My sweet Frida, today I am going to take my time with you.'],
 };
 
@@ -185,13 +195,13 @@ export const FORM_LINES: Record<FormId, string[]> = {
   'photo-tease': ['You will pose for me like a pin-up: arched back, pouty lips, {cup}-cup forms pushed together.', 'Every photo you take, I want you a little more undressed and a little more shameless.'],
 };
 
-export const LOC_LINES = ['We do it in {loc}, {min} minutes, no rushing.', 'Meet me in {loc}. You have {min} minutes of being mine.', 'Location: {loc}. Timer: {min} minutes. No excuses.'];
+export const LOC_LINES = ['Set the scene: {loc}, {min} minutes, no rushing.', 'Setting: {loc}. You have {min} minutes of being mine.', 'Location: {loc}, {min} minutes, no excuses.'];
 
 export const CLOSERS: Record<Tone, string[]> = {
   sweet: ['And afterwards you get cuddles, my good girl.', 'I am so proud of you already.'],
   stern: ['Disappoint me and tomorrow will be harder.', 'Report back when you are done.'],
   playful: ['Try not to make too much noise, hehe.', 'Bet you are blushing right now.'],
-  cold: ['That is all. Begin when told.', 'Your feelings are not my concern.'],
+  cold: ['That is all, begin when told.', 'Your feelings are not my concern.'],
   sultry: ['I will be watching you the whole time.', 'Mmm, I can hardly wait.'],
 };
 

@@ -4,10 +4,12 @@ import {
   type CTemplate, type Item,
 } from './content';
 
-const CLAMP_FORMS: FormId[] = ['nipples', 'bondage', 'chastity', 'milking'];
+import { STYLE_BY_ID, type StyleDef } from './looks';
 import type {
-  Challenge, ChallengeKind, DayPlan, DayRecord, FormId, Game, GameLog, Intensity, OutfitPlan, SexPlan, Star,
+  Challenge, ChallengeKind, DayPlan, DayRecord, FormId, Game, GameLog, Intensity, KnownFor, OutfitPlan, SexPlan, Star, Style,
 } from './types';
+
+const CLAMP_FORMS: FormId[] = ['nipples', 'bondage', 'chastity', 'milking'];
 
 export const MAX_CHALLENGES = 3;
 const AVOID_RECENT = 7;
@@ -71,39 +73,41 @@ export function pickStarId(date: string, stars: Star[], days: Record<string, Day
 }
 
 // ---------- outfit ----------
-function styled(r: R, items: Item[], star: Star): string {
-  const m = items.filter((it) => it.s.includes(star.style));
+function styled(r: R, items: Item[], look: Style): string {
+  const m = items.filter((it) => it.s.includes(look));
   return pick(r, m.length ? m : items).t;
 }
-export function cupFor(star: Star, defaultCup: string, r: R): string {
-  const base = Math.max(0, CUPS.indexOf(defaultCup));
-  const jitter = Math.floor(r() * 3) - 1; // -1..+1
-  const idx = Math.min(CUPS.length - 1, Math.max(0, base + star.cupBias + (r() < 0.5 ? 0 : jitter)));
-  return CUPS[idx];
+/** Frida's forms: mostly the star's own cup shifted by today's style, lightly anchored to the default. */
+export function cupFor(star: Star, style: StyleDef, defaultCup: string, r: R): string {
+  const own = Math.max(0, CUPS.indexOf(star.cup));
+  const def = Math.max(0, CUPS.indexOf(defaultCup));
+  const jitter = r() < 0.3 ? (r() < 0.5 ? -1 : 1) : 0;
+  const idx = Math.round((own + style.cupShift) * 0.7 + def * 0.3) + jitter;
+  return CUPS[Math.min(CUPS.length - 1, Math.max(0, idx))];
 }
-function buildOutfit(r: R, star: Star, cup: string, intensity: Intensity, form: FormId): OutfitPlan {
-  const panties = styled(r, PANTIES, star);
-  const bra = styled(r, BRAS, star);
-  const top = styled(r, TOPS, star);
-  const bottom = styled(r, BOTTOMS, star);
-  const legwear = styled(r, LEGWEAR, star);
-  const shoes = styled(r, SHOES, star);
-  const makeup = styled(r, MAKEUP, star);
-  const wig = styled(r, WIGS, star);
-  // cage only on chastity days; plug always present on plug-based days
-  const pool = EXTRAS.filter((e) => (e.s.includes(star.style) || e.s.includes('any'))
+function buildOutfit(r: R, star: Star, style: StyleDef, cup: string, intensity: Intensity, form: FormId): OutfitPlan {
+  const look = style.look;
+  const panties = styled(r, PANTIES, look);
+  const bra = styled(r, BRAS, look);
+  const top = styled(r, TOPS, look);
+  const bottom = styled(r, BOTTOMS, look);
+  const legwear = styled(r, LEGWEAR, look);
+  const shoes = styled(r, SHOES, look);
+  const makeup = styled(r, MAKEUP, look);
+  const wig = styled(r, WIGS, look);
+  // style signature first; cage only on chastity days; plug only on plug-based days
+  const pool = EXTRAS.filter((e) => (e.s.includes(look) || e.s.includes('any'))
     && !e.t.includes('chastity') && !e.t.includes('plug')
-    && (!e.t.includes('clamps') || CLAMP_FORMS.includes(form)));
-  const count = intensity === 'hard' ? 3 : 2;
-  const extras: string[] = [];
+    && (!e.t.includes('clamps') || CLAMP_FORMS.includes(form))
+    && !style.signature.includes(e.t.split(' ').slice(-1)[0]));
+  const extras: string[] = [style.signature];
   if (form === 'chastity') extras.push('chastity cage');
   if (PLUG_FORMS.includes(form)) extras.push(intensity === 'hard' ? 'large jeweled butt plug' : 'small butt plug');
+  const count = Math.max(extras.length, intensity === 'hard' ? 3 : 2);
   let guard = 0;
   while (extras.length < count && guard++ < 50) {
-    const e = weighted(r, pool, (e) => (e.hard ? (intensity === 'hard' ? 3 : 0.3) : 1) * (e.s.includes(star.style) ? 2 : 1));
-    if (extras.includes(e.t)) continue;
-    if (e.t.includes('plug') && extras.some((t) => t.includes('plug'))) continue;
-    extras.push(e.t);
+    const e = weighted(r, pool, (e) => (e.hard ? (intensity === 'hard' ? 3 : 0.3) : 1) * (e.s.includes(look) ? 2 : 1));
+    if (!extras.includes(e.t)) extras.push(e.t);
   }
   const summary = `${starShort(star)} picks: ${top}, ${bottom}, ${legwear}, ${cup}-cup forms.`;
   return { panties, bra, cup, top, bottom, legwear, shoes, makeup, wig, extras, summary };
@@ -113,17 +117,24 @@ function buildOutfit(r: R, star: Star, cup: string, intensity: Intensity, form: 
 function fill(t: string, v: Record<string, string>): string {
   return t.replace(/\{(\w+)\}/g, (_, k: string) => v[k] ?? '');
 }
-function buildSex(r: R, star: Star, outfit: OutfitPlan, intensity: Intensity, form: FormId): SexPlan {
+function buildSex(r: R, star: Star, style: StyleDef, outfit: OutfitPlan, intensity: Intensity, form: FormId): SexPlan {
+  const tone = style.tone && r() < 0.5 ? style.tone : star.tone;
   const def = FORMS.find((f) => f.id === form)!;
   const minutes = between(r, intensity === 'hard' ? def.hard : def.soft);
   const location = pick(r, LOCATIONS);
   const v = { cup: outfit.cup, item: outfit.panties, loc: location, min: String(minutes) };
   const lines = [
-    pick(r, OPENERS[star.tone]),
+    pick(r, OPENERS[tone]),
+    style.line,
     ...FORM_LINES[form].map((l) => fill(l, v)),
     fill(pick(r, LOC_LINES), v),
-    pick(r, CLOSERS[star.tone]),
+    pick(r, CLOSERS[tone]),
   ];
+  // keep the scene at 3-6 sentences: drop the closer, then the style line, if too long
+  const count = (ls: string[]) => (ls.join(' ').match(/[.!?](\s|$)/g) ?? []).length;
+  if (count(lines) > 6) lines.pop(); // closer
+  if (count(lines) > 6) lines.splice(1, 1); // style line
+  if (count(lines) > 6) lines.splice(2, 1); // second form line
   return { form, formLabel: def.label, minutes, location, intensity, scene: lines.join(' ') };
 }
 
@@ -148,13 +159,29 @@ export function starShort(star: { name: string }): string {
   return titles.includes(parts[0]) ? `${parts[0]} ${parts[1]}` : parts[0];
 }
 
-export function generateDay(date: string, star: Star, defaultCup: string): DayPlan {
-  const r = rng(`day|${date}|${star.id}`);
-  const intensity: Intensity = r() < (star.leaning === 'hard' ? 0.75 : star.leaning === 'soft' ? 0.2 : 0.5) ? 'hard' : 'soft';
-  const cup = cupFor(star, defaultCup, r);
-  const form = weighted(r, FORMS, (f) => (star.favForms.includes(f.id) ? 4 : 1)).id;
-  const outfit = buildOutfit(r, star, cup, intensity, form);
-  const sex = buildSex(r, star, outfit, intensity, form);
+/** Most recent style this star wore before `date` (from saved days). */
+export function lastStyle(starId: string, date: string, days: Record<string, DayRecord>): KnownFor | undefined {
+  const keys = Object.keys(days).filter((k) => k < date && days[k].plan.starId === starId).sort();
+  return keys.length ? days[keys[keys.length - 1]].plan.styleId : undefined;
+}
+/** One of her known-for styles, never the same as her last appearance (when she has 2+). */
+export function pickStyle(date: string, star: Star, days: Record<string, DayRecord>): KnownFor {
+  const known = star.knownFor.filter((k) => STYLE_BY_ID[k]);
+  if (known.length === 0) return 'sweet-tease';
+  const last = lastStyle(star.id, date, days);
+  const options = known.length > 1 ? known.filter((k) => k !== last) : known;
+  return pick(rng(`style|${date}|${star.id}`), options);
+}
+
+export function generateDay(date: string, star: Star, defaultCup: string, days: Record<string, DayRecord>): DayPlan {
+  const styleId = pickStyle(date, star, days);
+  const style = STYLE_BY_ID[styleId];
+  const r = rng(`day|${date}|${star.id}|${styleId}`);
+  const intensity: Intensity = r() < (style.leaning === 'hard' ? 0.75 : style.leaning === 'soft' ? 0.2 : 0.5) ? 'hard' : 'soft';
+  const cup = cupFor(star, style, defaultCup, r);
+  const form = weighted(r, FORMS, (f) => (style.forms.includes(f.id) ? 5 : 1)).id;
+  const outfit = buildOutfit(r, star, style, cup, intensity, form);
+  const sex = buildSex(r, star, style, outfit, intensity, form);
   const v = {
     cup: outfit.cup, star: starShort(star), panties: outfit.panties, legwear: outfit.legwear, shoes: outfit.shoes,
     loc: sex.location, form: formLabel(form).toLowerCase(),
@@ -164,7 +191,10 @@ export function generateDay(date: string, star: Star, defaultCup: string): DayPl
     punishment: toChallenge(pick(r, PUNISHMENTS.filter((t) => fits(t, form))), `${date}-p`, v),
     reward: toChallenge(pick(r, REWARDS.filter((t) => fits(t, form))), `${date}-r`, v),
   };
-  return { date, starId: star.id, starName: star.name, outfit, sex, challenges, spare, bonus: pick(r, BONUSES), penalty: pick(r, PENALTIES) };
+  return {
+    date, starId: star.id, starName: star.name, styleId, styleLabel: style.label,
+    outfit, sex, challenges, spare, bonus: pick(r, BONUSES), penalty: pick(r, PENALTIES),
+  };
 }
 
 // ---------- gaming ----------

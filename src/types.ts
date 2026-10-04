@@ -1,6 +1,14 @@
 export type Style =
   | 'sweet' | 'classy' | 'latex' | 'goth' | 'anime' | 'fantasy'
-  | 'office' | 'nurse' | 'sporty' | 'bimbo' | 'retro' | 'cyber';
+  | 'office' | 'nurse' | 'sporty' | 'bimbo' | 'retro' | 'cyber' | 'western';
+
+/** A 'known for' style a star can bring on a given day. */
+export type KnownFor =
+  | 'latex-domme' | 'strapon-queen' | 'sweet-tease' | 'milf' | 'goth' | 'anime' | 'hentai'
+  | 'fantasy-queen' | 'office-boss' | 'nurse' | 'gym' | 'succubus' | 'elf' | 'bimbo'
+  | 'schoolgirl-cosplay' | 'cowgirl' | 'vampire' | 'witch' | 'pinup' | 'cyberpunk' | 'maid'
+  | 'police' | 'sugar-mommy' | 'ballet' | 'gamer-girl' | 'siren' | 'viking' | 'librarian'
+  | 'punk' | 'catgirl' | 'tantric';
 
 export type Tone = 'sweet' | 'stern' | 'playful' | 'cold' | 'sultry';
 export type Leaning = 'soft' | 'mixed' | 'hard';
@@ -13,17 +21,13 @@ export type FormId =
 export interface Star {
   id: string;
   name: string;
-  archetype: string;
-  style: Style;
-  tone: Tone;
-  leaning: Leaning;
-  cupBias: number; // -2..+3 relative to default cup
   hair: string;
   body: string;
-  outfit: string; // her own signature outfit
+  cup: string; // her own cup size, B-H
+  wardrobe: string; // her signature wardrobe
   personality: string;
-  likes: string;
-  favForms: FormId[];
+  tone: Tone; // her voice
+  knownFor: KnownFor[]; // 2-4 styles
   enabled: boolean;
   custom?: boolean;
 }
@@ -66,6 +70,8 @@ export interface DayPlan {
   date: string;
   starId: string;
   starName: string;
+  styleId: KnownFor;
+  styleLabel: string;
   outfit: OutfitPlan;
   sex: SexPlan;
   challenges: Challenge[];
@@ -96,7 +102,7 @@ export interface DayRecord {
 }
 
 export interface AppData {
-  version: 1;
+  version: 2;
   defaultCup: string;
   stars: Star[];
   days: Record<string, DayRecord>;

@@ -117,3 +117,10 @@ blockquote cite { display: block; text-align: right; margin-top: 6px; color: var
 .challenges li.failed .box, .challenges li.missed .box { border-color: var(--bad); color: var(--bad); }
 .failbtn { align-self: center; background: none; border: 1px solid var(--border); border-radius: 10px; color: var(--muted); font-size: .72rem; padding: 4px 8px; cursor: pointer; }
 .failbtn.on { border-color: var(--bad); color: var(--bad); background: #d27b8e22; }
+
+.todaystyle { margin: 2px 0 6px; font-weight: 800; color: var(--rose); letter-spacing: .02em; }
+.chip.on { background: var(--rose-deep); border-color: var(--rose); }
+.seg3 { grid-template-columns: repeat(3, 1fr); }
+.btn.slim { padding: 8px; font-size: .85rem; margin-top: 0; }
+.btn:disabled { opacity: .45; cursor: not-allowed; }
+input[type='search'] { -webkit-appearance: none; appearance: none; }

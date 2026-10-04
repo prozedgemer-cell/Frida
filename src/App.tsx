@@ -1,11 +1,12 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { CUPS, FORMS, STYLES } from './content';
+import { CUPS } from './content';
+import { STYLE_DEFS, styleLabel } from './looks';
 import {
   GAMES, MAX_CHALLENGES, effectivePlan, generateDay, pickStarId, scoreGame, starShort, todayKey,
   type Mood,
 } from './engine';
 import { freshData, loadData, saveData } from './storage';
-import type { AppData, ChallengeStatus, DayRecord, FormId, Game, GameLog, Leaning, Star, Style, Tone } from './types';
+import type { AppData, ChallengeStatus, DayRecord, Game, GameLog, KnownFor, Star, Tone } from './types';
 
 type Tab = 'today' | 'history' | 'settings';
 
@@ -13,7 +14,7 @@ function ensureDay(d: AppData, date: string): AppData {
   if (d.days[date]) return d;
   const id = pickStarId(date, d.stars, d.days);
   const star = d.stars.find((s) => s.id === id) ?? d.stars[0];
-  const rec: DayRecord = { plan: generateDay(date, star, d.defaultCup), games: [], status: {}, sexDone: false };
+  const rec: DayRecord = { plan: generateDay(date, star, d.defaultCup, d.days), games: [], status: {}, sexDone: false };
   return { ...d, days: { ...d.days, [date]: rec } };
 }
 
@@ -91,10 +92,11 @@ function TodayView({ rec, star, update }: { rec: DayRecord; star?: Star; update:
         <h1>{plan.starName}</h1>
         {star && (
           <>
-            <div className="chips"><span className="chip">{star.archetype}</span><span className={`chip ${star.leaning}`}>{star.leaning}</span></div>
-            <p className="look">{star.hair} · {star.body} · {star.outfit}</p>
+            <p className="todaystyle">Today: {plan.styleLabel}</p>
+            <p className="look">{star.hair} · {star.body} · {star.cup}-cup</p>
+            <p className="muted small">Wears: {star.wardrobe}</p>
             <p className="muted">{star.personality}</p>
-            <p className="muted small">Loves: {star.likes}</p>
+            <div className="chips">{star.knownFor.map((k) => <span key={k} className={`chip ${k === plan.styleId ? 'on' : ''}`}>{styleLabel(k)}</span>)}</div>
           </>
         )}
       </section>
@@ -230,7 +232,7 @@ function HistoryView({ data, today }: { data: AppData; today: string }) {
         return (
           <section className="card hist" key={key}>
             <div className="kicker">{key === today ? 'Today' : new Date(key + 'T12:00').toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' })}</div>
-            <h3>{plan.starName}</h3>
+            <h3>{plan.starName} <span className="muted small">· {plan.styleLabel}</span></h3>
             <p className="small">{plan.outfit.summary}</p>
             <p className="small">{rec.sexDone ? '\u2713' : '\u25cb'} {plan.sex.formLabel} · {plan.sex.minutes} min · {plan.sex.intensity}</p>
             <p className="small muted">{fx.line}{fx.score !== null ? ` · Game score ${fx.score}` : ''}</p>
@@ -242,24 +244,37 @@ function HistoryView({ data, today }: { data: AppData; today: string }) {
 }
 
 const TONES: Tone[] = ['sweet', 'stern', 'playful', 'cold', 'sultry'];
-const LEANS: Leaning[] = ['soft', 'mixed', 'hard'];
+const STAR_CUPS = ['B', 'C', 'D', 'DD', 'E', 'F', 'G', 'H'];
 
 function blankStar(): Star {
   return {
-    id: 'c' + Date.now().toString(36), name: '', archetype: '', style: 'sweet', tone: 'sweet', leaning: 'mixed', cupBias: 0,
-    hair: '', body: '', outfit: '', personality: '', likes: '', favForms: ['striptease'], enabled: true, custom: true,
+    id: 'c' + Date.now().toString(36), name: '', hair: '', body: '', cup: 'C', wardrobe: '', personality: '',
+    tone: 'sweet', knownFor: ['sweet-tease', 'pinup'], enabled: true, custom: true,
   };
 }
 
 function SettingsView({ data, setData, today }: { data: AppData; setData: (fn: (d: AppData) => AppData) => void; today: string }) {
   const [editing, setEditing] = useState<Star | null>(null);
+  const [q, setQ] = useState('');
+  const [filter, setFilter] = useState<'all' | 'on' | 'off'>('all');
+  const [limit, setLimit] = useState(40);
   const enabled = data.stars.filter((s) => s.enabled).length;
+  const shown = useMemo(() => {
+    const needle = q.trim().toLowerCase();
+    return data.stars.filter((s) =>
+      (filter === 'all' || (filter === 'on') === s.enabled)
+      && (!needle || s.name.toLowerCase().includes(needle) || s.knownFor.some((k) => styleLabel(k).toLowerCase().includes(needle))));
+  }, [data.stars, q, filter]);
+  const setEnabled = (ids: Set<string>, on: boolean) =>
+    setData((d) => {
+      const stars = d.stars.map((x) => (ids.has(x.id) ? { ...x, enabled: on } : x));
+      return stars.some((x) => x.enabled) ? { ...d, stars } : d; // keep at least one star on
+    });
   const saveStar = (s: Star) => {
-    if (!s.name.trim()) return;
+    if (!s.name.trim() || s.knownFor.length === 0) return;
     setData((d) => {
       const exists = d.stars.some((x) => x.id === s.id);
-      const stars = exists ? d.stars.map((x) => (x.id === s.id ? s : x)) : [...d.stars, s];
-      return { ...d, stars };
+      return { ...d, stars: exists ? d.stars.map((x) => (x.id === s.id ? s : x)) : [s, ...d.stars] };
     });
     setEditing(null);
   };
@@ -272,7 +287,7 @@ function SettingsView({ data, setData, today }: { data: AppData; setData: (fn: (
             {CUPS.map((c) => <option key={c}>{c}</option>)}
           </select>
         </label>
-        <p className="muted small">Each star nudges the cup up or down from this.</p>
+        <p className="muted small">Your forms follow the star&rsquo;s own size and today&rsquo;s style, lightly pulled toward this.</p>
       </section>
 
       <section className="card">
@@ -283,21 +298,34 @@ function SettingsView({ data, setData, today }: { data: AppData; setData: (fn: (
         ) : (
           <>
             <button className="btn" onClick={() => setEditing(blankStar())}>+ Add star</button>
+            <div className="form" style={{ marginTop: 10 }}>
+              <input type="search" placeholder="Search name or style…" value={q} onChange={(e) => { setQ(e.target.value); setLimit(40); }} />
+              <div className="seg seg3">
+                {(['all', 'on', 'off'] as const).map((f) => (
+                  <button key={f} className={filter === f ? 'on' : ''} onClick={() => { setFilter(f); setLimit(40); }}>{f === 'all' ? 'All' : f === 'on' ? 'On' : 'Off'}</button>
+                ))}
+              </div>
+              <div className="row2">
+                <button className="btn ghost slim" onClick={() => setEnabled(new Set(shown.map((s) => s.id)), true)}>Enable shown ({shown.length})</button>
+                <button className="btn ghost slim" onClick={() => setEnabled(new Set(shown.map((s) => s.id)), false)}>Disable shown</button>
+              </div>
+            </div>
             <ul className="stars">
-              {data.stars.map((s) => (
+              {shown.slice(0, limit).map((s) => (
                 <li key={s.id} className={s.enabled ? '' : 'off'}>
                   <div onClick={() => setEditing({ ...s })}>
                     <b>{s.name}</b>
-                    <span className="muted small">{s.archetype} · {s.leaning}</span>
+                    <span className="muted small">{s.cup}-cup · {s.knownFor.map(styleLabel).join(', ')}</span>
                   </div>
                   <label className="toggle">
-                    <input type="checkbox" checked={s.enabled}
-                      onChange={() => setData((d) => ({ ...d, stars: d.stars.map((x) => (x.id === s.id ? { ...x, enabled: !x.enabled } : x)) }))} />
+                    <input type="checkbox" checked={s.enabled} onChange={() => setEnabled(new Set([s.id]), !s.enabled)} />
                     <span />
                   </label>
                 </li>
               ))}
             </ul>
+            {shown.length > limit && <button className="btn ghost" onClick={() => setLimit(limit + 60)}>Show more ({shown.length - limit} left)</button>}
+            {shown.length === 0 && <p className="muted small">No stars match.</p>}
           </>
         )}
       </section>
@@ -316,46 +344,40 @@ function SettingsView({ data, setData, today }: { data: AppData; setData: (fn: (
 
 function StarEditor({ star, onSave, onCancel, onDelete }: { star: Star; onSave: (s: Star) => void; onCancel: () => void; onDelete?: () => void }) {
   const [s, setS] = useState<Star>(star);
-  const txt = (k: keyof Star, label: string) => (
+  const txt = (k: 'name' | 'hair' | 'body' | 'wardrobe' | 'personality', label: string) => (
     <label className="field">{label}
-      <input value={String(s[k] ?? '')} onChange={(e) => setS({ ...s, [k]: e.target.value })} />
+      <input value={s[k]} onChange={(e) => setS({ ...s, [k]: e.target.value })} />
     </label>
   );
-  const toggleForm = (f: FormId) => setS({ ...s, favForms: s.favForms.includes(f) ? s.favForms.filter((x) => x !== f) : [...s.favForms, f] });
+  const toggle = (k: KnownFor) => {
+    if (s.knownFor.includes(k)) setS({ ...s, knownFor: s.knownFor.filter((x) => x !== k) });
+    else if (s.knownFor.length < 4) setS({ ...s, knownFor: [...s.knownFor, k] });
+  };
+  const ok = s.name.trim() !== '' && s.knownFor.length >= 2 && s.knownFor.length <= 4;
   return (
     <div className="form">
       {txt('name', 'Name')}
-      {txt('archetype', 'Archetype / style')}
-      <div className="row3">
-        <label className="field">Outfit style
-          <select value={s.style} onChange={(e) => setS({ ...s, style: e.target.value as Style })}>{STYLES.map((x) => <option key={x}>{x}</option>)}</select>
+      <div className="row2">
+        <label className="field">Her cup size
+          <select value={s.cup} onChange={(e) => setS({ ...s, cup: e.target.value })}>{STAR_CUPS.map((c) => <option key={c}>{c}</option>)}</select>
         </label>
         <label className="field">Voice
           <select value={s.tone} onChange={(e) => setS({ ...s, tone: e.target.value as Tone })}>{TONES.map((x) => <option key={x}>{x}</option>)}</select>
         </label>
-        <label className="field">Leaning
-          <select value={s.leaning} onChange={(e) => setS({ ...s, leaning: e.target.value as Leaning })}>{LEANS.map((x) => <option key={x}>{x}</option>)}</select>
-        </label>
       </div>
-      <label className="field">Cup nudge
-        <select value={s.cupBias} onChange={(e) => setS({ ...s, cupBias: +e.target.value })}>
-          {[-2, -1, 0, 1, 2, 3].map((n) => <option key={n} value={n}>{n > 0 ? `+${n}` : n}</option>)}
-        </select>
-      </label>
       {txt('hair', 'Hair')}
-      {txt('body', 'Body')}
-      {txt('outfit', 'Signature outfit')}
+      {txt('body', 'Body type')}
+      {txt('wardrobe', 'Signature wardrobe')}
       {txt('personality', 'Personality')}
-      {txt('likes', 'Favorite things')}
-      <div className="field">Favorite sex forms
+      <div className="field">Known for (pick 2–4) · {s.knownFor.length} chosen
         <div className="chips pick">
-          {FORMS.map((f) => (
-            <button key={f.id} className={`chip ${s.favForms.includes(f.id) ? 'on' : ''}`} onClick={() => toggleForm(f.id)}>{f.label}</button>
+          {STYLE_DEFS.map((d) => (
+            <button key={d.id} className={`chip ${s.knownFor.includes(d.id) ? 'on' : ''}`} onClick={() => toggle(d.id)}>{d.label}</button>
           ))}
         </div>
       </div>
       <div className="row2">
-        <button className="btn" onClick={() => onSave(s)}>Save</button>
+        <button className="btn" disabled={!ok} onClick={() => onSave(s)}>Save</button>
         <button className="btn ghost" onClick={onCancel}>Cancel</button>
       </div>
       {onDelete && <button className="btn danger" onClick={onDelete}>Delete star</button>}
