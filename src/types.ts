@@ -97,6 +97,29 @@ export interface Challenge {
   fromTag?: string; // which day tag this challenge covers
 }
 
+
+export type DayMode = 'normal' | 'boss' | 'quiet';
+export type WeatherLean = 'cold' | 'mild' | 'warm' | 'rain';
+export type TimeLean = 'morning' | 'day' | 'evening';
+
+export interface DayFlavor {
+  mode: DayMode;
+  weather: WeatherLean;
+  weatherNote: string;
+  timeLean: TimeLean;
+  timeNote: string;
+  themeId: string;
+  themeLabel: string;
+  themeBlurb: string;
+}
+
+export interface ActiveBuffs {
+  softDay?: boolean;
+  minutesDown?: boolean;
+  cupUp?: boolean;
+  vibeBoost?: boolean;
+}
+
 export interface DayPlan {
   date: string;
   starId: string;
@@ -110,6 +133,7 @@ export interface DayPlan {
   spare: { punishment: Challenge; reward: Challenge };
   bonus: string; // detail when all 3 challenges are done
   penalty: string; // detail when 2+ challenges failed
+  flavor?: DayFlavor;
 }
 
 export type Game = 'CS2' | 'WARDOGS' | 'LoL' | 'Diablo IV' | 'Fortnite';
@@ -131,6 +155,8 @@ export interface DayRecord {
   games: GameLog[];
   status: Record<string, ChallengeStatus>;
   sexDone: boolean;
+  /** Challenge ids already paid out in the points payout log. */
+  pointsPaid?: Record<string, ChallengeStatus | 'sex' | 'all3' | string>;
 }
 
 export interface AppData {
@@ -141,4 +167,12 @@ export interface AppData {
   days: Record<string, DayRecord>;
   /** User-added day tags (labels); stored as lowercase ids matching the label. */
   customTags?: string[];
+  /** RPG points balance. */
+  points?: number;
+  /** Owned shop item ids (consumables may appear more than once). */
+  inventory?: string[];
+  /** Permanent vanity unlocks (non-consumable cosmetics). */
+  unlocks?: string[];
+  /** One-shot buffs waiting to apply. */
+  buffs?: ActiveBuffs;
 }

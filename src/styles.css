@@ -77,7 +77,7 @@ blockquote cite { display: block; text-align: right; margin-top: 6px; color: var
 .form input, .form select, .field select, .field input { width: 100%; background: var(--elev); border: 1px solid var(--border); border-radius: 12px; padding: 10px 12px; }
 .field { display: grid; gap: 4px; font-size: .85rem; color: var(--muted); }
 .field input, .field select { color: var(--text); font-size: 1rem; }
-.row3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.row3 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
 .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
 .seg { display: grid; grid-template-columns: 1fr 1fr; background: var(--elev); border-radius: 12px; padding: 3px; border: 1px solid var(--border); }
 .seg button { background: none; border: 0; padding: 8px; border-radius: 10px; cursor: pointer; }
@@ -135,3 +135,11 @@ input[type='search'] { -webkit-appearance: none; appearance: none; }
 .swaps { list-style: none; padding: 0; margin: 6px 0 0; display: grid; gap: 6px; }
 .swaps li { background: var(--elev); border: 1px solid var(--border); border-radius: 12px; padding: 8px 10px; font-size: .9rem; }
 .swaps li b { color: var(--rose); }
+
+.pts { background: none; border: 0; color: var(--rose); font: inherit; cursor: pointer; padding: 0; }
+.shop { list-style: none; padding: 0; margin: 0; display: grid; gap: 8px; }
+.shop li { display: flex; gap: 10px; align-items: center; justify-content: space-between; background: var(--elev); border: 1px solid var(--border); border-radius: 14px; padding: 10px 12px; }
+.shop li div { display: grid; gap: 2px; flex: 1; min-width: 0; }
+.shop li b { color: var(--rose); }
+.btn.slim { width: auto; margin: 0; padding: 8px 12px; font-size: .85rem; flex-shrink: 0; }
+.btn:disabled { opacity: .45; cursor: not-allowed; }

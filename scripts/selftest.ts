@@ -1,6 +1,8 @@
 import { readFileSync, readdirSync } from 'node:fs';
 import { DEFAULT_STARS } from '../src/stars';
 import { generateDay, needsLayers, regenerateChallenges } from '../src/engine';
+import { isBossDay, isQuietDay, themeForDate, weatherFor } from '../src/meta';
+import { SHOP_ITEMS } from '../src/shop';
 import { FULL_LOOKS, NORMAL_LOOKS } from '../src/wardrobe';
 import type { Star } from '../src/types';
 
@@ -15,9 +17,24 @@ for (const f of readdirSync('src').filter((x) => /\.tsx?$/.test(x))) {
 }
 if (NORMAL_LOOKS.length !== 200) fail(`normals ${NORMAL_LOOKS.length}`);
 if (FULL_LOOKS.length !== 100) fail(`fulls ${FULL_LOOKS.length}`);
+if (SHOP_ITEMS.length < 25) fail(`shop too small ${SHOP_ITEMS.length}`);
 if (needsLayers(['hus', 'cook', 'shower'])) fail('all-home should not layer');
 if (!needsLayers(['hus', 'handel'])) fail('home+grocery should layer');
 if (needsLayers(['handel', 'tur', 'fisk'])) fail('all-out should be single tailored');
+
+// weekend boss exists somewhere in a year of saturdays
+let bosses = 0, quiets = 0;
+for (let i = 0; i < 60; i++) {
+  const d = `2026-10-${String((i % 28) + 1).padStart(2, '0')}`;
+  if (isBossDay(d)) bosses++;
+  if (isQuietDay(d)) quiets++;
+}
+if (bosses < 1) fail('expected some boss weekends');
+if (quiets < 1) fail('expected some quiet days');
+const tw = themeForDate('2026-10-05');
+if (!tw.label) fail('theme missing');
+const wx = weatherFor('2026-10-05');
+if (!wx.weather) fail('weather missing');
 
 const stars = DEFAULT_STARS.map((s) => ({ ...s }));
 let edg = 0, vag = 0;
@@ -25,18 +42,17 @@ for (let n = 0; n < 40; n++) {
   const star = stars[n % stars.length];
   const tags = [['hus', 'cook', 'shower'], ['hus', 'handel'], ['spil', 'tv'], ['arbejde', 'trafik']][n % 4];
   const plan = generateDay(`2026-11-${String((n % 28) + 1).padStart(2, '0')}`, star, 'C', {}, tags);
-  if (plan.challenges.length !== 3 && tags.length >= 2) {
-    if (plan.challenges.length > 3) fail('>3 challenges');
-  }
+  if (!plan.flavor) fail('flavor missing');
+  if (plan.challenges.length > 3) fail('>3 challenges');
   const layered = needsLayers(tags);
   if (!layered && plan.outfit.swaps.length) fail(`single day has swaps: ${tags}`);
   if (layered && !plan.outfit.swaps.length) fail(`layered day missing swaps: ${tags}`);
-  if (plan.outfit.evening) fail('evening block should not appear in v3.7 single/layered modes');
+  if (plan.outfit.evening) fail('evening block should not appear');
   const js = JSON.stringify(plan);
   if (EDG.test(js)) edg++;
   if (BAD_VAG.test(js)) vag++;
 }
-console.log(`wardrobe: ${NORMAL_LOOKS.length}+${FULL_LOOKS.length}; 40 days edg ${edg} vag ${vag}`);
+console.log(`wardrobe: ${NORMAL_LOOKS.length}+${FULL_LOOKS.length}; shop ${SHOP_ITEMS.length}; boss~${bosses} quiet~${quiets}; 40 days edg ${edg} vag ${vag}`);
 
 function force(star: Star, styleId: string, tags: string[], date: string) {
   const solo = { ...star, knownFor: [styleId as Star['knownFor'][number]] };
@@ -50,11 +66,10 @@ if (home.outfit.swaps.length || home.outfit.evening) fail('all-home must be one 
 if (!mixed.outfit.swaps.some((s) => s.tag === 'handel')) fail('grocery cover missing');
 
 console.log('\n1 ALL-HOME (one outfit):', JSON.stringify({
-  tags: home.tags, summary: home.outfit.summary, swaps: home.outfit.swaps.length,
-  look: `${home.outfit.top} / ${home.outfit.bottom}`,
+  tags: home.tags, swaps: home.outfit.swaps.length, look: `${home.outfit.top} / ${home.outfit.bottom}`,
+  theme: home.flavor?.themeLabel, wx: home.flavor?.weather,
 }, null, 2));
 console.log('\n2 HOME+GROCERY (layers):', JSON.stringify({
-  tags: mixed.tags, summary: mixed.outfit.summary,
-  base: `${mixed.outfit.top} / ${mixed.outfit.bottom}`,
-  covers: mixed.outfit.swaps,
+  tags: mixed.tags, base: `${mixed.outfit.top} / ${mixed.outfit.bottom}`,
+  covers: mixed.outfit.swaps.map((s) => s.label), theme: mixed.flavor?.themeLabel,
 }, null, 2));

@@ -2,14 +2,17 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { CUPS } from './content';
 import { STYLE_DEFS, styleLabel } from './looks';
 import {
-  GAMES, MAX_CHALLENGES, effectivePlan, ensureDay, regenerateChallenges, scoreGame, starShort, todayKey,
-  type Mood,
+  GAMES, MAX_CHALLENGES, applyBuffsToPlan, awardChallengePoints, awardGamePoints, awardSexPoints,
+  buyShopItem, effectivePlan, ensureDay, regenerateChallenges, scoreGame, starShort, todayKey,
+  useInventoryItem, type Mood,
 } from './engine';
+import { buildFlavor } from './meta';
+import { SHOP_ITEMS, shopByKind } from './shop';
 import { freshData, loadData, saveData } from './storage';
 import { BUILTIN_TAGS, TAG_GROUPS, tagLabel } from './tags';
 import type { AppData, ChallengeStatus, DayRecord, Game, GameLog, KnownFor, Star, Tone } from './types';
 
-type Tab = 'today' | 'history' | 'settings';
+type Tab = 'today' | 'history' | 'shop' | 'settings';
 
 export default function App() {
   const [today, setToday] = useState(todayKey());
@@ -35,21 +38,28 @@ export default function App() {
     <div className="app">
       <header className="top">
         <div className="brand">Frida <span>Diary</span></div>
-        <div className="date">{new Date().toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' })}</div>
+        <div className="date">{new Date().toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' })} · <button type="button" className="pts" onClick={() => setTab('shop')}>{data.points ?? 0} pts</button></div>
       </header>
       <main>
         {tab === 'today' && data.days[today] && (
-          <TodayView rec={data.days[today]} star={data.stars.find((s) => s.id === data.days[today].plan.starId)}
+          <TodayView
+            rec={data.days[today]}
+            star={data.stars.find((s) => s.id === data.days[today].plan.starId)}
             customTags={data.customTags ?? []}
-            update={(fn) => updateDay(today, fn)} />
+            data={data}
+            setData={setData}
+            today={today}
+            update={(fn) => updateDay(today, fn)}
+          />
         )}
         {tab === 'history' && <HistoryView data={data} today={today} />}
+        {tab === 'shop' && <ShopView data={data} setData={setData} today={today} />}
         {tab === 'settings' && <SettingsView data={data} setData={setData} today={today} />}
       </main>
       <nav className="tabs">
-        {(['today', 'history', 'settings'] as Tab[]).map((t) => (
+        {(['today', 'history', 'shop', 'settings'] as Tab[]).map((t) => (
           <button key={t} className={tab === t ? 'on' : ''} onClick={() => setTab(t)}>
-            <span className="ico">{t === 'today' ? '\u2661' : t === 'history' ? '\u2630' : '\u2699'}</span>
+            <span className="ico">{t === 'today' ? '\u2661' : t === 'history' ? '\u2630' : t === 'shop' ? '\u2666' : '\u2699'}</span>
             {t[0].toUpperCase() + t.slice(1)}
           </button>
         ))}
@@ -66,22 +76,32 @@ const MOOD_TEXT: Record<Mood, string> = {
   reward: 'Great games! You earned a reward.',
 };
 
-function TodayView({ rec, star, customTags, update }: {
+function TodayView({ rec, star, customTags, data, setData, today, update }: {
   rec: DayRecord; star?: Star; customTags: string[];
+  data: AppData; setData: (fn: (d: AppData) => AppData) => void; today: string;
   update: (fn: (r: DayRecord) => DayRecord) => void;
 }) {
   const [now, setNow] = useState(() => new Date());
   useEffect(() => { const t = window.setInterval(() => setNow(new Date()), 60_000); return () => window.clearInterval(t); }, []);
-  const { plan, fx, missedIds } = useMemo(() => effectivePlan(rec, now), [rec, now]);
+  const raw = useMemo(() => effectivePlan(rec, now), [rec, now]);
+  const plan = applyBuffsToPlan(raw.plan, data.buffs);
+  const { fx, missedIds } = raw;
   const o = plan.outfit;
   const tags = plan.tags ?? [];
+  const flavor = plan.flavor ?? buildFlavor(plan.date, now);
   const short = starShort({ name: star?.name ?? plan.starName });
-  const setStatus = (id: string, st: ChallengeStatus) =>
+  const setStatus = (id: string, st: ChallengeStatus) => {
+    setData((d) => {
+      const cur = d.days[today]?.status?.[id];
+      const next = cur === st ? null : st;
+      return awardChallengePoints(d, today, id, next);
+    });
     update((r) => {
       const status = { ...(r.status ?? {}) };
       if (status[id] === st) delete status[id]; else status[id] = st;
       return { ...r, status };
     });
+  };
   const toggleTag = (id: string) => {
     if (!star) return;
     const next = tags.includes(id) ? tags.filter((t) => t !== id) : [...tags, id];
@@ -105,6 +125,19 @@ function TodayView({ rec, star, customTags, update }: {
             <div className="chips">{star.knownFor.map((k) => <span key={k} className={`chip ${k === plan.styleId ? 'on' : ''}`}>{styleLabel(k)}</span>)}</div>
           </>
         )}
+      </section>
+
+      {(flavor.mode === 'boss' || flavor.mode === 'quiet') && (
+        <section className={`banner ${flavor.mode === 'boss' ? 'stricter' : 'reward'}`}>
+          {flavor.mode === 'boss'
+            ? 'Weekend boss day — harder sex, boss challenge, full energy.'
+            : 'Quiet day — softer sex, fewer challenges, calmer look.'}
+        </section>
+      )}
+      <section className="banner">
+        <b>Theme week:</b> {flavor.themeLabel} — {flavor.themeBlurb}
+        <br />
+        <span className="small muted">{flavor.weatherNote} · {flavor.timeNote}</span>
       </section>
 
       <section className="card">
@@ -202,13 +235,17 @@ function TodayView({ rec, star, customTags, update }: {
         </p>
         {fx.detail && <p className={`fxline ${fx.done === MAX_CHALLENGES ? 'soft' : 'hard'}`}>{fx.detail}</p>}
         <blockquote>&ldquo;{plan.sex.scene}&rdquo;<cite>— {short}</cite></blockquote>
-        <button className={`btn ${rec.sexDone ? 'done' : ''}`} onClick={() => update((r) => ({ ...r, sexDone: !r.sexDone }))}>
+                <button className={`btn ${rec.sexDone ? 'done' : ''}`} onClick={() => {
+          const next = !rec.sexDone;
+          update((r) => ({ ...r, sexDone: next }));
+          setData((d) => awardSexPoints(d, today, next));
+        }}>
           {rec.sexDone ? '\u2713 Done' : 'Mark done'}
         </button>
       </section>
 
       <section className="card">
-        <h2>Challenges {tags.length > 0 && <span className="count">{fx.done}/{MAX_CHALLENGES}</span>}</h2>
+        <h2>Challenges {tags.length > 0 && <span className="count">{fx.done}/{Math.max(plan.challenges.length, 1)}</span>}</h2>
         {tags.length === 0 ? (
           <p className="muted">No challenges yet. Pick day tags above. Challenges are concrete things you do in her style clothing — not voice orders.</p>
         ) : (
@@ -236,12 +273,12 @@ function TodayView({ rec, star, customTags, update }: {
         )}
       </section>
 
-      <GameLogCard rec={rec} update={update} />
+      <GameLogCard rec={rec} update={update} onScored={(score) => setData((d) => awardGamePoints(d, today, score))} />
     </>
   );
 }
 
-function GameLogCard({ rec, update }: { rec: DayRecord; update: (fn: (r: DayRecord) => DayRecord) => void }) {
+function GameLogCard({ rec, update, onScored }: { rec: DayRecord; update: (fn: (r: DayRecord) => DayRecord) => void; onScored?: (score: number) => void }) {
   const [open, setOpen] = useState(false);
   const [game, setGame] = useState<Game>('CS2');
   const [k, setK] = useState('');
@@ -253,6 +290,7 @@ function GameLogCard({ rec, update }: { rec: DayRecord; update: (fn: (r: DayReco
     const base = { game, kills: +k || 0, deaths: +dth || 0, assists: +a || 0, win, cash: game === 'WARDOGS' && cash !== '' ? +cash : undefined };
     const log: GameLog = { ...base, id: String(Date.now()), at: Date.now(), score: scoreGame(base) };
     update((r) => ({ ...r, games: [...r.games, log] }));
+    onScored?.(log.score);
     setK(''); setD(''); setA(''); setCash(''); setOpen(false);
   };
   return (
@@ -307,6 +345,7 @@ function HistoryView({ data, today }: { data: AppData; today: string }) {
             {!!(plan.tags?.length) && <p className="small muted">{plan.tags.map((t) => tagLabel(t, data.customTags)).join(' · ')}</p>}
             <p className="small">{plan.outfit.summary}</p>
             <p className="small">{rec.sexDone ? '\u2713' : '\u25cb'} {plan.sex.formLabel} · {plan.sex.minutes} min · {plan.sex.intensity}</p>
+            {plan.flavor && <p className="small muted">{plan.flavor.mode !== 'normal' ? plan.flavor.mode + ' · ' : ''}{plan.flavor.themeLabel} · {plan.flavor.weather}</p>}
             <p className="small muted">{fx.line}{fx.score !== null ? ` · Game score ${fx.score}` : ''}</p>
           </section>
         );
@@ -415,6 +454,90 @@ function SettingsView({ data, setData, today }: { data: AppData; setData: (fn: (
           setData(() => ensureDay(freshData(), today));
         }}>Reset all data</button>
       </section>
+    </>
+  );
+}
+
+
+function ShopView({ data, setData, today }: { data: AppData; setData: (fn: (d: AppData) => AppData) => void; today: string }) {
+  const pts = data.points ?? 0;
+  const inv = data.inventory ?? [];
+  const unlocks = data.unlocks ?? [];
+  const kinds = ['token', 'perk', 'cosmetic', 'treat'] as const;
+  const buy = (id: string) => setData((d) => buyShopItem(d, id));
+  const use = (id: string) => {
+    const item = SHOP_ITEMS.find((x) => x.id === id);
+    if (!item) return;
+    if (item.effect === 'skip-challenge') {
+      setData((d) => {
+        let next = useInventoryItem(d, id);
+        const rec = next.days[today];
+        if (!rec) return next;
+        const open = rec.plan.challenges.find((c) => rec.status?.[c.id] !== 'done');
+        if (open) {
+          const status = { ...(rec.status ?? {}), [open.id]: 'done' as ChallengeStatus };
+          next = { ...next, days: { ...next.days, [today]: { ...rec, status } } };
+          next = awardChallengePoints(next, today, open.id, 'done');
+        }
+        return next;
+      });
+      return;
+    }
+    setData((d) => useInventoryItem(d, id));
+  };
+  return (
+    <>
+      <section className="card">
+        <h2>Points <span className="count">{pts}</span></h2>
+        <p className="muted small">Earn pts: challenge done +8, all 3 +15, sex done +6, good games +10. Fail -5, bad games -8. Spend below.</p>
+        {!!(data.buffs && (data.buffs.softDay || data.buffs.minutesDown || data.buffs.cupUp || data.buffs.vibeBoost)) && (
+          <p className="banner reward">Active buffs: {[data.buffs.softDay && 'soft day', data.buffs.minutesDown && '-10 min', data.buffs.cupUp && 'cup up', data.buffs.vibeBoost && 'vibe boost'].filter(Boolean).join(' · ')}</p>
+        )}
+      </section>
+      {inv.length > 0 && (
+        <section className="card">
+          <h2>Inventory</h2>
+          <ul className="shop">
+            {inv.map((id, i) => {
+              const it = SHOP_ITEMS.find((x) => x.id === id);
+              return (
+                <li key={id + i}>
+                  <div><b>{it?.name ?? id}</b><span className="muted small">{it?.blurb}</span></div>
+                  {it?.consumable && <button className="btn slim" type="button" onClick={() => use(id)}>Use</button>}
+                </li>
+              );
+            })}
+          </ul>
+        </section>
+      )}
+      {unlocks.length > 0 && (
+        <section className="card">
+          <h2>Unlocks</h2>
+          <div className="chips">{unlocks.map((id) => <span key={id} className="chip on">{SHOP_ITEMS.find((x) => x.id === id)?.name ?? id}</span>)}</div>
+        </section>
+      )}
+      {kinds.map((k) => (
+        <section className="card" key={k}>
+          <h2>{k[0].toUpperCase() + k.slice(1)}s</h2>
+          <ul className="shop">
+            {shopByKind(k).map((it) => {
+              const owned = !it.consumable && unlocks.includes(it.id);
+              const can = pts >= it.cost && !owned;
+              return (
+                <li key={it.id}>
+                  <div>
+                    <b>{it.name}</b> <span className="muted small">{it.cost} pts</span>
+                    <span className="muted small">{it.blurb}</span>
+                  </div>
+                  <button className="btn slim" type="button" disabled={!can} onClick={() => buy(it.id)}>
+                    {owned ? 'Owned' : 'Buy'}
+                  </button>
+                </li>
+              );
+            })}
+          </ul>
+        </section>
+      ))}
     </>
   );
 }

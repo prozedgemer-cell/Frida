@@ -7,8 +7,12 @@ import { LAYER_PRIORITY, OUTER_LAYERS, TAG_CHALLENGES, TAG_PUNISHMENTS, TAG_REWA
 import { FULL_LOOKS, NORMAL_LOOKS, STYLE_VIBES, type WardrobeLook } from './wardrobe';
 
 import { STYLE_BY_ID, type StyleDef } from './looks';
+import {
+  applyWeatherTimeLean, buildFlavor, flavorVibes, themeForDate, type DayFlavor,
+} from './meta';
+import { POINTS, SHOP_BY_ID } from './shop';
 import type {
-  AppData, Challenge, DayPlan, DayRecord, FormId, Game, GameLog, Intensity, KnownFor, OutfitPlan, SexPlan, Star, Style,
+  ActiveBuffs, AppData, Challenge, ChallengeStatus, DayPlan, DayRecord, FormId, Game, GameLog, Intensity, KnownFor, OutfitPlan, SexPlan, Star, Style,
 } from './types';
 
 
@@ -198,8 +202,9 @@ function tailorForHome(pieces: ReturnType<typeof lookToPieces>, tags: string[]) 
   return { ...pieces, extras };
 }
 
-function buildOutfit(r: R, star: Star, style: StyleDef, cup: string, intensity: Intensity, form: FormId, tags: string[] = []): OutfitPlan {
-  const vibes = STYLE_VIBES[style.id] ?? ['casual', 'sexy'];
+function buildOutfit(r: R, star: Star, style: StyleDef, cup: string, intensity: Intensity, form: FormId, tags: string[] = [], flavor?: DayFlavor): OutfitPlan {
+  const baseVibes = STYLE_VIBES[style.id] ?? ['casual', 'sexy'];
+  const vibes = flavor ? [...baseVibes, ...flavorVibes(flavor)] : baseVibes;
   const layered = needsLayers(tags);
   const allHome = tags.length > 0 && tags.every((t) => !OUTER_LAYERS[t]);
   const allCover = tags.length > 0 && tags.every((t) => !!OUTER_LAYERS[t]);
@@ -218,6 +223,7 @@ function buildOutfit(r: R, star: Star, style: StyleDef, cup: string, intensity: 
     let pieces = lookToPieces(mixed, cup, style, form, intensity, r);
     if (allCover) pieces = tailorForOut(pieces, tags, r);
     if (allHome) pieces = tailorForHome(pieces, tags);
+    if (flavor) pieces = applyWeatherTimeLean(pieces, flavor);
     const summary = `${starShort(star)} today: ${mixed.name} — ${pieces.top}, ${pieces.bottom}, ${pieces.legwear}, ${cup}-cup forms.`;
     return {
       baseId: mixed.id,
@@ -234,7 +240,8 @@ function buildOutfit(r: R, star: Star, style: StyleDef, cup: string, intensity: 
   // Layered day (out + home mix): stable normal base + outer swaps for cover tags only
   const seed = pickLook(r, NORMAL_LOOKS, vibes);
   const baseLook = mixLooks(r, seed, NORMAL_LOOKS, vibes);
-  const pieces = lookToPieces(baseLook, cup, style, form, intensity, r);
+  let pieces = lookToPieces(baseLook, cup, style, form, intensity, r);
+  if (flavor) pieces = applyWeatherTimeLean(pieces, flavor);
   const swaps = buildSwaps(tags);
   for (const sw of swaps) {
     if (r() < 0.35) {
@@ -252,7 +259,7 @@ function buildOutfit(r: R, star: Star, style: StyleDef, cup: string, intensity: 
 
 /** Re-apply activity swaps / evening eligibility when tags change — keeps the same base look. */
 /** Re-apply outfit mode when tags change — keeps the same base pieces when layered; rebuilds single-look when mode flips. */
-export function applyLayers(outfit: OutfitPlan, star: Star, style: StyleDef, tags: string[]): OutfitPlan {
+export function applyLayers(outfit: OutfitPlan, star: Star, style: StyleDef, tags: string[], flavor?: DayFlavor): OutfitPlan {
   const layered = needsLayers(tags);
   // If day is a single-look day, rebuild a fresh single tailored outfit from the same cup/baseId seed vibes
   if (!layered) {
@@ -275,6 +282,7 @@ export function applyLayers(outfit: OutfitPlan, star: Star, style: StyleDef, tag
     const allCover = tags.every((t) => !!OUTER_LAYERS[t]);
     if (allCover) pieces = tailorForOut(pieces, tags, r);
     if (allHome) pieces = tailorForHome(pieces, tags);
+    if (flavor) pieces = applyWeatherTimeLean(pieces, flavor);
     const summary = `${starShort(star)} today: ${mixed.name} — ${pieces.top}, ${pieces.bottom}, ${pieces.legwear}, ${outfit.cup}-cup forms.`;
     return {
       baseId: mixed.id, baseName: mixed.name, baseTier: fantasyHome ? 'full' : 'normal',
@@ -485,14 +493,17 @@ function buildSpare(r: R, form: FormId, style: StyleDef, tags: string[], date: s
 /** Rebuild challenges + layers + sex lean from tags. Keeps sex form and base outfit pieces. */
 export function regenerateChallenges(plan: DayPlan, star: Star, tags: string[]): DayPlan {
   const style = STYLE_BY_ID[plan.styleId];
+  const flavor = plan.flavor ?? buildFlavor(plan.date);
   const r = rng(`chal|${plan.date}|${star.id}|${plan.styleId}|${[...tags].sort().join(',')}`);
-  const outfit = applyLayers(plan.outfit, star, style, tags);
-  const sex = leanSexFromTags(r, plan.sex, tags, leftoverTags(tags));
+  const outfit = applyLayers(plan.outfit, star, style, tags, flavor);
+  let sex = leanSexFromTags(r, plan.sex, tags, leftoverTags(tags));
+  sex = applyModeToSex(sex, flavor);
   const v = outfitVars(style, outfit, sex.form, star);
   v.loc = sex.location;
-  const challenges = buildChallenges(r, sex.intensity, plan.date, sex.form, style, tags, v);
+  let challenges = buildChallenges(r, sex.intensity, plan.date, sex.form, style, tags, v);
+  challenges = applyModeToChallenges(challenges, flavor, plan.date, v);
   const spare = buildSpare(r, sex.form, style, tags, plan.date, v);
-  return { ...plan, tags, outfit, sex, challenges, spare };
+  return { ...plan, tags, outfit, sex, challenges, spare, flavor };
 }
 
 export function starShort(star: { name: string }): string {
@@ -511,27 +522,64 @@ export function pickStyle(date: string, star: Star, days: Record<string, DayReco
   const known = star.knownFor.filter((k) => STYLE_BY_ID[k]);
   if (known.length === 0) return 'sweet-tease';
   const last = lastStyle(star.id, date, days);
-  const options = known.length > 1 ? known.filter((k) => k !== last) : known;
-  return pick(rng(`style|${date}|${star.id}`), options);
+  let options = known.length > 1 ? known.filter((k) => k !== last) : known;
+  const theme = themeForDate(date);
+  const biased = options.filter((k) => theme.styleBias.includes(k));
+  const r = rng(`style|${date}|${star.id}`);
+  if (biased.length && r() < 0.55) return pick(r, biased);
+  return pick(r, options);
+}
+
+function applyModeToSex(sex: SexPlan, flavor: DayFlavor): SexPlan {
+  if (flavor.mode === 'boss') {
+    return { ...sex, intensity: 'hard', minutes: Math.min(90, sex.minutes + 15) };
+  }
+  if (flavor.mode === 'quiet') {
+    return { ...sex, intensity: 'soft', minutes: Math.max(5, sex.minutes - 10) };
+  }
+  return sex;
+}
+
+function applyModeToChallenges(challenges: Challenge[], flavor: DayFlavor, date: string, v: Record<string, string>): Challenge[] {
+  if (flavor.mode === 'quiet') {
+    return challenges.slice(0, Math.min(2, Math.max(1, challenges.length)));
+  }
+  if (flavor.mode === 'boss' && challenges.length) {
+    const boss: Challenge = {
+      id: `${date}-boss`,
+      kind: 'task',
+      text: fill('Boss day: wear her full look energy all day and send one mirror photo in her {style} style before evening.', v),
+      link: fill('Failure means hard {form} with no shortcuts tonight.', v),
+      fromTag: challenges[0].fromTag,
+    };
+    const rest = challenges.filter((c) => c.id !== boss.id).slice(0, MAX_CHALLENGES - 1);
+    return [boss, ...rest].slice(0, MAX_CHALLENGES);
+  }
+  return challenges;
 }
 
 export function generateDay(date: string, star: Star, defaultCup: string, days: Record<string, DayRecord>, tags: string[] = []): DayPlan {
   const styleId = pickStyle(date, star, days);
   const style = STYLE_BY_ID[styleId];
+  const flavor = buildFlavor(date);
   const r = rng(`day|${date}|${star.id}|${styleId}`);
-  const intensity: Intensity = r() < (style.leaning === 'hard' ? 0.75 : style.leaning === 'soft' ? 0.2 : 0.5) ? 'hard' : 'soft';
-  const cup = cupFor(star, style, defaultCup, r);
+  let intensity: Intensity = r() < (style.leaning === 'hard' ? 0.75 : style.leaning === 'soft' ? 0.2 : 0.5) ? 'hard' : 'soft';
+  if (flavor.mode === 'boss') intensity = 'hard';
+  if (flavor.mode === 'quiet') intensity = 'soft';
+  let cup = cupFor(star, style, defaultCup, r);
   const form = weighted(r, FORMS, (f) => (style.forms.includes(f.id) ? 5 : 1)).id;
-  const outfit = buildOutfit(r, star, style, cup, intensity, form, tags);
+  const outfit = buildOutfit(r, star, style, cup, intensity, form, tags, flavor);
   const sex0 = buildSex(r, star, style, outfit, intensity, form);
-  const sex = leanSexFromTags(rng(`sexlean|${date}|${star.id}|${[...tags].sort().join(',')}`), sex0, tags, leftoverTags(tags));
+  let sex = leanSexFromTags(rng(`sexlean|${date}|${star.id}|${[...tags].sort().join(',')}`), sex0, tags, leftoverTags(tags));
+  sex = applyModeToSex(sex, flavor);
   const v = outfitVars(style, outfit, form, star);
   v.loc = sex.location;
-  const challenges = buildChallenges(r, sex.intensity, date, form, style, tags, v);
+  let challenges = buildChallenges(r, sex.intensity, date, form, style, tags, v);
+  challenges = applyModeToChallenges(challenges, flavor, date, v);
   const spare = buildSpare(r, form, style, tags, date, v);
   return {
     date, starId: star.id, starName: star.name, styleId, styleLabel: style.label, tags: [...tags],
-    outfit, sex, challenges, spare, bonus: pick(r, BONUSES), penalty: pick(r, PENALTIES),
+    outfit, sex, challenges, spare, bonus: pick(r, BONUSES), penalty: pick(r, PENALTIES), flavor,
   };
 }
 
@@ -606,13 +654,14 @@ export function effectivePlan(rec: DayRecord, now: Date = new Date()): { plan: D
     else if (status[c.id] === 'failed') failed++;
     else if (overdue) { failed++; missed++; missedIds.add(c.id); }
   }
+  const totalCh = Math.max(1, challenges.length);
   const chalDelta = done * DONE_MIN + failed * FAIL_MIN;
   let detail = '';
-  if (done === MAX_CHALLENGES) { intensity = 'soft'; detail = base.bonus; }
+  if (done >= totalCh && challenges.length > 0) { intensity = 'soft'; detail = base.bonus; }
   else if (failed >= 2) { intensity = 'hard'; detail = base.penalty; }
   const minutes = Math.max(5, base.sex.minutes + gameDelta + chalDelta);
 
-  const parts = [`${done}/${MAX_CHALLENGES} done`];
+  const parts = [`${done}/${totalCh} done`];
   if (failed) parts.push(`${failed} failed${missed ? ` (${missed} missed)` : ''}`);
   const delta = chalDelta === 0 ? 'no change' : `${chalDelta < 0 ? '\u2212' : '+'}${Math.abs(chalDelta)} min`;
   const line = `Challenges: ${parts.join(', ')} \u00b7 ${delta}${detail ? (intensity === 'soft' ? ', soft' : ', hard') : ''}`;
@@ -629,6 +678,7 @@ export function ensureDay(d: AppData, date: string): AppData {
   const existing = d.days[date];
   if (existing) {
     let plan = existing.plan.tags ? existing.plan : { ...existing.plan, tags: [] as string[] };
+    if (!plan.flavor) plan = { ...plan, flavor: buildFlavor(date) };
     const star = d.stars.find((s) => s.id === plan.starId);
     if (star && star.name !== plan.starName) {
       const { [date]: _today, ...rest } = d.days;
@@ -650,3 +700,94 @@ export function ensureDay(d: AppData, date: string): AppData {
   return { ...d, days: { ...d.days, [date]: rec } };
 }
 
+
+
+// ---------- points / shop ----------
+
+export function awardChallengePoints(
+  data: AppData, date: string, challengeId: string, status: ChallengeStatus | null,
+): AppData {
+  const rec = data.days[date];
+  if (!rec) return data;
+  const paid = { ...(rec.pointsPaid ?? {}) };
+  let points = data.points ?? 0;
+  const prev = paid[challengeId];
+  if (prev === 'done') points -= POINTS.challengeDone;
+  if (prev === 'failed') points -= POINTS.challengeFail;
+  if (status === 'done') { points += POINTS.challengeDone; paid[challengeId] = 'done'; }
+  else if (status === 'failed') { points += POINTS.challengeFail; paid[challengeId] = 'failed'; }
+  else { delete paid[challengeId]; }
+
+  const nextStatus = { ...(rec.status ?? {}) };
+  if (status) nextStatus[challengeId] = status;
+  else delete nextStatus[challengeId];
+  const { fx } = effectivePlan({ ...rec, status: nextStatus });
+  const need = Math.max(1, (data.days[date]?.plan.challenges.length ?? MAX_CHALLENGES));
+  if (fx.done >= need && paid['__all3'] !== 'all3') {
+    points += POINTS.allThreeBonus;
+    paid['__all3'] = 'all3';
+  }
+  if (fx.done < need && paid['__all3'] === 'all3') {
+    points -= POINTS.allThreeBonus;
+    delete paid['__all3'];
+  }
+  return {
+    ...data,
+    points,
+    days: { ...data.days, [date]: { ...rec, pointsPaid: paid } },
+  };
+}
+
+export function awardSexPoints(data: AppData, date: string, sexDone: boolean): AppData {
+  const rec = data.days[date];
+  if (!rec) return data;
+  const paid = { ...(rec.pointsPaid ?? {}) };
+  let points = data.points ?? 0;
+  if (sexDone && paid['__sex'] !== 'sex') { points += POINTS.sexDone; paid['__sex'] = 'sex'; }
+  if (!sexDone && paid['__sex'] === 'sex') { points -= POINTS.sexDone; delete paid['__sex']; }
+  return { ...data, points, days: { ...data.days, [date]: { ...rec, pointsPaid: paid } } };
+}
+
+export function awardGamePoints(data: AppData, _date: string, score: number): AppData {
+  let delta = POINTS.gameNeutral;
+  if (score >= 75) delta = POINTS.gameReward;
+  else if (score < 25) delta = POINTS.gamePunish;
+  return { ...data, points: (data.points ?? 0) + delta };
+}
+
+export function buyShopItem(data: AppData, itemId: string): AppData {
+  const item = SHOP_BY_ID[itemId];
+  if (!item) return data;
+  const pts = data.points ?? 0;
+  if (pts < item.cost) return data;
+  const inventory = [...(data.inventory ?? [])];
+  const unlocks = [...(data.unlocks ?? [])];
+  if (item.consumable) inventory.push(item.id);
+  else if (!unlocks.includes(item.id)) unlocks.push(item.id);
+  else return data; // already owned permanent
+  return { ...data, points: pts - item.cost, inventory, unlocks };
+}
+
+export function useInventoryItem(data: AppData, itemId: string): AppData {
+  const item = SHOP_BY_ID[itemId];
+  if (!item || !item.consumable) return data;
+  const inv = [...(data.inventory ?? [])];
+  const idx = inv.indexOf(itemId);
+  if (idx < 0) return data;
+  inv.splice(idx, 1);
+  const buffs: ActiveBuffs = { ...(data.buffs ?? {}) };
+  if (item.effect === 'soft-day') buffs.softDay = true;
+  if (item.effect === 'minutes-down') buffs.minutesDown = true;
+  if (item.effect === 'cup-up') buffs.cupUp = true;
+  if (item.effect === 'vibe-boost') buffs.vibeBoost = true;
+  if (item.effect === 'skip-challenge') buffs.softDay = buffs.softDay; // handled in UI by marking a challenge done
+  return { ...data, inventory: inv, buffs };
+}
+
+export function applyBuffsToPlan(plan: DayPlan, buffs?: ActiveBuffs): DayPlan {
+  if (!buffs) return plan;
+  let sex = { ...plan.sex };
+  if (buffs.softDay) sex = { ...sex, intensity: 'soft' };
+  if (buffs.minutesDown) sex = { ...sex, minutes: Math.max(5, sex.minutes - 10) };
+  return { ...plan, sex };
+}
