@@ -43,6 +43,8 @@ export interface OutfitPlan {
   makeup: string;
   wig: string;
   extras: string[];
+  /** Practical outer layers when day tags are out-of-house / work / school. */
+  layers?: string;
   summary: string;
 }
 
@@ -72,6 +74,7 @@ export interface DayPlan {
   starName: string;
   styleId: KnownFor;
   styleLabel: string;
+  tags: string[];
   outfit: OutfitPlan;
   sex: SexPlan;
   challenges: Challenge[];
@@ -107,4 +110,6 @@ export interface AppData {
   defaultCup: string;
   stars: Star[];
   days: Record<string, DayRecord>;
+  /** User-added day tags (labels); stored as lowercase ids matching the label. */
+  customTags?: string[];
 }

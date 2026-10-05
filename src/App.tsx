@@ -2,10 +2,11 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { CUPS } from './content';
 import { STYLE_DEFS, styleLabel } from './looks';
 import {
-  GAMES, MAX_CHALLENGES, effectivePlan, ensureDay, scoreGame, starShort, todayKey,
+  GAMES, MAX_CHALLENGES, effectivePlan, ensureDay, regenerateChallenges, scoreGame, starShort, todayKey,
   type Mood,
 } from './engine';
 import { freshData, loadData, saveData } from './storage';
+import { BUILTIN_TAGS, tagLabel } from './tags';
 import type { AppData, ChallengeStatus, DayRecord, Game, GameLog, KnownFor, Star, Tone } from './types';
 
 type Tab = 'today' | 'history' | 'settings';
@@ -39,6 +40,7 @@ export default function App() {
       <main>
         {tab === 'today' && data.days[today] && (
           <TodayView rec={data.days[today]} star={data.stars.find((s) => s.id === data.days[today].plan.starId)}
+            customTags={data.customTags ?? []}
             update={(fn) => updateDay(today, fn)} />
         )}
         {tab === 'history' && <HistoryView data={data} today={today} />}
@@ -64,18 +66,31 @@ const MOOD_TEXT: Record<Mood, string> = {
   reward: 'Great games! You earned a reward.',
 };
 
-function TodayView({ rec, star, update }: { rec: DayRecord; star?: Star; update: (fn: (r: DayRecord) => DayRecord) => void }) {
+function TodayView({ rec, star, customTags, update }: {
+  rec: DayRecord; star?: Star; customTags: string[];
+  update: (fn: (r: DayRecord) => DayRecord) => void;
+}) {
   const [now, setNow] = useState(() => new Date());
   useEffect(() => { const t = window.setInterval(() => setNow(new Date()), 60_000); return () => window.clearInterval(t); }, []);
   const { plan, fx, missedIds } = useMemo(() => effectivePlan(rec, now), [rec, now]);
   const o = plan.outfit;
+  const tags = plan.tags ?? [];
   const short = starShort({ name: star?.name ?? plan.starName });
+  const allTags = [...BUILTIN_TAGS.map((t) => t.id), ...customTags.map((c) => c.toLowerCase())];
   const setStatus = (id: string, st: ChallengeStatus) =>
     update((r) => {
       const status = { ...(r.status ?? {}) };
       if (status[id] === st) delete status[id]; else status[id] = st;
       return { ...r, status };
     });
+  const toggleTag = (id: string) => {
+    if (!star) return;
+    const next = tags.includes(id) ? tags.filter((t) => t !== id) : [...tags, id];
+    update((r) => {
+      const plan2 = regenerateChallenges(r.plan, star, next);
+      return { ...r, plan: plan2, status: {} };
+    });
+  };
   const softer = fx.chalDelta < 0, harder = fx.chalDelta > 0;
   return (
     <>
@@ -93,6 +108,21 @@ function TodayView({ rec, star, update }: { rec: DayRecord; star?: Star; update:
         )}
       </section>
 
+      <section className="card">
+        <h2>Day tags</h2>
+        <p className="muted small">What you do today. Challenges are real activities in her {plan.styleLabel} clothes.</p>
+        <div className="chips pick">
+          {allTags.map((id) => (
+            <button key={id} type="button" className={`chip ${tags.includes(id) ? 'on' : ''}`} onClick={() => toggleTag(id)}>
+              {tagLabel(id, customTags)}
+            </button>
+          ))}
+        </div>
+        {tags.length === 0 && (
+          <p className="banner strict" style={{ marginTop: 10, marginBottom: 0 }}>Pick at least one tag so she can set today&rsquo;s 3 challenges.</p>
+        )}
+      </section>
+
       {fx.mood !== 'none' && (
         <section className={`banner ${fx.mood}`}>Game score {fx.score}/100 · {MOOD_TEXT[fx.mood]}</section>
       )}
@@ -107,6 +137,7 @@ function TodayView({ rec, star, update }: { rec: DayRecord; star?: Star; update:
           <dt>Bottom</dt><dd>{o.bottom}</dd>
           <dt>Legs</dt><dd>{o.legwear}</dd>
           <dt>Shoes</dt><dd>{o.shoes}</dd>
+          {o.layers && (<><dt>Outer</dt><dd>{o.layers}</dd></>)}
           <dt>Makeup</dt><dd>{o.makeup}</dd>
           <dt>Wig</dt><dd>{o.wig}</dd>
           <dt>Extras</dt><dd>{o.extras.join(', ')}</dd>
@@ -135,26 +166,32 @@ function TodayView({ rec, star, update }: { rec: DayRecord; star?: Star; update:
       </section>
 
       <section className="card">
-        <h2>Challenges <span className="count">{fx.done}/{MAX_CHALLENGES}</span></h2>
-        <p className="muted small">Done: {'\u2212'}5 min each, all 3 = soft + bonus. Failed: +10 min each, 2 failed = hard. Unchecked after 21:00 counts as failed.</p>
-        <ul className="challenges">
-          {plan.challenges.slice(0, MAX_CHALLENGES).map((c) => {
-            const st: string = rec.status?.[c.id] ?? (missedIds.has(c.id) ? 'missed' : '');
-            return (
-              <li key={c.id} className={`${st} ${c.kind}`}>
-                <button className="box" aria-label="Done" onClick={() => setStatus(c.id, 'done')}>
-                  {st === 'done' ? '\u2713' : st === 'failed' || st === 'missed' ? '\u2715' : ''}
-                </button>
-                <span className="ctext" onClick={() => setStatus(c.id, 'done')}>
-                  <b className="kind">{c.kind}{st === 'missed' ? ' · missed' : ''}</b>
-                  {c.text}
-                  <span className="clink">{'\u21b3'} {c.link}</span>
-                </span>
-                <button className={`failbtn ${st === 'failed' ? 'on' : ''}`} onClick={() => setStatus(c.id, 'failed')}>Failed</button>
-              </li>
-            );
-          })}
-        </ul>
+        <h2>Challenges {tags.length > 0 && <span className="count">{fx.done}/{MAX_CHALLENGES}</span>}</h2>
+        {tags.length === 0 ? (
+          <p className="muted">No challenges yet. Pick day tags above. Challenges are concrete things you do in her style clothing — not voice orders.</p>
+        ) : (
+          <>
+            <p className="muted small">Done: {'\u2212'}5 min each, all 3 = soft + bonus. Failed: +10 min each, 2 failed = hard. Unchecked after 21:00 counts as failed. Changing tags re-rolls challenges.</p>
+            <ul className="challenges">
+              {plan.challenges.slice(0, MAX_CHALLENGES).map((c) => {
+                const st: string = rec.status?.[c.id] ?? (missedIds.has(c.id) ? 'missed' : '');
+                return (
+                  <li key={c.id} className={`${st} ${c.kind}`}>
+                    <button className="box" aria-label="Done" onClick={() => setStatus(c.id, 'done')}>
+                      {st === 'done' ? '\u2713' : st === 'failed' || st === 'missed' ? '\u2715' : ''}
+                    </button>
+                    <span className="ctext" onClick={() => setStatus(c.id, 'done')}>
+                      <b className="kind">{c.kind}{st === 'missed' ? ' · missed' : ''}</b>
+                      {c.text}
+                      <span className="clink">{'\u21b3'} {c.link}</span>
+                    </span>
+                    <button className={`failbtn ${st === 'failed' ? 'on' : ''}`} onClick={() => setStatus(c.id, 'failed')}>Failed</button>
+                  </li>
+                );
+              })}
+            </ul>
+          </>
+        )}
       </section>
 
       <GameLogCard rec={rec} update={update} />
@@ -225,6 +262,7 @@ function HistoryView({ data, today }: { data: AppData; today: string }) {
           <section className="card hist" key={key}>
             <div className="kicker">{key === today ? 'Today' : new Date(key + 'T12:00').toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' })}</div>
             <h3>{data.stars.find((x) => x.id === plan.starId)?.name ?? plan.starName} <span className="muted small">· {plan.styleLabel}</span></h3>
+            {!!(plan.tags?.length) && <p className="small muted">{plan.tags.map((t) => tagLabel(t, data.customTags)).join(' · ')}</p>}
             <p className="small">{plan.outfit.summary}</p>
             <p className="small">{rec.sexDone ? '\u2713' : '\u25cb'} {plan.sex.formLabel} · {plan.sex.minutes} min · {plan.sex.intensity}</p>
             <p className="small muted">{fx.line}{fx.score !== null ? ` · Game score ${fx.score}` : ''}</p>
@@ -323,6 +361,11 @@ function SettingsView({ data, setData, today }: { data: AppData; setData: (fn: (
       </section>
 
       <section className="card">
+        <h2>Custom day tags</h2>
+        <CustomTagsEditor data={data} setData={setData} />
+      </section>
+
+      <section className="card">
         <h2>Data</h2>
         <p className="muted small">Everything is stored only on this device.</p>
         <button className="btn danger" onClick={() => {
@@ -373,6 +416,39 @@ function StarEditor({ star, onSave, onCancel, onDelete }: { star: Star; onSave: 
         <button className="btn ghost" onClick={onCancel}>Cancel</button>
       </div>
       {onDelete && <button className="btn danger" onClick={onDelete}>Delete star</button>}
+    </div>
+  );
+}
+
+
+function CustomTagsEditor({ data, setData }: { data: AppData; setData: (fn: (d: AppData) => AppData) => void }) {
+  const [val, setVal] = useState('');
+  const custom = data.customTags ?? [];
+  const add = () => {
+    const label = val.trim();
+    if (!label) return;
+    const id = label.toLowerCase();
+    if (BUILTIN_TAGS.some((t) => t.id === id) || custom.some((c) => c.toLowerCase() === id)) { setVal(''); return; }
+    setData((d) => ({ ...d, customTags: [...(d.customTags ?? []), label] }));
+    setVal('');
+  };
+  return (
+    <div className="form">
+      <p className="muted small">Extra tags show on Today next to Fisk, Spil, Hus…</p>
+      <div className="row2">
+        <input value={val} placeholder="e.g. Fitness" onChange={(e) => setVal(e.target.value)}
+          onKeyDown={(e) => { if (e.key === 'Enter') add(); }} />
+        <button className="btn" type="button" onClick={add}>Add</button>
+      </div>
+      {custom.length > 0 && (
+        <div className="chips pick">
+          {custom.map((c) => (
+            <button key={c} type="button" className="chip on" onClick={() => setData((d) => ({
+              ...d, customTags: (d.customTags ?? []).filter((x) => x !== c),
+            }))}>{c} ×</button>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

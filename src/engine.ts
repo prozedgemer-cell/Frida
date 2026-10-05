@@ -1,8 +1,9 @@
 import {
-  BONUSES, BOTTOMS, BRAS, CHALLENGES, CLOSERS, CUPS, EXTRAS, FORM_LINES, FORMS, LEGWEAR, LOC_LINES, LOCATIONS,
-  MAKEUP, OPENERS, PANTIES, PENALTIES, PLUG_FORMS, PUNISHMENTS, REWARDS, SHOES, TOPS, WIGS, formLabel,
-  type CTemplate, type Item,
+  BONUSES, BOTTOMS, BRAS, CLOSERS, CUPS, EXTRAS, FORM_LINES, FORMS, LEGWEAR, LOC_LINES, LOCATIONS,
+  MAKEUP, OPENERS, PANTIES, PENALTIES, PLUG_FORMS, SHOES, TOPS, WIGS, formLabel,
+  type Item,
 } from './content';
+import { OUTER_LAYERS, TAG_CHALLENGES, TAG_PUNISHMENTS, TAG_REWARDS, isOutTag, type TagChallenge } from './tags';
 
 import { STYLE_BY_ID, type Slot, type StyleDef } from './looks';
 import type {
@@ -85,7 +86,7 @@ export function cupFor(star: Star, style: StyleDef, defaultCup: string, r: R): s
   const idx = Math.round((own + style.cupShift) * 0.7 + def * 0.3) + jitter;
   return CUPS[Math.min(CUPS.length - 1, Math.max(0, idx))];
 }
-function buildOutfit(r: R, star: Star, style: StyleDef, cup: string, intensity: Intensity, form: FormId): OutfitPlan {
+function buildOutfit(r: R, star: Star, style: StyleDef, cup: string, intensity: Intensity, form: FormId, tags: string[] = []): OutfitPlan {
   const look = style.look;
   // style-specific pieces first (top/bottom always, others most of the time), else the shared look pool
   const slot = (k: Slot, items: Item[], always: boolean) => {
@@ -114,14 +115,11 @@ function buildOutfit(r: R, star: Star, style: StyleDef, cup: string, intensity: 
     const e = weighted(r, pool, (e) => (e.hard ? (intensity === 'hard' ? 3 : 0.3) : 1) * (e.s.includes(look) ? 2 : 1));
     if (!extras.includes(e.t)) extras.push(e.t);
   }
-  const summary = `${starShort(star)} picks: ${top}, ${bottom}, ${legwear}, ${cup}-cup forms.`;
-  return { panties, bra, cup, top, bottom, legwear, shoes, makeup, wig, extras, summary };
+  const base = { panties, bra, cup, top, bottom, legwear, shoes, makeup, wig, extras };
+  return applyLayers({ ...base, summary: '' }, star, style, tags ?? []);
 }
 
 // ---------- sex ----------
-function fill(t: string, v: Record<string, string>): string {
-  return t.replace(/\{(\w+)\}/g, (_, k: string) => v[k] ?? '');
-}
 function buildSex(r: R, star: Star, style: StyleDef, outfit: OutfitPlan, intensity: Intensity, form: FormId): SexPlan {
   const tone = style.tone && r() < 0.5 ? style.tone : star.tone;
   const def = FORMS.find((f) => f.id === form)!;
@@ -144,18 +142,100 @@ function buildSex(r: R, star: Star, style: StyleDef, outfit: OutfitPlan, intensi
 }
 
 // ---------- challenges ----------
-const fits = (t: CTemplate, form: FormId) => !t.forms || t.forms.includes(form);
-function toChallenge(t: CTemplate, id: string, v: Record<string, string>): Challenge {
-  return { id: `${id}-${hash(t.text) % 10000}`, kind: t.kind, text: fill(t.text, v), link: fill(t.link, v) };
+function fill(t: string, v: Record<string, string>): string {
+  return t.replace(/\{(\w+)\}/g, (_, k: string) => v[k] ?? '');
 }
-function buildChallenges(r: R, intensity: Intensity, date: string, form: FormId, v: Record<string, string>): Challenge[] {
-  const hardW = (t: CTemplate) => (t.hard ? (intensity === 'hard' ? 2 : 0.25) : 1) * (t.forms ? 3 : 1);
-  const slots: ChallengeKind[] = ['wear', 'tease', r() < 0.5 ? 'gaming' : 'task'];
-  const out = slots.map((kind, idx) => {
-    const t = weighted(r, CHALLENGES.filter((c) => c.kind === kind && fits(c, form)), hardW);
-    return toChallenge(t, `${date}-${idx}`, v);
-  });
+const fitsForm = (t: TagChallenge, form: FormId) => !t.forms || t.forms.includes(form);
+function tagMatch(t: TagChallenge, tags: string[]): boolean {
+  if (t.tags.includes('*')) return tags.length > 0;
+  return t.tags.some((x) => tags.includes(x));
+}
+function toChallenge(t: TagChallenge, id: string, v: Record<string, string>): Challenge {
+  return { id: `${id}-${hash(t.text + t.link) % 10000}`, kind: t.kind, text: fill(t.text, v), link: fill(t.link, v) };
+}
+function outfitVars(style: StyleDef, outfit: OutfitPlan, form: FormId, star: Star): Record<string, string> {
+  return {
+    cup: outfit.cup, star: starShort(star), style: style.label.toLowerCase(), look: style.label.toLowerCase(),
+    panties: outfit.panties, bra: outfit.bra, top: outfit.top, bottom: outfit.bottom, legwear: outfit.legwear,
+    shoes: outfit.shoes, sig: style.signature, loc: '', form: formLabel(form).toLowerCase(),
+  };
+}
+/** Apply practical outer layers from day tags onto a style outfit. */
+export function applyLayers(outfit: Omit<OutfitPlan,'summary'|'layers'> & Partial<Pick<OutfitPlan,'summary'|'layers'>>, star: Star, _style: StyleDef, tags: string[]): OutfitPlan {
+  const outTags = tags.filter((t) => OUTER_LAYERS[t]);
+  if (!outTags.length) {
+    const summary = `${starShort(star)} picks: ${outfit.top}, ${outfit.bottom}, ${outfit.legwear}, ${outfit.cup}-cup forms.`;
+    return { ...outfit, layers: undefined, summary };
+  }
+  const layer = OUTER_LAYERS[outTags[0]];
+  const parts = [layer.top, layer.bottom];
+  if (layer.shoes) parts.push(layer.shoes);
+  const layers = parts.join('; ');
+  const summary = `${starShort(star)} picks: ${outfit.top} + ${outfit.bottom} under ${layer.bottom}, ${outfit.cup}-cup forms.`;
+  return { ...outfit, layers, summary };
+}
+
+export function buildChallenges(
+  r: R, intensity: Intensity, date: string, form: FormId, style: StyleDef, tags: string[], v: Record<string, string>,
+): Challenge[] {
+  if (!tags.length) return [];
+  const hardW = (t: TagChallenge) => {
+    let w = t.hard ? (intensity === 'hard' ? 2.5 : 0.35) : 1;
+    if (t.styles?.includes(style.id)) w *= 4;
+    if (t.forms) w *= 1.5;
+    if (t.outOnly && !tags.some(isOutTag)) w = 0;
+    if (t.homeOnly && tags.some(isOutTag) && !tags.includes('hus') && !tags.includes('spil')) w = 0;
+    return w;
+  };
+  const pool = TAG_CHALLENGES.filter((c) => tagMatch(c, tags) && fitsForm(c, form) && hardW(c) > 0
+    && (!c.styles || c.styles.includes(style.id)));
+  // Prefer style-matched first, then diversify kinds
+  const styleHit = pool.filter((c) => c.styles?.includes(style.id));
+  const rest = pool.filter((c) => !c.styles?.includes(style.id));
+  const ranked = [...styleHit, ...rest];
+  const out: Challenge[] = [];
+  const usedText = new Set<string>();
+  const wantKinds: ChallengeKind[][] = [
+    ['wear', 'task'],
+    ['tease', 'task', 'wear'],
+    tags.includes('spil') ? ['gaming', 'task', 'wear'] : ['task', 'wear', 'tease', 'gaming'],
+  ];
+  for (let idx = 0; idx < MAX_CHALLENGES; idx++) {
+    const kinds = wantKinds[idx];
+    const candidates = ranked.filter((c) => kinds.includes(c.kind) && !usedText.has(c.text) && hardW(c) > 0);
+    const fallback = ranked.filter((c) => !usedText.has(c.text) && hardW(c) > 0);
+    const list = candidates.length ? candidates : fallback;
+    if (!list.length) break;
+    const t = weighted(r, list, hardW);
+    usedText.add(t.text);
+    out.push(toChallenge(t, `${date}-c${idx}`, v));
+  }
   return out.slice(0, MAX_CHALLENGES);
+}
+
+function buildSpare(r: R, form: FormId, style: StyleDef, tags: string[], date: string, v: Record<string, string>) {
+  const tagsOr = tags.length ? tags : ['*'];
+  const pun = TAG_PUNISHMENTS.filter((t) => tagMatch(t, tagsOr) && fitsForm(t, form) && (!t.styles || t.styles.includes(style.id)));
+  const rew = TAG_REWARDS.filter((t) => {
+    if (form === 'chastity' && /finish/i.test(t.text)) return false;
+    return tagMatch(t, tagsOr) && fitsForm(t, form);
+  });
+  return {
+    punishment: toChallenge(pick(r, pun.length ? pun : TAG_PUNISHMENTS), `${date}-p`, v),
+    reward: toChallenge(pick(r, rew.length ? rew : TAG_REWARDS.filter((t) => !(form === 'chastity' && /finish/i.test(t.text)))), `${date}-r`, v),
+  };
+}
+
+/** Rebuild only challenges (and spare) from current tags — keeps sex and base outfit pieces. */
+export function regenerateChallenges(plan: DayPlan, star: Star, tags: string[]): DayPlan {
+  const style = STYLE_BY_ID[plan.styleId];
+  const r = rng(`chal|${plan.date}|${star.id}|${plan.styleId}|${[...tags].sort().join(',')}`);
+  const outfit = applyLayers(plan.outfit, star, style, tags);
+  const v = outfitVars(style, outfit, plan.sex.form, star);
+  v.loc = plan.sex.location;
+  const challenges = buildChallenges(r, plan.sex.intensity, plan.date, plan.sex.form, style, tags, v);
+  const spare = buildSpare(r, plan.sex.form, style, tags, plan.date, v);
+  return { ...plan, tags, outfit, challenges, spare };
 }
 
 export function starShort(star: { name: string }): string {
@@ -178,26 +258,21 @@ export function pickStyle(date: string, star: Star, days: Record<string, DayReco
   return pick(rng(`style|${date}|${star.id}`), options);
 }
 
-export function generateDay(date: string, star: Star, defaultCup: string, days: Record<string, DayRecord>): DayPlan {
+export function generateDay(date: string, star: Star, defaultCup: string, days: Record<string, DayRecord>, tags: string[] = []): DayPlan {
   const styleId = pickStyle(date, star, days);
   const style = STYLE_BY_ID[styleId];
   const r = rng(`day|${date}|${star.id}|${styleId}`);
   const intensity: Intensity = r() < (style.leaning === 'hard' ? 0.75 : style.leaning === 'soft' ? 0.2 : 0.5) ? 'hard' : 'soft';
   const cup = cupFor(star, style, defaultCup, r);
   const form = weighted(r, FORMS, (f) => (style.forms.includes(f.id) ? 5 : 1)).id;
-  const outfit = buildOutfit(r, star, style, cup, intensity, form);
+  const outfit = buildOutfit(r, star, style, cup, intensity, form, tags);
   const sex = buildSex(r, star, style, outfit, intensity, form);
-  const v = {
-    cup: outfit.cup, star: starShort(star), panties: outfit.panties, legwear: outfit.legwear, shoes: outfit.shoes,
-    loc: sex.location, form: formLabel(form).toLowerCase(),
-  };
-  const challenges = buildChallenges(r, intensity, date, form, v);
-  const spare = {
-    punishment: toChallenge(pick(r, PUNISHMENTS.filter((t) => fits(t, form))), `${date}-p`, v),
-    reward: toChallenge(pick(r, REWARDS.filter((t) => fits(t, form))), `${date}-r`, v),
-  };
+  const v = outfitVars(style, outfit, form, star);
+  v.loc = sex.location;
+  const challenges = buildChallenges(r, intensity, date, form, style, tags, v);
+  const spare = buildSpare(r, form, style, tags, date, v);
   return {
-    date, starId: star.id, starName: star.name, styleId, styleLabel: style.label,
+    date, starId: star.id, starName: star.name, styleId, styleLabel: style.label, tags: [...tags],
     outfit, sex, challenges, spare, bonus: pick(r, BONUSES), penalty: pick(r, PENALTIES),
   };
 }
@@ -295,16 +370,25 @@ export function effectivePlan(rec: DayRecord, now: Date = new Date()): { plan: D
 export function ensureDay(d: AppData, date: string): AppData {
   const existing = d.days[date];
   if (existing) {
-    const star = d.stars.find((s) => s.id === existing.plan.starId);
-    if (!star || star.name === existing.plan.starName) return d;
-    const { [date]: _today, ...rest } = d.days;
-    void _today;
-    const plan = generateDay(date, star, d.defaultCup, rest);
-    return { ...d, days: { ...d.days, [date]: { ...existing, plan } } };
+    let plan = existing.plan.tags ? existing.plan : { ...existing.plan, tags: [] as string[] };
+    const star = d.stars.find((s) => s.id === plan.starId);
+    if (star && star.name !== plan.starName) {
+      const { [date]: _today, ...rest } = d.days;
+      void _today;
+      let rebuilt = generateDay(date, star, d.defaultCup, rest, plan.tags ?? []);
+      if (plan.tags?.length) rebuilt = regenerateChallenges(rebuilt, star, plan.tags);
+      else rebuilt = { ...rebuilt, tags: [], challenges: [] };
+      return { ...d, days: { ...d.days, [date]: { ...existing, plan: rebuilt } } };
+    }
+    if (plan !== existing.plan) return { ...d, days: { ...d.days, [date]: { ...existing, plan } } };
+    return d;
   }
   const id = pickStarId(date, d.stars, d.days);
   const star = d.stars.find((s) => s.id === id) ?? d.stars[0];
-  const rec: DayRecord = { plan: generateDay(date, star, d.defaultCup, d.days), games: [], status: {}, sexDone: false };
+  const rec: DayRecord = {
+    plan: { ...generateDay(date, star, d.defaultCup, d.days, []), tags: [], challenges: [] },
+    games: [], status: {}, sexDone: false,
+  };
   return { ...d, days: { ...d.days, [date]: rec } };
 }
 

@@ -6,7 +6,7 @@ export const STORAGE_KEY = 'frida-v3';
 export const ROSTER_VERSION = 2;
 
 export function freshData(): AppData {
-  return { version: 2, rosterVersion: ROSTER_VERSION, defaultCup: 'C', stars: DEFAULT_STARS.map((s) => ({ ...s })), days: {} };
+  return { version: 2, rosterVersion: ROSTER_VERSION, defaultCup: 'C', stars: DEFAULT_STARS.map((s) => ({ ...s })), days: {}, customTags: [] };
 }
 
 export function loadData(): AppData {
@@ -20,6 +20,7 @@ export function loadData(): AppData {
       d.stars = d.stars.map((s) => (!s.custom && names.has(s.id) ? { ...s, name: names.get(s.id)! } : s));
       d.rosterVersion = ROSTER_VERSION;
     }
+    d.customTags ??= [];
     return d;
   } catch {
     return freshData();
