@@ -127,3 +127,7 @@ input[type='search'] { -webkit-appearance: none; appearance: none; }
 
 .chips.pick button.chip { cursor: pointer; }
 .chips.pick button.chip.on { background: var(--rose-deep); border-color: var(--rose); color: var(--text); }
+
+.taggroup { margin-top: 10px; }
+.taggroup .kicker { margin-bottom: 6px; }
+.taggroup .chips { margin-bottom: 2px; }

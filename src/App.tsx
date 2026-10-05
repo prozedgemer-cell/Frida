@@ -6,7 +6,7 @@ import {
   type Mood,
 } from './engine';
 import { freshData, loadData, saveData } from './storage';
-import { BUILTIN_TAGS, tagLabel } from './tags';
+import { BUILTIN_TAGS, TAG_GROUPS, tagLabel } from './tags';
 import type { AppData, ChallengeStatus, DayRecord, Game, GameLog, KnownFor, Star, Tone } from './types';
 
 type Tab = 'today' | 'history' | 'settings';
@@ -76,7 +76,6 @@ function TodayView({ rec, star, customTags, update }: {
   const o = plan.outfit;
   const tags = plan.tags ?? [];
   const short = starShort({ name: star?.name ?? plan.starName });
-  const allTags = [...BUILTIN_TAGS.map((t) => t.id), ...customTags.map((c) => c.toLowerCase())];
   const setStatus = (id: string, st: ChallengeStatus) =>
     update((r) => {
       const status = { ...(r.status ?? {}) };
@@ -110,14 +109,34 @@ function TodayView({ rec, star, customTags, update }: {
 
       <section className="card">
         <h2>Day tags</h2>
-        <p className="muted small">What you do today. Challenges are real activities in her {plan.styleLabel} clothes.</p>
-        <div className="chips pick">
-          {allTags.map((id) => (
-            <button key={id} type="button" className={`chip ${tags.includes(id) ? 'on' : ''}`} onClick={() => toggleTag(id)}>
-              {tagLabel(id, customTags)}
-            </button>
-          ))}
-        </div>
+        <p className="muted small">Tick what you do today. Outfit layers + 3 challenges follow her {plan.styleLabel} clothes.</p>
+        {TAG_GROUPS.map((g) => (
+          <div key={g.id} className="taggroup">
+            <div className="kicker">{g.label}</div>
+            <div className="chips pick">
+              {BUILTIN_TAGS.filter((t) => t.group === g.id).map((t) => (
+                <button key={t.id} type="button" className={`chip ${tags.includes(t.id) ? 'on' : ''}`} onClick={() => toggleTag(t.id)} title={t.hint}>
+                  {t.label}
+                </button>
+              ))}
+            </div>
+          </div>
+        ))}
+        {customTags.length > 0 && (
+          <div className="taggroup">
+            <div className="kicker">Custom</div>
+            <div className="chips pick">
+              {customTags.map((c) => {
+                const id = c.toLowerCase();
+                return (
+                  <button key={id} type="button" className={`chip ${tags.includes(id) ? 'on' : ''}`} onClick={() => toggleTag(id)}>
+                    {c}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
         {tags.length === 0 && (
           <p className="banner strict" style={{ marginTop: 10, marginBottom: 0 }}>Pick at least one tag so she can set today&rsquo;s 3 challenges.</p>
         )}

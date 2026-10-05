@@ -3,7 +3,7 @@ import {
   MAKEUP, OPENERS, PANTIES, PENALTIES, PLUG_FORMS, SHOES, TOPS, WIGS, formLabel,
   type Item,
 } from './content';
-import { OUTER_LAYERS, TAG_CHALLENGES, TAG_PUNISHMENTS, TAG_REWARDS, isOutTag, type TagChallenge } from './tags';
+import { LAYER_PRIORITY, OUTER_LAYERS, TAG_CHALLENGES, TAG_PUNISHMENTS, TAG_REWARDS, isHomeTag, isOutTag, type TagChallenge } from './tags';
 
 import { STYLE_BY_ID, type Slot, type StyleDef } from './looks';
 import type {
@@ -162,7 +162,7 @@ function outfitVars(style: StyleDef, outfit: OutfitPlan, form: FormId, star: Sta
 }
 /** Apply practical outer layers from day tags onto a style outfit. */
 export function applyLayers(outfit: Omit<OutfitPlan,'summary'|'layers'> & Partial<Pick<OutfitPlan,'summary'|'layers'>>, star: Star, _style: StyleDef, tags: string[]): OutfitPlan {
-  const outTags = tags.filter((t) => OUTER_LAYERS[t]);
+  const outTags = LAYER_PRIORITY.filter((t) => tags.includes(t) && OUTER_LAYERS[t]);
   if (!outTags.length) {
     const summary = `${starShort(star)} picks: ${outfit.top}, ${outfit.bottom}, ${outfit.legwear}, ${outfit.cup}-cup forms.`;
     return { ...outfit, layers: undefined, summary };
@@ -184,7 +184,7 @@ export function buildChallenges(
     if (t.styles?.includes(style.id)) w *= 4;
     if (t.forms) w *= 1.5;
     if (t.outOnly && !tags.some(isOutTag)) w = 0;
-    if (t.homeOnly && tags.some(isOutTag) && !tags.includes('hus') && !tags.includes('spil')) w = 0;
+    if (t.homeOnly && !tags.some(isHomeTag)) w = 0;
     return w;
   };
   const pool = TAG_CHALLENGES.filter((c) => tagMatch(c, tags) && fitsForm(c, form) && hardW(c) > 0
@@ -198,7 +198,7 @@ export function buildChallenges(
   const wantKinds: ChallengeKind[][] = [
     ['wear', 'task'],
     ['tease', 'task', 'wear'],
-    tags.includes('spil') ? ['gaming', 'task', 'wear'] : ['task', 'wear', 'tease', 'gaming'],
+    tags.includes('spil') || tags.includes('workout') ? ['gaming', 'task', 'wear'] : ['task', 'wear', 'tease', 'gaming'],
   ];
   for (let idx = 0; idx < MAX_CHALLENGES; idx++) {
     const kinds = wantKinds[idx];
