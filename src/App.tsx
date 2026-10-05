@@ -149,7 +149,7 @@ function TodayView({ rec, star, customTags, update }: {
       <section className="card">
         <h2>Outfit</h2>
         <p className="summary">{o.summary}</p>
-        <p className="kicker">Base all day · {o.baseName}</p>
+        <p className="kicker">{o.swaps?.length ? `Base all day · ${o.baseName}` : `Today · ${o.baseName}`}</p>
         <dl className="list">
           <dt>Panties</dt><dd>{o.panties}</dd>
           <dt>Bra</dt><dd>{o.bra} · {o.cup}-cup forms</dd>
@@ -161,9 +161,9 @@ function TodayView({ rec, star, customTags, update }: {
           <dt>Wig</dt><dd>{o.wig}</dd>
           <dt>Extras</dt><dd>{o.extras.join(', ')}</dd>
         </dl>
-        {o.swaps?.length > 0 && (
+        {!!o.swaps?.length && (
           <>
-            <p className="kicker" style={{ marginTop: 12 }}>Activity swaps (same base)</p>
+            <p className="kicker" style={{ marginTop: 12 }}>Outer covers (same base underneath)</p>
             <ul className="swaps">
               {o.swaps.map((sw) => (
                 <li key={sw.tag}><b>{sw.label}</b> — {sw.change}</li>

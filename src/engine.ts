@@ -96,40 +96,29 @@ function pickLook(r: R, pool: WardrobeLook[], vibes: string[]): WardrobeLook {
   return weighted(r, hit.length ? hit : pool, (l) => scoreLook(l, vibes));
 }
 
-/** Evening full look once any tags are set (for sex); day stays on the normal base + swaps. */
-function wantsEveningFull(tags: string[], _styleId: KnownFor): boolean {
-  return tags.length > 0;
+/**
+ * Layer swaps only when the day mixes cover-needed tags (out/errands/work cover)
+ * with home/leisure tags. Pure home OR pure out → one tailored outfit.
+ */
+export function needsLayers(tags: string[]): boolean {
+  const cover = tags.filter((t) => !!OUTER_LAYERS[t]);
+  const homeish = tags.filter((t) =>
+    ['hus', 'cook', 'dinner', 'laundry', 'vacuum', 'shower', 'tv', 'spil'].includes(t));
+  return cover.length > 0 && homeish.length > 0;
 }
 
 function buildSwaps(tags: string[]): { tag: string; label: string; change: string }[] {
+  if (!needsLayers(tags)) return [];
+  // Only real outer covers for out/work tags — home stays on the same base
   const ordered = LAYER_PRIORITY.filter((t) => tags.includes(t) && OUTER_LAYERS[t]);
-  // also include home activity "soft swaps" that are not full outer covers
-  const homeSoft: Record<string, string> = {
-    cook: 'Add an apron over the same base; sleeves rolled.',
-    dinner: 'Keep the base; add a nice belt / earrings for dinner.',
-    laundry: 'Same base; hair up, maybe drop the outer top while folding alone.',
-    vacuum: 'Same base; kick shoes off if home alone.',
-    hus: 'Same base at home; outer jacket off.',
-    shower: 'Base set aside; after shower, back into the same base (or evening look).',
-    tv: 'Same base on the couch; trousers optional if alone.',
-    spil: 'Same base at the desk; trousers optional if alone.',
-  };
-  const swaps: { tag: string; label: string; change: string }[] = [];
-  const seen = new Set<string>();
-  for (const id of ordered) {
-    const L = OUTER_LAYERS[id];
-    swaps.push({
+  return ordered.map((id) => {
+    const L = OUTER_LAYERS[id]!;
+    return {
       tag: id,
       label: tagLabel(id),
       change: `Over the same base: ${L.top}; ${L.bottom}${L.shoes ? `; ${L.shoes}` : ''}.`,
-    });
-    seen.add(id);
-  }
-  for (const id of tags) {
-    if (seen.has(id) || !homeSoft[id]) continue;
-    swaps.push({ tag: id, label: tagLabel(id), change: homeSoft[id] });
-  }
-  return swaps;
+    };
+  });
 }
 
 /** Mix 2–3 template looks into one outfit so catalogs are pools, not rigid costumes. */
@@ -174,7 +163,9 @@ function lookToPieces(look: WardrobeLook, cup: string, style: StyleDef, form: Fo
   if (PLUG_FORMS.includes(form) && !extras.some((e) => /plug/i.test(e))) {
     extras.push(intensity === 'hard' ? 'large jeweled butt plug' : 'small butt plug');
   }
-  // Always remix makeup/wig from style pools (not locked to template)
+  if (r() < 0.35 && !extras.some((e) => /apron/i.test(e))) {
+    /* apron may be added by home cook tailor below */
+  }
   const makeup = styled(r, MAKEUP, style.look);
   const wig = r() < 0.4 ? styled(r, WIGS, style.look) : 'own hair / light styling';
   return {
@@ -183,78 +174,118 @@ function lookToPieces(look: WardrobeLook, cup: string, style: StyleDef, form: Fo
   };
 }
 
+/** Bake practical cover into a single all-day outfit (pure out / errands days). */
+function tailorForOut(pieces: ReturnType<typeof lookToPieces>, tags: string[], _r: R) {
+  const cover = LAYER_PRIORITY.find((t) => tags.includes(t) && OUTER_LAYERS[t]);
+  if (!cover) return pieces;
+  const L = OUTER_LAYERS[cover]!;
+  return {
+    ...pieces,
+    top: `${pieces.top} under ${L.top.replace(/ over her style top/i, '').replace(/ over her style/i, '')}`.replace(/\s+/g, ' ').trim(),
+    bottom: L.bottom.includes('jeans') ? 'jeans over her look (same base lingerie)' : pieces.bottom,
+    shoes: L.shoes ?? pieces.shoes,
+    extras: [...pieces.extras, `day cover: ${tagLabel(cover)}`],
+  };
+}
+
+/** Soft home accents baked into the single outfit (apron, etc.). */
+function tailorForHome(pieces: ReturnType<typeof lookToPieces>, tags: string[]) {
+  const extras = [...pieces.extras];
+  if (tags.includes('cook') || tags.includes('dinner')) {
+    if (!extras.some((e) => /apron/i.test(e))) extras.push('apron for kitchen');
+  }
+  if (tags.includes('shower')) extras.push('easy on/off for shower');
+  return { ...pieces, extras };
+}
+
 function buildOutfit(r: R, star: Star, style: StyleDef, cup: string, intensity: Intensity, form: FormId, tags: string[] = []): OutfitPlan {
   const vibes = STYLE_VIBES[style.id] ?? ['casual', 'sexy'];
-  // Base from the 200 normal templates, always piece-mixed with 1–2 other normals
+  const layered = needsLayers(tags);
+  const allHome = tags.length > 0 && tags.every((t) => !OUTER_LAYERS[t]);
+  const allCover = tags.length > 0 && tags.every((t) => !!OUTER_LAYERS[t]);
+  const fantasyHome = allHome && (['latex-domme', 'maid', 'succubus', 'hentai', 'catgirl', 'elf', 'vampire', 'witch', 'siren', 'nurse', 'police', 'bimbo', 'pinup'] as KnownFor[]).includes(style.id);
+
+  // Single-look day: pick ONE mixed outfit (full pool if fantasy home, else normal)
+  if (!layered && tags.length > 0) {
+    const pool = fantasyHome ? FULL_LOOKS : NORMAL_LOOKS;
+    const seed = pickLook(r, pool, vibes);
+    const mixed = mixLooks(r, seed, pool, vibes);
+    if (fantasyHome && r() < 0.4) {
+      const linger = pickLook(r, NORMAL_LOOKS, vibes);
+      mixed.panties = linger.panties;
+      mixed.bra = r() < 0.5 ? linger.bra : mixed.bra;
+    }
+    let pieces = lookToPieces(mixed, cup, style, form, intensity, r);
+    if (allCover) pieces = tailorForOut(pieces, tags, r);
+    if (allHome) pieces = tailorForHome(pieces, tags);
+    const summary = `${starShort(star)} today: ${mixed.name} — ${pieces.top}, ${pieces.bottom}, ${pieces.legwear}, ${cup}-cup forms.`;
+    return {
+      baseId: mixed.id,
+      baseName: mixed.name,
+      baseTier: fantasyHome ? 'full' : 'normal',
+      ...pieces,
+      swaps: [],
+      evening: undefined,
+      layers: undefined,
+      summary,
+    };
+  }
+
+  // Layered day (out + home mix): stable normal base + outer swaps for cover tags only
   const seed = pickLook(r, NORMAL_LOOKS, vibes);
   const baseLook = mixLooks(r, seed, NORMAL_LOOKS, vibes);
   const pieces = lookToPieces(baseLook, cup, style, form, intensity, r);
   const swaps = buildSwaps(tags);
-  // Occasionally borrow an outer-swap shoe/top wording from a second normal template
   for (const sw of swaps) {
-    if (r() < 0.4) {
+    if (r() < 0.35) {
       const donor = pickLook(r, NORMAL_LOOKS, vibes);
-      sw.change += ` Accent from ${donor.name.split('#')[0].trim()}: keep her ${donor.shoes}.`;
+      sw.change += ` Accent: ${donor.shoes}.`;
     }
   }
-  let evening: OutfitPlan['evening'];
-  if (wantsEveningFull(tags, style.id)) {
-    const fullSeed = pickLook(r, FULL_LOOKS, vibes);
-    // Mix full templates together; sometimes pull lingerie pieces from a normal look underneath
-    const fullMix = mixLooks(r, fullSeed, FULL_LOOKS, vibes);
-    if (r() < 0.45) {
-      const linger = pickLook(r, NORMAL_LOOKS, vibes);
-      fullMix.panties = linger.panties;
-      fullMix.bra = r() < 0.5 ? linger.bra : fullMix.bra;
-    }
-    const ep = lookToPieces(fullMix, cup, style, form, intensity, r);
-    evening = {
-      id: fullMix.id, name: fullMix.name,
-      summary: `Evening / sex: ${fullMix.name} — ${ep.top}, ${ep.bottom}, ${cup}-cup forms.`,
-      panties: ep.panties, bra: ep.bra, top: ep.top, bottom: ep.bottom,
-      legwear: ep.legwear, shoes: ep.shoes, extras: ep.extras,
-    };
-  }
-  const layers = swaps.length
-    ? swaps.map((s) => `${s.label}: ${s.change}`).join(' · ')
-    : undefined;
-  const summary = evening
-    ? `${starShort(star)} base all day: ${baseLook.name} (${pieces.top} + ${pieces.bottom}, ${cup}-cup). Evening → ${evening.name}.`
-    : `${starShort(star)} base all day: ${baseLook.name} — ${pieces.top}, ${pieces.bottom}, ${pieces.legwear}, ${cup}-cup forms.`;
+  const layers = swaps.length ? swaps.map((s) => `${s.label}: ${s.change}`).join(' · ') : undefined;
+  const summary = `${starShort(star)} base all day: ${baseLook.name} — ${pieces.top}, ${pieces.bottom}, ${cup}-cup forms${swaps.length ? ` · covers for ${swaps.map((s) => s.label).join(', ')}` : ''}.`;
   return {
     baseId: baseLook.id, baseName: baseLook.name, baseTier: 'normal',
-    ...pieces, swaps, evening, layers, summary,
+    ...pieces, swaps, evening: undefined, layers, summary,
   };
 }
 
 /** Re-apply activity swaps / evening eligibility when tags change — keeps the same base look. */
+/** Re-apply outfit mode when tags change — keeps the same base pieces when layered; rebuilds single-look when mode flips. */
 export function applyLayers(outfit: OutfitPlan, star: Star, style: StyleDef, tags: string[]): OutfitPlan {
-  const swaps = buildSwaps(tags);
-  const layers = swaps.length ? swaps.map((s) => `${s.label}: ${s.change}`).join(' · ') : undefined;
-  let evening = outfit.evening;
-  const want = wantsEveningFull(tags, style.id);
-  if (want && !evening) {
-    const vibes = STYLE_VIBES[style.id] ?? ['casual', 'sexy'];
-    const r = rng(`eve|${star.id}|${outfit.baseId}|${[...tags].sort().join(',')}`);
-    const fullSeed = pickLook(r, FULL_LOOKS, vibes);
-    const full = mixLooks(r, fullSeed, FULL_LOOKS, vibes);
-    if (r() < 0.45) {
-      const linger = pickLook(r, NORMAL_LOOKS, vibes);
-      full.panties = linger.panties;
-      full.bra = r() < 0.5 ? linger.bra : full.bra;
+  const layered = needsLayers(tags);
+  // If day is a single-look day, rebuild a fresh single tailored outfit from the same cup/baseId seed vibes
+  if (!layered) {
+    if (tags.length === 0) {
+      const summary = `${starShort(star)} today: ${outfit.baseName} — ${outfit.top}, ${outfit.bottom}, ${outfit.legwear}, ${outfit.cup}-cup forms.`;
+      return { ...outfit, swaps: [], evening: undefined, layers: undefined, summary };
     }
-    evening = {
-      id: full.id, name: full.name,
-      summary: `Evening / sex: ${full.name} — ${full.top}, ${full.bottom}, ${outfit.cup}-cup forms.`,
-      panties: full.panties, bra: full.bra, top: full.top, bottom: full.bottom,
-      legwear: full.legwear, shoes: full.shoes, extras: [...full.extras, style.signature],
+    const r = rng(`single|${star.id}|${outfit.baseId}|${[...tags].sort().join(',')}`);
+    const vibes = STYLE_VIBES[style.id] ?? ['casual', 'sexy'];
+    const allHome = tags.every((t) => !OUTER_LAYERS[t]);
+    const fantasyHome = allHome && (['latex-domme', 'maid', 'succubus', 'hentai', 'catgirl', 'elf', 'vampire', 'witch', 'siren', 'nurse', 'police', 'bimbo', 'pinup'] as KnownFor[]).includes(style.id);
+    const pool = fantasyHome ? FULL_LOOKS : NORMAL_LOOKS;
+    const seed = pickLook(r, pool, vibes);
+    const mixed = mixLooks(r, seed, pool, vibes);
+    let pieces = lookToPieces(mixed, outfit.cup, style, 'mirror', 'soft', r);
+    // preserve cage/plug from previous extras if present
+    for (const e of outfit.extras) {
+      if (/cage|plug/i.test(e) && !pieces.extras.includes(e)) pieces.extras.push(e);
+    }
+    const allCover = tags.every((t) => !!OUTER_LAYERS[t]);
+    if (allCover) pieces = tailorForOut(pieces, tags, r);
+    if (allHome) pieces = tailorForHome(pieces, tags);
+    const summary = `${starShort(star)} today: ${mixed.name} — ${pieces.top}, ${pieces.bottom}, ${pieces.legwear}, ${outfit.cup}-cup forms.`;
+    return {
+      baseId: mixed.id, baseName: mixed.name, baseTier: fantasyHome ? 'full' : 'normal',
+      ...pieces, cup: outfit.cup, swaps: [], evening: undefined, layers: undefined, summary,
     };
   }
-  if (!want) evening = undefined;
-  const summary = evening
-    ? `${starShort(star)} base all day: ${outfit.baseName} (${outfit.top} + ${outfit.bottom}, ${outfit.cup}-cup). Evening → ${evening.name}.`
-    : `${starShort(star)} base all day: ${outfit.baseName} — ${outfit.top}, ${outfit.bottom}, ${outfit.legwear}, ${outfit.cup}-cup forms.`;
-  return { ...outfit, swaps, evening, layers, summary };
+  // Layered: keep base pieces, only refresh out covers
+  const swaps = buildSwaps(tags);
+  const layers = swaps.length ? swaps.map((s) => `${s.label}: ${s.change}`).join(' · ') : undefined;
+  const summary = `${starShort(star)} base all day: ${outfit.baseName} — ${outfit.top}, ${outfit.bottom}, ${outfit.cup}-cup forms${swaps.length ? ` · covers for ${swaps.map((s) => s.label).join(', ')}` : ''}.`;
+  return { ...outfit, swaps, evening: undefined, layers, summary };
 }
 
 
