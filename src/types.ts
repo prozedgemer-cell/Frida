@@ -66,6 +66,7 @@ export interface Challenge {
   kind: ChallengeKind;
   text: string;
   link: string; // how it ties into today's sex
+  fromTag?: string; // which day tag this challenge covers
 }
 
 export interface DayPlan {

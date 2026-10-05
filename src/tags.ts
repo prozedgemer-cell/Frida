@@ -283,3 +283,8 @@ export const TAG_REWARDS: TagChallenge[] = [
 ];
 
 void OUT; void WORK;
+
+/** Tag ids a challenge template covers (excluding the catch-all '*'). */
+export function challengeTags(t: TagChallenge): string[] {
+  return t.tags.filter((x) => x !== '*');
+}

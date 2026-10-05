@@ -200,7 +200,7 @@ function TodayView({ rec, star, customTags, update }: {
                       {st === 'done' ? '\u2713' : st === 'failed' || st === 'missed' ? '\u2715' : ''}
                     </button>
                     <span className="ctext" onClick={() => setStatus(c.id, 'done')}>
-                      <b className="kind">{c.kind}{st === 'missed' ? ' · missed' : ''}</b>
+                      <b className="kind">{c.kind}{c.fromTag ? ` · ${tagLabel(c.fromTag, customTags)}` : ''}{st === 'missed' ? ' · missed' : ''}</b>
                       {c.text}
                       <span className="clink">{'\u21b3'} {c.link}</span>
                     </span>

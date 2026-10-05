@@ -3,11 +3,11 @@ import {
   MAKEUP, OPENERS, PANTIES, PENALTIES, PLUG_FORMS, SHOES, TOPS, WIGS, formLabel,
   type Item,
 } from './content';
-import { LAYER_PRIORITY, OUTER_LAYERS, TAG_CHALLENGES, TAG_PUNISHMENTS, TAG_REWARDS, isHomeTag, isOutTag, type TagChallenge } from './tags';
+import { LAYER_PRIORITY, OUTER_LAYERS, TAG_CHALLENGES, TAG_PUNISHMENTS, TAG_REWARDS, challengeTags, isHomeTag, isOutTag, tagLabel, type TagChallenge } from './tags';
 
 import { STYLE_BY_ID, type Slot, type StyleDef } from './looks';
 import type {
-  AppData, Challenge, ChallengeKind, DayPlan, DayRecord, FormId, Game, GameLog, Intensity, KnownFor, OutfitPlan, SexPlan, Star, Style,
+  AppData, Challenge, DayPlan, DayRecord, FormId, Game, GameLog, Intensity, KnownFor, OutfitPlan, SexPlan, Star, Style,
 } from './types';
 
 const CLAMP_FORMS: FormId[] = ['nipples', 'bondage', 'chastity', 'milking'];
@@ -160,57 +160,163 @@ function outfitVars(style: StyleDef, outfit: OutfitPlan, form: FormId, star: Sta
     shoes: outfit.shoes, sig: style.signature, loc: '', form: formLabel(form).toLowerCase(),
   };
 }
-/** Apply practical outer layers from day tags onto a style outfit. */
+/** Apply practical outer layers from ALL selected tags that have a cover layer. */
 export function applyLayers(outfit: Omit<OutfitPlan,'summary'|'layers'> & Partial<Pick<OutfitPlan,'summary'|'layers'>>, star: Star, _style: StyleDef, tags: string[]): OutfitPlan {
   const outTags = LAYER_PRIORITY.filter((t) => tags.includes(t) && OUTER_LAYERS[t]);
   if (!outTags.length) {
     const summary = `${starShort(star)} picks: ${outfit.top}, ${outfit.bottom}, ${outfit.legwear}, ${outfit.cup}-cup forms.`;
     return { ...outfit, layers: undefined, summary };
   }
-  const layer = OUTER_LAYERS[outTags[0]];
-  const parts = [layer.top, layer.bottom];
-  if (layer.shoes) parts.push(layer.shoes);
-  const layers = parts.join('; ');
-  const summary = `${starShort(star)} picks: ${outfit.top} + ${outfit.bottom} under ${layer.bottom}, ${outfit.cup}-cup forms.`;
+  // Merge every tagged cover so no selected out/work tag is ignored
+  const bits: string[] = [];
+  for (const id of outTags) {
+    const L = OUTER_LAYERS[id];
+    const label = tagLabel(id);
+    bits.push(`${label}: ${L.top}; ${L.bottom}${L.shoes ? `; ${L.shoes}` : ''}`);
+  }
+  const layers = bits.join(' · ');
+  const primary = OUTER_LAYERS[outTags[0]];
+  const extra = outTags.length > 1 ? ` (+${outTags.length - 1} more covers)` : '';
+  const summary = `${starShort(star)} picks: ${outfit.top} + ${outfit.bottom} under ${primary.bottom}${extra}, ${outfit.cup}-cup forms.`;
   return { ...outfit, layers, summary };
 }
 
+function hardW(t: TagChallenge, intensity: Intensity, style: StyleDef, tags: string[]): number {
+  let w = t.hard ? (intensity === 'hard' ? 2.5 : 0.35) : 1;
+  if (t.styles?.includes(style.id)) w *= 4;
+  if (t.forms) w *= 1.5;
+  if (t.outOnly && !tags.some(isOutTag)) w = 0;
+  if (t.homeOnly && !tags.some(isHomeTag)) w = 0;
+  return w;
+}
+
+/** Stable order for covering tags: work/out priority first, then the rest as selected. */
+export function orderedTags(tags: string[]): string[] {
+  const pri = LAYER_PRIORITY.filter((t) => tags.includes(t));
+  const rest = tags.filter((t) => !pri.includes(t));
+  return [...pri, ...rest];
+}
+
+/**
+ * Build exactly up to 3 challenges.
+ * When 3+ tags are selected, each challenge covers a DIFFERENT tag (one per tag).
+ * Extra tags (4+) influence outfit layers + sex lean instead.
+ */
 export function buildChallenges(
   r: R, intensity: Intensity, date: string, form: FormId, style: StyleDef, tags: string[], v: Record<string, string>,
 ): Challenge[] {
   if (!tags.length) return [];
-  const hardW = (t: TagChallenge) => {
-    let w = t.hard ? (intensity === 'hard' ? 2.5 : 0.35) : 1;
-    if (t.styles?.includes(style.id)) w *= 4;
-    if (t.forms) w *= 1.5;
-    if (t.outOnly && !tags.some(isOutTag)) w = 0;
-    if (t.homeOnly && !tags.some(isHomeTag)) w = 0;
-    return w;
-  };
-  const pool = TAG_CHALLENGES.filter((c) => tagMatch(c, tags) && fitsForm(c, form) && hardW(c) > 0
-    && (!c.styles || c.styles.includes(style.id)));
-  // Prefer style-matched first, then diversify kinds
-  const styleHit = pool.filter((c) => c.styles?.includes(style.id));
-  const rest = pool.filter((c) => !c.styles?.includes(style.id));
-  const ranked = [...styleHit, ...rest];
+  const cover = orderedTags(tags).slice(0, MAX_CHALLENGES);
   const out: Challenge[] = [];
   const usedText = new Set<string>();
-  const wantKinds: ChallengeKind[][] = [
-    ['wear', 'task'],
-    ['tease', 'task', 'wear'],
-    tags.includes('spil') || tags.includes('workout') ? ['gaming', 'task', 'wear'] : ['task', 'wear', 'tease', 'gaming'],
-  ];
-  for (let idx = 0; idx < MAX_CHALLENGES; idx++) {
-    const kinds = wantKinds[idx];
-    const candidates = ranked.filter((c) => kinds.includes(c.kind) && !usedText.has(c.text) && hardW(c) > 0);
-    const fallback = ranked.filter((c) => !usedText.has(c.text) && hardW(c) > 0);
-    const list = candidates.length ? candidates : fallback;
-    if (!list.length) break;
-    const t = weighted(r, list, hardW);
+
+  const pickForTag = (tagId: string, idx: number): Challenge | null => {
+    const specific = TAG_CHALLENGES.filter((c) =>
+      challengeTags(c).includes(tagId) && fitsForm(c, form) && hardW(c, intensity, style, tags) > 0
+      && (!c.styles || c.styles.includes(style.id)) && !usedText.has(c.text));
+    // style-matched first
+    const ranked = [
+      ...specific.filter((c) => c.styles?.includes(style.id)),
+      ...specific.filter((c) => !c.styles?.includes(style.id)),
+    ];
+    // fallback: any template that matches this tag OR (if none) a mild * filler not yet used
+    let list = ranked;
+    if (!list.length) {
+      list = TAG_CHALLENGES.filter((c) =>
+        c.tags.includes('*') && fitsForm(c, form) && hardW(c, intensity, style, tags) > 0 && !usedText.has(c.text));
+    }
+    if (!list.length) return null;
+    const t = weighted(r, list, (c) => hardW(c, intensity, style, tags));
     usedText.add(t.text);
-    out.push(toChallenge(t, `${date}-c${idx}`, v));
+    const ch = toChallenge(t, `${date}-c${idx}`, v);
+    ch.fromTag = tagId;
+    return ch;
+  };
+
+  for (let idx = 0; idx < cover.length; idx++) {
+    const ch = pickForTag(cover[idx], idx);
+    if (ch) out.push(ch);
+  }
+  // If fewer than 3 tags, fill remaining slots from unused selected-tag pool (still prefer uncovered diversity)
+  while (out.length < MAX_CHALLENGES) {
+    const pool = TAG_CHALLENGES.filter((c) =>
+      tagMatch(c, tags) && fitsForm(c, form) && hardW(c, intensity, style, tags) > 0
+      && (!c.styles || c.styles.includes(style.id)) && !usedText.has(c.text));
+    if (!pool.length) break;
+    const t = weighted(r, pool, (c) => hardW(c, intensity, style, tags));
+    usedText.add(t.text);
+    const ch = toChallenge(t, `${date}-c${out.length}`, v);
+    const hit = challengeTags(t).find((x) => tags.includes(x));
+    ch.fromTag = hit ?? tags[out.length % tags.length];
+    out.push(ch);
   }
   return out.slice(0, MAX_CHALLENGES);
+}
+
+const TAG_LOCS: Record<string, string[]> = {
+  spil: ['at your gaming desk'],
+  shower: ['the shower', 'the bathroom, by the mirror'],
+  cook: ['the kitchen counter'],
+  dinner: ['the kitchen counter'],
+  kaelder: ['the living room floor', 'the hallway mirror'],
+  tv: ['the couch with a blanket'],
+  laundry: ['the bedroom, lights dimmed', 'in front of the full-length mirror'],
+  vacuum: ['in front of the full-length mirror', 'the living room floor'],
+  hus: ['the bedroom, lights dimmed', 'on the bed, tied to the frame'],
+  workout: ['the bathroom, by the mirror', 'the shower'],
+  handel: ['the bathroom, by the mirror'],
+  errands: ['the bathroom, by the mirror'],
+  tur: ['the hallway mirror'],
+  bil: ['the bathroom, by the mirror'],
+  trafik: ['the bathroom, by the mirror'],
+  friends: ['the bedroom, lights dimmed'],
+  arbejde: ['at your gaming desk', 'the bathroom, by the mirror'],
+  skole: ['the bathroom, by the mirror'],
+  fisk: ['the bathroom, by the mirror'],
+};
+
+function locsFor(tags: string[]): string[] {
+  const out: string[] = [];
+  for (const id of tags) for (const loc of TAG_LOCS[id] ?? []) if (!out.includes(loc)) out.push(loc);
+  return out;
+}
+
+/**
+ * Lean sex from ALL tags. `focus` (e.g. leftover 4th+ tags not used by a challenge)
+ * gets first say on location so every selected tag still shapes the plan.
+ */
+export function leanSexFromTags(r: R, sex: SexPlan, tags: string[], focus: string[] = []): SexPlan {
+  if (!tags.length) return sex;
+  let { intensity, minutes, location, scene } = sex;
+  const outN = tags.filter(isOutTag).length;
+  const homeN = tags.filter(isHomeTag).length;
+  const focusLocs = locsFor(focus);
+  const allLocs = locsFor(tags);
+  const locs = focusLocs.length ? focusLocs : allLocs;
+  if (locs.length) location = pick(r, locs);
+
+  const workish = outN + (tags.includes('kaelder') ? 1 : 0);
+  if (workish >= 2) intensity = 'hard';
+  else if (homeN >= 2 && outN === 0 && r() < 0.5) intensity = 'soft';
+  // leftover leisure tags (gaming/tv/shower) nudge minutes without overriding work hardness
+  if (focus.some((t) => t === 'spil' || t === 'tv')) minutes = Math.max(5, minutes - 5);
+  if (focus.includes('shower')) minutes = Math.max(5, minutes);
+  minutes = Math.max(5, Math.min(90, minutes + Math.min(20, workish * 5) - (homeN > workish ? 5 : 0)));
+
+  scene = scene
+    .replace(/Location: [^.]+\./g, `Location: ${location}, ${minutes} minutes, no excuses.`)
+    .replace(/Set the scene: [^.]+\./g, `Set the scene: ${location}, ${minutes} minutes, no rushing.`)
+    .replace(/Setting: [^.]+\./g, `Setting: ${location}. You have ${minutes} minutes of being mine.`)
+    .replace(/Meet me in [^.]+\./g, `Meet me in ${location}. You have ${minutes} minutes of being mine.`)
+    .replace(/Timer: \d+ minutes/g, `Timer: ${minutes} minutes`);
+
+  return { ...sex, intensity, minutes, location, scene };
+}
+
+/** Tags not assigned a challenge slot (4th+), used to lean sex/outfit. */
+export function leftoverTags(tags: string[]): string[] {
+  const covered = new Set(orderedTags(tags).slice(0, MAX_CHALLENGES));
+  return tags.filter((t) => !covered.has(t));
 }
 
 function buildSpare(r: R, form: FormId, style: StyleDef, tags: string[], date: string, v: Record<string, string>) {
@@ -226,16 +332,17 @@ function buildSpare(r: R, form: FormId, style: StyleDef, tags: string[], date: s
   };
 }
 
-/** Rebuild only challenges (and spare) from current tags — keeps sex and base outfit pieces. */
+/** Rebuild challenges + layers + sex lean from tags. Keeps sex form and base outfit pieces. */
 export function regenerateChallenges(plan: DayPlan, star: Star, tags: string[]): DayPlan {
   const style = STYLE_BY_ID[plan.styleId];
   const r = rng(`chal|${plan.date}|${star.id}|${plan.styleId}|${[...tags].sort().join(',')}`);
   const outfit = applyLayers(plan.outfit, star, style, tags);
-  const v = outfitVars(style, outfit, plan.sex.form, star);
-  v.loc = plan.sex.location;
-  const challenges = buildChallenges(r, plan.sex.intensity, plan.date, plan.sex.form, style, tags, v);
-  const spare = buildSpare(r, plan.sex.form, style, tags, plan.date, v);
-  return { ...plan, tags, outfit, challenges, spare };
+  const sex = leanSexFromTags(r, plan.sex, tags, leftoverTags(tags));
+  const v = outfitVars(style, outfit, sex.form, star);
+  v.loc = sex.location;
+  const challenges = buildChallenges(r, sex.intensity, plan.date, sex.form, style, tags, v);
+  const spare = buildSpare(r, sex.form, style, tags, plan.date, v);
+  return { ...plan, tags, outfit, sex, challenges, spare };
 }
 
 export function starShort(star: { name: string }): string {
@@ -266,10 +373,11 @@ export function generateDay(date: string, star: Star, defaultCup: string, days: 
   const cup = cupFor(star, style, defaultCup, r);
   const form = weighted(r, FORMS, (f) => (style.forms.includes(f.id) ? 5 : 1)).id;
   const outfit = buildOutfit(r, star, style, cup, intensity, form, tags);
-  const sex = buildSex(r, star, style, outfit, intensity, form);
+  const sex0 = buildSex(r, star, style, outfit, intensity, form);
+  const sex = leanSexFromTags(rng(`sexlean|${date}|${star.id}|${[...tags].sort().join(',')}`), sex0, tags, leftoverTags(tags));
   const v = outfitVars(style, outfit, form, star);
   v.loc = sex.location;
-  const challenges = buildChallenges(r, intensity, date, form, style, tags, v);
+  const challenges = buildChallenges(r, sex.intensity, date, form, style, tags, v);
   const spare = buildSpare(r, form, style, tags, date, v);
   return {
     date, starId: star.id, starName: star.name, styleId, styleLabel: style.label, tags: [...tags],
