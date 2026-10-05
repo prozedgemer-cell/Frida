@@ -1,7 +1,7 @@
 {
   "name": "frida",
   "private": true,
-  "version": "3.5.0",
+  "version": "3.6.0",
   "type": "module",
   "description": "Frida - personal 18+ diary PWA (fictional roleplay)",
   "scripts": {

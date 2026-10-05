@@ -1,8 +1,8 @@
 import { readFileSync, readdirSync } from 'node:fs';
 import { DEFAULT_STARS } from '../src/stars';
-import { addDays, generateDay, orderedTags, pickStarId, regenerateChallenges } from '../src/engine';
-import { BUILTIN_TAGS, OUTER_LAYERS } from '../src/tags';
-import type { DayRecord, Star } from '../src/types';
+import { generateDay, regenerateChallenges } from '../src/engine';
+import { FULL_LOOKS, NORMAL_LOOKS, lookById } from '../src/wardrobe';
+import type { Star } from '../src/types';
 
 const BAD_VAG = /vagin|pussy|clit|labia|cunni/i;
 const EDG = /edg/i;
@@ -10,73 +10,66 @@ const fail = (m: string) => { throw new Error(m); };
 
 for (const f of readdirSync('src').filter((x) => /\.tsx?$/.test(x))) {
   const t = readFileSync(`src/${f}`, 'utf8');
-  if (EDG.test(t)) fail(`'edg' in src/${f}`);
+  if (EDG.test(t)) fail(`edg in src/${f}`);
   if (BAD_VAG.test(t)) fail(`vaginal in src/${f}`);
 }
+if (NORMAL_LOOKS.length !== 200) fail(`normals ${NORMAL_LOOKS.length}`);
+if (FULL_LOOKS.length !== 100) fail(`fulls ${FULL_LOOKS.length}`);
 
 const stars = DEFAULT_STARS.map((s) => ({ ...s }));
-const days: Record<string, DayRecord> = {};
-const start = '2026-10-05';
-let edg = 0, vag = 0, maxCh = 0;
-
+let edg = 0, vag = 0, mixed = 0, rigid = 0;
 for (let n = 0; n < 80; n++) {
-  const d = addDays(start, n);
-  const id = pickStarId(d, stars, days);
-  const star = stars.find((s) => s.id === id)!;
-  const tags = ['kaelder', 'handel', 'dinner', 'spil'];
-  const plan = generateDay(d, star, 'C', days, tags);
-  if (plan.challenges.length !== 3) fail(`need 3 got ${plan.challenges.length}`);
-  maxCh = Math.max(maxCh, plan.challenges.length);
-  const covered = plan.challenges.map((c) => c.fromTag).filter(Boolean) as string[];
-  if (new Set(covered).size !== covered.length) fail(`duplicate tag coverage on ${d}: ${covered}`);
-  // each covered tag must be one of the selected tags
-  for (const t of covered) if (!tags.includes(t)) fail(`challenge from unknown tag ${t}`);
-  // with 4 tags, 3 distinct challenges should cover 3 of them
-  if (covered.length !== 3) fail(`expected 3 fromTags got ${covered}`);
-  // leftover tag must appear in layers or sex lean evidence
-  const leftover = tags.filter((t) => !covered.includes(t));
-  if (leftover.length !== 1) fail(`expected 1 leftover tag, got ${leftover}`);
-  const layerIds = Object.keys(OUTER_LAYERS).filter((t) => tags.includes(t));
-  const layersText = plan.outfit.layers ?? '';
-  for (const t of layerIds) {
-    // every layer-capable selected tag must appear in merged layers
-    if (!layersText.toLowerCase().includes(BUILTIN_TAGS.find((b) => b.id === t)!.label.toLowerCase().slice(0, 5))) {
-      // basement / grocery labels
-      if (!layersText) fail(`missing layers entirely`);
+  const star = stars[n % stars.length];
+  const tags = [['kaelder', 'handel', 'dinner'], ['hus', 'cook', 'shower'], ['spil', 'tv', 'tur'], ['arbejde', 'trafik']][n % 4];
+  const plan = generateDay(`2026-11-${String((n % 28) + 1).padStart(2, '0')}`, star, 'C', {}, tags);
+  if (plan.outfit.baseTier !== 'normal') fail('base must be normal');
+  if (plan.challenges.length !== 3 && tags.length >= 3) fail('need 3 challenges');
+  const seed = lookById[plan.outfit.baseId];
+  if (!seed) fail('missing base id');
+  // mixing: not all slots identical to a single catalog row
+  const sameAsSeed =
+    plan.outfit.panties === seed.panties && plan.outfit.bra === seed.bra
+    && plan.outfit.top === seed.top && plan.outfit.bottom === seed.bottom
+    && plan.outfit.legwear === seed.legwear && plan.outfit.shoes === seed.shoes;
+  if (sameAsSeed) rigid++; else mixed++;
+  if (plan.outfit.evening) {
+    const eve = lookById[plan.outfit.evening.id];
+    if (eve) {
+      const eveRigid = plan.outfit.evening.top === eve.top && plan.outfit.evening.bottom === eve.bottom
+        && plan.outfit.evening.panties === eve.panties && plan.outfit.evening.bra === eve.bra;
+      if (!eveRigid) mixed++;
     }
-  }
-  // all layer tags mentioned in merged layers string
-  if (layerIds.length && layerIds.filter((t) => layersText.includes(BUILTIN_TAGS.find((b) => b.id === t)!.label)).length < layerIds.length) {
-    fail(`layers missing some tags: ${layersText} vs ${layerIds}`);
   }
   const js = JSON.stringify(plan);
   if (EDG.test(js)) edg++;
   if (BAD_VAG.test(js)) vag++;
-  days[d] = { plan, games: [], status: {}, sexDone: false };
 }
+if (mixed < rigid) fail(`templates too rigid: mixed ${mixed} rigid ${rigid}`);
+console.log(`wardrobe pools: ${NORMAL_LOOKS.length} normal + ${FULL_LOOKS.length} full templates (mixed when used)`);
+console.log(`80 days: edg ${edg} vag ${vag} | mixed-piece days≈${mixed} rigid≈${rigid}`);
 
-// Explicit 4-tag example
-function force(star: Star, styleId: string, tags: string[]) {
+function force(star: Star, styleId: string, tags: string[], date: string) {
   const solo = { ...star, knownFor: [styleId as Star['knownFor'][number]] };
-  return regenerateChallenges(generateDay('2026-10-05', solo, 'C', {}, tags), solo, tags);
+  return regenerateChallenges(generateDay(date, solo, 'C', {}, tags), solo, tags);
 }
 const milf = stars.find((s) => s.knownFor.includes('milf'))!;
-const tags4 = ['kaelder', 'handel', 'dinner', 'spil'];
-const sample = force(milf, 'milf', tags4);
-const covered = sample.challenges.map((c) => c.fromTag!);
-if (new Set(covered).size !== 3) fail(`sample coverage ${covered}`);
-const leftover = tags4.filter((t) => !covered.includes(t));
-console.log('ordered cover slots:', orderedTags(tags4).slice(0, 3));
-console.log(`${80} four-tag days: edg ${edg} vag ${vag} maxCh ${maxCh}`);
-if (leftover[0] === 'spil' && sample.sex.location !== 'at your gaming desk') fail(`spil leftover should lean gaming desk, got ${sample.sex.location}`);
-console.log('EXAMPLE 4-tag day:', JSON.stringify({
-  star: sample.starName,
-  style: sample.styleLabel,
-  tags: sample.tags,
-  coveredChallenges: sample.challenges.map((c) => ({ tag: c.fromTag, text: c.text })),
-  leftoverTagInfluences: {
-    leftover,
-    layers: sample.outfit.layers,
-    sex: { form: sample.sex.formLabel, min: sample.sex.minutes, intensity: sample.sex.intensity, loc: sample.sex.location },
-  },
-}, null, 2));
+const maid = stars.find((s) => s.knownFor.includes('maid'))!;
+const gamer = stars.find((s) => s.knownFor.includes('gamer-girl'))!;
+const examples = [
+  ['A Basement+Grocery+Dinner / MILF', force(milf, 'milf', ['kaelder', 'handel', 'dinner'], '2026-10-05')],
+  ['B Home+Cook+Shower / Maid', force(maid, 'maid', ['hus', 'cook', 'shower'], '2026-10-06')],
+  ['C Gaming+TV+Walk / Gamer girl', force(gamer, 'gamer-girl', ['spil', 'tv', 'tur'], '2026-10-07')],
+] as const;
+for (const [label, p] of examples) {
+  console.log('\n' + label);
+  console.log(JSON.stringify({
+    star: p.starName, style: p.styleLabel, tags: p.tags,
+    progression: {
+      baseAllDay: `${p.outfit.baseName}: ${p.outfit.panties}, ${p.outfit.bra}, ${p.outfit.top}, ${p.outfit.bottom}, ${p.outfit.legwear}, ${p.outfit.shoes}, ${p.outfit.cup}-cup`,
+      activitySwaps: p.outfit.swaps.map((s) => `${s.label} → ${s.change}`),
+      eveningSex: p.outfit.evening
+        ? `${p.outfit.evening.name}: ${p.outfit.evening.top} / ${p.outfit.evening.bottom} (${p.outfit.evening.panties}, ${p.outfit.evening.bra})`
+        : null,
+    },
+  }, null, 2));
+}

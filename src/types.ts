@@ -32,7 +32,31 @@ export interface Star {
   custom?: boolean;
 }
 
+export interface OutfitSwap {
+  tag: string;
+  label: string;
+  /** What changes over the same base for this activity. */
+  change: string;
+}
+
+export interface EveningLook {
+  id: string;
+  name: string;
+  summary: string;
+  panties: string;
+  bra: string;
+  top: string;
+  bottom: string;
+  legwear: string;
+  shoes: string;
+  extras: string[];
+}
+
 export interface OutfitPlan {
+  /** Catalog ids */
+  baseId: string;
+  baseName: string;
+  baseTier: 'normal' | 'full';
   panties: string;
   bra: string;
   cup: string;
@@ -43,7 +67,11 @@ export interface OutfitPlan {
   makeup: string;
   wig: string;
   extras: string[];
-  /** Practical outer layers when day tags are out-of-house / work / school. */
+  /** Outer swaps per activity tag — same base underneath. */
+  swaps: OutfitSwap[];
+  /** Full slut/fantasy look for sex / evening when tags allow. */
+  evening?: EveningLook;
+  /** Compact multi-line layers text (legacy + display). */
   layers?: string;
   summary: string;
 }

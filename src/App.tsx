@@ -149,6 +149,7 @@ function TodayView({ rec, star, customTags, update }: {
       <section className="card">
         <h2>Outfit</h2>
         <p className="summary">{o.summary}</p>
+        <p className="kicker">Base all day · {o.baseName}</p>
         <dl className="list">
           <dt>Panties</dt><dd>{o.panties}</dd>
           <dt>Bra</dt><dd>{o.bra} · {o.cup}-cup forms</dd>
@@ -156,11 +157,33 @@ function TodayView({ rec, star, customTags, update }: {
           <dt>Bottom</dt><dd>{o.bottom}</dd>
           <dt>Legs</dt><dd>{o.legwear}</dd>
           <dt>Shoes</dt><dd>{o.shoes}</dd>
-          {o.layers && (<><dt>Outer</dt><dd>{o.layers}</dd></>)}
           <dt>Makeup</dt><dd>{o.makeup}</dd>
           <dt>Wig</dt><dd>{o.wig}</dd>
           <dt>Extras</dt><dd>{o.extras.join(', ')}</dd>
         </dl>
+        {o.swaps?.length > 0 && (
+          <>
+            <p className="kicker" style={{ marginTop: 12 }}>Activity swaps (same base)</p>
+            <ul className="swaps">
+              {o.swaps.map((sw) => (
+                <li key={sw.tag}><b>{sw.label}</b> — {sw.change}</li>
+              ))}
+            </ul>
+          </>
+        )}
+        {o.evening && (
+          <>
+            <p className="kicker" style={{ marginTop: 12 }}>Evening / sex</p>
+            <p className="summary">{o.evening.summary}</p>
+            <dl className="list">
+              <dt>Look</dt><dd>{o.evening.name}</dd>
+              <dt>Top</dt><dd>{o.evening.top}</dd>
+              <dt>Bottom</dt><dd>{o.evening.bottom}</dd>
+              <dt>Legs</dt><dd>{o.evening.legwear}</dd>
+              <dt>Extras</dt><dd>{o.evening.extras.join(', ')}</dd>
+            </dl>
+          </>
+        )}
       </section>
 
       <section className="card">

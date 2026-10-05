@@ -131,3 +131,7 @@ input[type='search'] { -webkit-appearance: none; appearance: none; }
 .taggroup { margin-top: 10px; }
 .taggroup .kicker { margin-bottom: 6px; }
 .taggroup .chips { margin-bottom: 2px; }
+
+.swaps { list-style: none; padding: 0; margin: 6px 0 0; display: grid; gap: 6px; }
+.swaps li { background: var(--elev); border: 1px solid var(--border); border-radius: 12px; padding: 8px 10px; font-size: .9rem; }
+.swaps li b { color: var(--rose); }

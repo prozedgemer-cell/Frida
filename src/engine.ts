@@ -1,16 +1,16 @@
 import {
-  BONUSES, BOTTOMS, BRAS, CLOSERS, CUPS, EXTRAS, FORM_LINES, FORMS, LEGWEAR, LOC_LINES, LOCATIONS,
-  MAKEUP, OPENERS, PANTIES, PENALTIES, PLUG_FORMS, SHOES, TOPS, WIGS, formLabel,
+  BONUSES, CLOSERS, CUPS, FORM_LINES, FORMS, LOC_LINES, LOCATIONS,
+  MAKEUP, OPENERS, PENALTIES, PLUG_FORMS, WIGS, formLabel,
   type Item,
 } from './content';
 import { LAYER_PRIORITY, OUTER_LAYERS, TAG_CHALLENGES, TAG_PUNISHMENTS, TAG_REWARDS, challengeTags, isHomeTag, isOutTag, tagLabel, type TagChallenge } from './tags';
+import { FULL_LOOKS, NORMAL_LOOKS, STYLE_VIBES, type WardrobeLook } from './wardrobe';
 
-import { STYLE_BY_ID, type Slot, type StyleDef } from './looks';
+import { STYLE_BY_ID, type StyleDef } from './looks';
 import type {
   AppData, Challenge, DayPlan, DayRecord, FormId, Game, GameLog, Intensity, KnownFor, OutfitPlan, SexPlan, Star, Style,
 } from './types';
 
-const CLAMP_FORMS: FormId[] = ['nipples', 'bondage', 'chastity', 'milking'];
 
 export const MAX_CHALLENGES = 3;
 const AVOID_RECENT = 7;
@@ -86,38 +86,177 @@ export function cupFor(star: Star, style: StyleDef, defaultCup: string, r: R): s
   const idx = Math.round((own + style.cupShift) * 0.7 + def * 0.3) + jitter;
   return CUPS[Math.min(CUPS.length - 1, Math.max(0, idx))];
 }
-function buildOutfit(r: R, star: Star, style: StyleDef, cup: string, intensity: Intensity, form: FormId, tags: string[] = []): OutfitPlan {
-  const look = style.look;
-  // style-specific pieces first (top/bottom always, others most of the time), else the shared look pool
-  const slot = (k: Slot, items: Item[], always: boolean) => {
-    const own = style.own?.[k];
-    return own && (always || r() < 0.65) ? pick(r, own) : styled(r, items, look);
-  };
-  const panties = slot('panties', PANTIES, false);
-  const bra = slot('bra', BRAS, false);
-  const top = slot('top', TOPS, true);
-  const bottom = slot('bottom', BOTTOMS, true);
-  const legwear = slot('legwear', LEGWEAR, false);
-  const shoes = slot('shoes', SHOES, false);
-  const makeup = styled(r, MAKEUP, look);
-  const wig = styled(r, WIGS, look);
-  // style signature first; cage only on chastity days; plug only on plug-based days
-  const pool = EXTRAS.filter((e) => (e.s.includes(look) || e.s.includes('any'))
-    && !e.t.includes('chastity') && !e.t.includes('plug')
-    && (!e.t.includes('clamps') || CLAMP_FORMS.includes(form))
-    && !style.signature.includes(e.t.split(' ').slice(-1)[0]));
-  const extras: string[] = [style.signature];
-  if (form === 'chastity') extras.push('chastity cage');
-  if (PLUG_FORMS.includes(form)) extras.push(intensity === 'hard' ? 'large jeweled butt plug' : 'small butt plug');
-  const count = Math.max(extras.length, intensity === 'hard' ? 3 : 2);
-  let guard = 0;
-  while (extras.length < count && guard++ < 50) {
-    const e = weighted(r, pool, (e) => (e.hard ? (intensity === 'hard' ? 3 : 0.3) : 1) * (e.s.includes(look) ? 2 : 1));
-    if (!extras.includes(e.t)) extras.push(e.t);
-  }
-  const base = { panties, bra, cup, top, bottom, legwear, shoes, makeup, wig, extras };
-  return applyLayers({ ...base, summary: '' }, star, style, tags ?? []);
+function scoreLook(look: WardrobeLook, vibes: string[]): number {
+  const hits = look.vibe.filter((v) => vibes.includes(v)).length;
+  if (hits === 0) return 0.12;
+  return hits * 12 + (vibes.includes(look.vibe[0]) ? 8 : 0);
 }
+function pickLook(r: R, pool: WardrobeLook[], vibes: string[]): WardrobeLook {
+  const hit = pool.filter((l) => l.vibe.some((v) => vibes.includes(v)));
+  return weighted(r, hit.length ? hit : pool, (l) => scoreLook(l, vibes));
+}
+
+/** Evening full look once any tags are set (for sex); day stays on the normal base + swaps. */
+function wantsEveningFull(tags: string[], _styleId: KnownFor): boolean {
+  return tags.length > 0;
+}
+
+function buildSwaps(tags: string[]): { tag: string; label: string; change: string }[] {
+  const ordered = LAYER_PRIORITY.filter((t) => tags.includes(t) && OUTER_LAYERS[t]);
+  // also include home activity "soft swaps" that are not full outer covers
+  const homeSoft: Record<string, string> = {
+    cook: 'Add an apron over the same base; sleeves rolled.',
+    dinner: 'Keep the base; add a nice belt / earrings for dinner.',
+    laundry: 'Same base; hair up, maybe drop the outer top while folding alone.',
+    vacuum: 'Same base; kick shoes off if home alone.',
+    hus: 'Same base at home; outer jacket off.',
+    shower: 'Base set aside; after shower, back into the same base (or evening look).',
+    tv: 'Same base on the couch; trousers optional if alone.',
+    spil: 'Same base at the desk; trousers optional if alone.',
+  };
+  const swaps: { tag: string; label: string; change: string }[] = [];
+  const seen = new Set<string>();
+  for (const id of ordered) {
+    const L = OUTER_LAYERS[id];
+    swaps.push({
+      tag: id,
+      label: tagLabel(id),
+      change: `Over the same base: ${L.top}; ${L.bottom}${L.shoes ? `; ${L.shoes}` : ''}.`,
+    });
+    seen.add(id);
+  }
+  for (const id of tags) {
+    if (seen.has(id) || !homeSoft[id]) continue;
+    swaps.push({ tag: id, label: tagLabel(id), change: homeSoft[id] });
+  }
+  return swaps;
+}
+
+/** Mix 2–3 template looks into one outfit so catalogs are pools, not rigid costumes. */
+function mixLooks(r: R, primary: WardrobeLook, pool: WardrobeLook[], vibes: string[]): WardrobeLook & { mixNote: string } {
+  const b = pickLook(r, pool, vibes);
+  const c = r() < 0.65 ? pickLook(r, pool, vibes) : b;
+  const donors = [primary, b, c];
+  const pickSlot = <K extends keyof WardrobeLook>(key: K, preferPrimary = false): WardrobeLook[K] => {
+    if (preferPrimary && r() < 0.55) return primary[key];
+    return donors[Math.floor(r() * donors.length)][key];
+  };
+  const extras = [
+    ...new Set([
+      ...(pickSlot('extras') as string[]),
+      ...(r() < 0.5 ? (b.extras as string[]) : []),
+      ...(r() < 0.35 ? (c.extras as string[]) : []),
+    ]),
+  ].slice(0, 4);
+  const mixedName = primary.name === b.name
+    ? primary.name
+    : `${primary.name} × ${b.name.split(' ')[0]}`;
+  return {
+    id: primary.id,
+    tier: primary.tier,
+    name: mixedName,
+    vibe: primary.vibe,
+    panties: pickSlot('panties', true) as string,
+    bra: pickSlot('bra', true) as string,
+    top: pickSlot('top', true) as string,
+    bottom: pickSlot('bottom', true) as string,
+    legwear: pickSlot('legwear') as string,
+    shoes: pickSlot('shoes') as string,
+    extras,
+    mixNote: `mixed from ${primary.id}/${b.id}/${c.id}`,
+  };
+}
+
+function lookToPieces(look: WardrobeLook, cup: string, style: StyleDef, form: FormId, intensity: Intensity, r: R) {
+  const extras = [...look.extras];
+  if (!extras.includes(style.signature)) extras.unshift(style.signature);
+  if (form === 'chastity' && !extras.some((e) => /cage|chastity/i.test(e))) extras.push('chastity cage');
+  if (PLUG_FORMS.includes(form) && !extras.some((e) => /plug/i.test(e))) {
+    extras.push(intensity === 'hard' ? 'large jeweled butt plug' : 'small butt plug');
+  }
+  // Always remix makeup/wig from style pools (not locked to template)
+  const makeup = styled(r, MAKEUP, style.look);
+  const wig = r() < 0.4 ? styled(r, WIGS, style.look) : 'own hair / light styling';
+  return {
+    panties: look.panties, bra: look.bra, cup, top: look.top, bottom: look.bottom,
+    legwear: look.legwear, shoes: look.shoes, makeup, wig, extras,
+  };
+}
+
+function buildOutfit(r: R, star: Star, style: StyleDef, cup: string, intensity: Intensity, form: FormId, tags: string[] = []): OutfitPlan {
+  const vibes = STYLE_VIBES[style.id] ?? ['casual', 'sexy'];
+  // Base from the 200 normal templates, always piece-mixed with 1–2 other normals
+  const seed = pickLook(r, NORMAL_LOOKS, vibes);
+  const baseLook = mixLooks(r, seed, NORMAL_LOOKS, vibes);
+  const pieces = lookToPieces(baseLook, cup, style, form, intensity, r);
+  const swaps = buildSwaps(tags);
+  // Occasionally borrow an outer-swap shoe/top wording from a second normal template
+  for (const sw of swaps) {
+    if (r() < 0.4) {
+      const donor = pickLook(r, NORMAL_LOOKS, vibes);
+      sw.change += ` Accent from ${donor.name.split('#')[0].trim()}: keep her ${donor.shoes}.`;
+    }
+  }
+  let evening: OutfitPlan['evening'];
+  if (wantsEveningFull(tags, style.id)) {
+    const fullSeed = pickLook(r, FULL_LOOKS, vibes);
+    // Mix full templates together; sometimes pull lingerie pieces from a normal look underneath
+    const fullMix = mixLooks(r, fullSeed, FULL_LOOKS, vibes);
+    if (r() < 0.45) {
+      const linger = pickLook(r, NORMAL_LOOKS, vibes);
+      fullMix.panties = linger.panties;
+      fullMix.bra = r() < 0.5 ? linger.bra : fullMix.bra;
+    }
+    const ep = lookToPieces(fullMix, cup, style, form, intensity, r);
+    evening = {
+      id: fullMix.id, name: fullMix.name,
+      summary: `Evening / sex: ${fullMix.name} — ${ep.top}, ${ep.bottom}, ${cup}-cup forms.`,
+      panties: ep.panties, bra: ep.bra, top: ep.top, bottom: ep.bottom,
+      legwear: ep.legwear, shoes: ep.shoes, extras: ep.extras,
+    };
+  }
+  const layers = swaps.length
+    ? swaps.map((s) => `${s.label}: ${s.change}`).join(' · ')
+    : undefined;
+  const summary = evening
+    ? `${starShort(star)} base all day: ${baseLook.name} (${pieces.top} + ${pieces.bottom}, ${cup}-cup). Evening → ${evening.name}.`
+    : `${starShort(star)} base all day: ${baseLook.name} — ${pieces.top}, ${pieces.bottom}, ${pieces.legwear}, ${cup}-cup forms.`;
+  return {
+    baseId: baseLook.id, baseName: baseLook.name, baseTier: 'normal',
+    ...pieces, swaps, evening, layers, summary,
+  };
+}
+
+/** Re-apply activity swaps / evening eligibility when tags change — keeps the same base look. */
+export function applyLayers(outfit: OutfitPlan, star: Star, style: StyleDef, tags: string[]): OutfitPlan {
+  const swaps = buildSwaps(tags);
+  const layers = swaps.length ? swaps.map((s) => `${s.label}: ${s.change}`).join(' · ') : undefined;
+  let evening = outfit.evening;
+  const want = wantsEveningFull(tags, style.id);
+  if (want && !evening) {
+    const vibes = STYLE_VIBES[style.id] ?? ['casual', 'sexy'];
+    const r = rng(`eve|${star.id}|${outfit.baseId}|${[...tags].sort().join(',')}`);
+    const fullSeed = pickLook(r, FULL_LOOKS, vibes);
+    const full = mixLooks(r, fullSeed, FULL_LOOKS, vibes);
+    if (r() < 0.45) {
+      const linger = pickLook(r, NORMAL_LOOKS, vibes);
+      full.panties = linger.panties;
+      full.bra = r() < 0.5 ? linger.bra : full.bra;
+    }
+    evening = {
+      id: full.id, name: full.name,
+      summary: `Evening / sex: ${full.name} — ${full.top}, ${full.bottom}, ${outfit.cup}-cup forms.`,
+      panties: full.panties, bra: full.bra, top: full.top, bottom: full.bottom,
+      legwear: full.legwear, shoes: full.shoes, extras: [...full.extras, style.signature],
+    };
+  }
+  if (!want) evening = undefined;
+  const summary = evening
+    ? `${starShort(star)} base all day: ${outfit.baseName} (${outfit.top} + ${outfit.bottom}, ${outfit.cup}-cup). Evening → ${evening.name}.`
+    : `${starShort(star)} base all day: ${outfit.baseName} — ${outfit.top}, ${outfit.bottom}, ${outfit.legwear}, ${outfit.cup}-cup forms.`;
+  return { ...outfit, swaps, evening, layers, summary };
+}
+
 
 // ---------- sex ----------
 function buildSex(r: R, star: Star, style: StyleDef, outfit: OutfitPlan, intensity: Intensity, form: FormId): SexPlan {
@@ -133,25 +272,15 @@ function buildSex(r: R, star: Star, style: StyleDef, outfit: OutfitPlan, intensi
     fill(pick(r, LOC_LINES), v),
     pick(r, CLOSERS[tone]),
   ];
-  // keep the scene at 3-6 sentences: drop the closer, then the style line, if too long
   const count = (ls: string[]) => (ls.join(' ').match(/[.!?](\s|$)/g) ?? []).length;
-  if (count(lines) > 6) lines.pop(); // closer
-  if (count(lines) > 6) lines.splice(1, 1); // style line
-  if (count(lines) > 6) lines.splice(2, 1); // second form line
+  if (count(lines) > 6) lines.pop();
+  if (count(lines) > 6) lines.splice(1, 1);
+  if (count(lines) > 6) lines.splice(2, 1);
   return { form, formLabel: def.label, minutes, location, intensity, scene: lines.join(' ') };
 }
 
-// ---------- challenges ----------
 function fill(t: string, v: Record<string, string>): string {
   return t.replace(/\{(\w+)\}/g, (_, k: string) => v[k] ?? '');
-}
-const fitsForm = (t: TagChallenge, form: FormId) => !t.forms || t.forms.includes(form);
-function tagMatch(t: TagChallenge, tags: string[]): boolean {
-  if (t.tags.includes('*')) return tags.length > 0;
-  return t.tags.some((x) => tags.includes(x));
-}
-function toChallenge(t: TagChallenge, id: string, v: Record<string, string>): Challenge {
-  return { id: `${id}-${hash(t.text + t.link) % 10000}`, kind: t.kind, text: fill(t.text, v), link: fill(t.link, v) };
 }
 function outfitVars(style: StyleDef, outfit: OutfitPlan, form: FormId, star: Star): Record<string, string> {
   return {
@@ -160,25 +289,15 @@ function outfitVars(style: StyleDef, outfit: OutfitPlan, form: FormId, star: Sta
     shoes: outfit.shoes, sig: style.signature, loc: '', form: formLabel(form).toLowerCase(),
   };
 }
-/** Apply practical outer layers from ALL selected tags that have a cover layer. */
-export function applyLayers(outfit: Omit<OutfitPlan,'summary'|'layers'> & Partial<Pick<OutfitPlan,'summary'|'layers'>>, star: Star, _style: StyleDef, tags: string[]): OutfitPlan {
-  const outTags = LAYER_PRIORITY.filter((t) => tags.includes(t) && OUTER_LAYERS[t]);
-  if (!outTags.length) {
-    const summary = `${starShort(star)} picks: ${outfit.top}, ${outfit.bottom}, ${outfit.legwear}, ${outfit.cup}-cup forms.`;
-    return { ...outfit, layers: undefined, summary };
-  }
-  // Merge every tagged cover so no selected out/work tag is ignored
-  const bits: string[] = [];
-  for (const id of outTags) {
-    const L = OUTER_LAYERS[id];
-    const label = tagLabel(id);
-    bits.push(`${label}: ${L.top}; ${L.bottom}${L.shoes ? `; ${L.shoes}` : ''}`);
-  }
-  const layers = bits.join(' · ');
-  const primary = OUTER_LAYERS[outTags[0]];
-  const extra = outTags.length > 1 ? ` (+${outTags.length - 1} more covers)` : '';
-  const summary = `${starShort(star)} picks: ${outfit.top} + ${outfit.bottom} under ${primary.bottom}${extra}, ${outfit.cup}-cup forms.`;
-  return { ...outfit, layers, summary };
+
+// ---------- challenges helpers ----------
+const fitsForm = (t: TagChallenge, form: FormId) => !t.forms || t.forms.includes(form);
+function tagMatch(t: TagChallenge, tags: string[]): boolean {
+  if (t.tags.includes('*')) return tags.length > 0;
+  return t.tags.some((x) => tags.includes(x));
+}
+function toChallenge(t: TagChallenge, id: string, v: Record<string, string>): Challenge {
+  return { id: `${id}-${hash(t.text + t.link) % 10000}`, kind: t.kind, text: fill(t.text, v), link: fill(t.link, v) };
 }
 
 function hardW(t: TagChallenge, intensity: Intensity, style: StyleDef, tags: string[]): number {
