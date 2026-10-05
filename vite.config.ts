@@ -4,6 +4,20 @@ import { VitePWA } from 'vite-plugin-pwa';
 
 export default defineConfig({
   base: process.env.BASE_PATH || '/',
+  build: {
+    rollupOptions: {
+      output: {
+        // Stable names so Pages deploys are easy to verify (SW still revisions).
+        entryFileNames: 'assets/index.js',
+        chunkFileNames: 'assets/[name].js',
+        assetFileNames: (info) => {
+          const n = info.name || '';
+          if (n.endsWith('.css')) return 'assets/index.css';
+          return 'assets/[name][extname]';
+        },
+      },
+    },
+  },
   plugins: [
     react(),
     VitePWA({
